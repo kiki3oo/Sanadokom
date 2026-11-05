@@ -1,0 +1,231 @@
+// Prisma Schema for COD SaaS Platform - Customized for OptiTrav Workflow
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  passwordHash  String
+  role          String    @default("CALL_AGENT") // ADMIN, CALL_AGENT, LOGISTICS_MANAGER
+  phone         String?
+  commissionFee Float     @default(10.0) // Commission par commande livrée (ex: 10 ou 15 DH)
+  permissions   String?   // JSON custom permissions {viewDashboard, viewCallCenter, viewOrders, viewStock, viewExpenses, viewIntegrations, viewAdmin, hideCostPrices}
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  assignedOrders Order[]  @relation("AssignedAgent")
+  callLogs       CallLog[]
+}
+
+model Store {
+  id            String    @id @default(uuid())
+  name          String
+  slug          String    @unique
+  currency      String    @default("MAD")
+  webhookSecret String    @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  products      Product[]
+  orders        Order[]
+  expenses      Expense[]
+  fbSettings    FacebookSetting?
+  courierConfig CourierConfig[]
+}
+
+model Product {
+  id              String          @id @default(uuid())
+  storeId         String
+  store           Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sku             String          @unique
+  name            String
+  variant         String?
+  color           String?
+  size            String?
+  description     String?
+  imageUrl        String?
+  costPrice       Float           @default(0) // COGS / Prix d'achat unitaire
+  packagingFee    Float           @default(5.0) // Frais emballage (Unité)
+  sellingPrice    Float           @default(0) // Prix de vente
+  stockInitial    Int             @default(0) // Stock initial
+  stockQuantity   Int             @default(0) // Stock Actuel
+  reservedQuantity Int            @default(0) // Reserved Quantity
+  quantitySold    Int             @default(0) // Quantity Sold
+  alertThreshold  Int             @default(10) // Alerte rupture
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  orderItems      OrderItem[]
+  stockMovements  StockMovement[]
+}
+
+model StockMovement {
+  id            String    @id @default(uuid())
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type          String    // PURCHASE, SALE, RETURN, DAMAGE, ADJUSTMENT
+  quantity      Int       // Positive or negative
+  previousStock Int
+  newStock      Int
+  reference     String?   // Order ID or Invoice #
+  notes         String?
+  createdAt     DateTime  @default(now())
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  orderNumber     String      @unique // e.g. 1359 or ORD-1001
+  storeId         String
+  store           Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  // Client details
+  customerName    String
+  customerPhone   String
+  customerCity    String
+  cityApi         String?     // Ville standardisée pour l'API transporteur
+  customerAddress String
+  customerNote    String?     // Remarque
+  
+  // Status & Workflow
+  // Confirmé, pas de réponse, Appel 1, Appel 2, Appel 3, Boîte Vocal, Injoignable, Appels + Message Whatssap, Numéro faux, Annulé
+  status          String      @default("PENDING")
+  subStatus       String?     // Détail appel (Appel 1, Appel 2, Boîte Vocal, etc.)
+  isDuplicate     Boolean     @default(false) // Detect Duplicate Order
+  
+  // Call Center & Upsell
+  assignedAgentId String?
+  assignedAgent   User?       @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
+  callAttempts    Int         @default(0)
+  lastCallAt      DateTime?
+  callbackAt      DateTime?
+  agentNotes      String?
+  upsell          String?     // Produit additionnel / Offre ajoutée
+  
+  // Financials & Fees
+  totalAmount     Float       @default(0) // Montant total à encaisser (COD)
+  costAmount      Float       @default(0) // Total COGS
+  packagingFee    Float       @default(0) // Total Packaging Fee
+  shippingCost    Float       @default(35.0) // Frais de livraison transporteur
+  confirmerFee    Float       @default(10.0) // Commission de l'agent
+  netProfit       Float       @default(0) // Bénéfice net calculé
+  
+  // Shipping / Logistics
+  // OzonExpress, Sendit, Olivraison, Forcelog, Coliix, Ameex, Onessta, Speedaf, Livo, Vitex, Speedex, Maberr, Colino Express, Livcach, Cathedis
+  courierProvider String?     
+  trackingNumber  String?
+  courierStatus   String?     // Transmis, En cours, Livré, Retourné
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  returnedAt      DateTime?
+  
+  // Facturation Confirmer
+  confirmerPaid   Boolean     @default(false) // Status de paiement (Awaiting payment / Paid)
+  
+  // Marketing attribution (UTM)
+  source          String?     @default("Landing Page")
+  utmCampaign     String?     // Campagne
+  utmSource       String?     // Source
+  adSet           String?     // Ad Set
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items           OrderItem[]
+  callLogs        CallLog[]
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  variant     String?
+  color       String?
+  size        String?
+  quantity    Int      @default(1)
+  unitPrice   Float    @default(0)
+  unitCost    Float    @default(0)
+}
+
+model CallLog {
+  id          String    @id @default(uuid())
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  agentId     String?
+  agent       User?     @relation(fields: [agentId], references: [id])
+  status      String    // Confirmé, pas de réponse, Appel 1, Appel 2, Appel 3, Boîte Vocal, Injoignable, Appels + Message Whatssap, Numéro faux, Annulé
+  notes       String?
+  callbackAt  DateTime?
+  durationSec Int       @default(0)
+  createdAt   DateTime  @default(now())
+}
+
+model Expense {
+  id          String    @id @default(uuid())
+  storeId     String
+  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  date        DateTime  @default(now())
+  category    String    // FACEBOOK_ADS, TIKTOK_ADS, PACKAGING, SALARIES, SHIPPING, CONFIRMER_FEE, OTHER
+  amount      Float
+  description String?
+  createdAt   DateTime  @default(now())
+}
+
+model FacebookSetting {
+  id              String    @id @default(uuid())
+  storeId         String    @unique
+  store           Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  adAccountId     String?
+  accessToken     String?
+  pixelId         String?
+  autoSyncSpend   Boolean   @default(false)
+  lastSyncAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model CourierConfig {
+  id              String    @id @default(uuid())
+  storeId         String
+  store           Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  provider        String    
+  apiKey          String?
+  apiSecret       String?
+  accountNumber   String?
+  apiUrl          String?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([storeId, provider])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  userName  String
+  userRole  String?
+  action    String   // STATUS_CHANGE, ORDER_EDIT, ASSIGNMENT, STOCK_CHANGE, EXPENSE_ADD, EXPENSE_DELETE, CALL_MADE
+  entity    String   // ORDER, PRODUCT, EXPENSE, USER, STORE
+  entityId  String?
+  details   String
+  oldValue  String?
+  newValue  String?
+  orderId   String?
+  storeId   String?
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
+}

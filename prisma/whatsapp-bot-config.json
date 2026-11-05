@@ -1,0 +1,39 @@
+{
+  "enabled": true,
+  "provider": "SIMULATOR_TEST",
+  "apiToken": "",
+  "phoneNumberId": "",
+  "instanceId": "",
+  "webhookSecret": "cod_wa_secret_2026",
+  "senderPhone": "+212720991683",
+  "delaySeconds": 10,
+  "upsellEnabled": true,
+  "upsellDiscountPercent": 50,
+  "deliveryRescueEnabled": true,
+  "templates": {
+    "MA": {
+      "messageText": "السلام عليكم أ سيدي/لالة {customerName} 👋\nشكراً على طلبيتك فـ متجرنا!\n📦 المنتج: {productName}\n💰 المبلغ الإجمالي: {totalAmount} {currency} (الدفع عند الاستلام والتوصيل مجاني).\n📍 العنوان: {customerAddress} - {customerCity}.\n\nباش نخرجو الكولية ديالك مع الموزع اليوم، عافاك أكد لينا بالضغط على الزر أسفله:",
+      "btnConfirm": "✅ نعم، أؤكد الطلبية",
+      "btnCancel": "❌ إلغاء الطلبية",
+      "btnModify": "✏️ تعديل العنوان / المقاس",
+      "confirmedReply": "شكراً ليك أ سيدي {customerName}! 🎉\nطلبيتك رقم #{orderNumber} تأكدات بنجاح وخرجات لقسم التغليف والشحن. غادي يتصل بيك الموزع قريباً فـ {customerCity}.",
+      "cancelledReply": "تم إلغاء طلبيتك #{orderNumber} بنجاح. شكراً على وقتك، وكنتمناو نشوفوك قريب! 🙏",
+      "upsellOffer": "🎁 عرض خاص وحصري ليك أ سيدي {customerName}!\nبمناسبة تأكيد الطلبية ديالك، واش نزيدو ليك الحبة الثانية بتخفيض 50% ونجمعوهم فـ نفس الكولية بالمجان؟",
+      "upsellBtnYes": "✅ نعم، زيدني الحبة الثانية بتخفيض",
+      "upsellBtnNo": "❌ لا، بغيت غير حبة وحدة فقط",
+      "rescueText": "السلام عليكم أ سيدي {customerName}، الموزع ديالنا حاول يتصل بيك بخصوص كوليتك #{orderNumber} وما جاوبتيهش. واش نبروغراميو ليك التوصيل غدا فـ نفس الوقت؟"
+    },
+    "SN": {
+      "messageText": "Bonjour M/Mme {customerName} 👋\nMerci pour votre commande sur notre boutique !\n📦 Produit: {productName}\n💰 Montant total: {totalAmount} {currency} (Paiement à la livraison).\n📍 Adresse: {customerAddress} - {customerCity}.\n\nPour expédier votre colis dès aujourd'hui avec notre livreur, veuillez confirmer en cliquant ci-dessous :",
+      "btnConfirm": "✅ Oui, je confirme ma commande",
+      "btnCancel": "❌ Annuler la commande",
+      "btnModify": "✏️ Modifier l'adresse",
+      "confirmedReply": "Merci beaucoup {customerName} ! 🎉\nVotre commande #{orderNumber} est bien confirmée et programmée pour la livraison à {customerCity}. Notre livreur vous contactera très vite.",
+      "cancelledReply": "Votre commande #{orderNumber} a été annulée avec succès. Merci et à très bientôt ! 🙏",
+      "upsellOffer": "🎁 Offre VIP exclusive pour vous {customerName} !\nProfitez d'un 2ème article à -50% de réduction immédiate livré ensemble sans frais supplémentaires !",
+      "upsellBtnYes": "✅ Oui, ajouter le 2ème avec remise",
+      "upsellBtnNo": "❌ Non, garder 1 seul article",
+      "rescueText": "Bonjour {customerName}, notre livreur a essayé de vous joindre pour votre colis #{orderNumber} sans succès. Souhaitez-vous reprogrammer la livraison demain ?"
+    }
+  }
+}

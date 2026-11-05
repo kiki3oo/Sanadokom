@@ -1,0 +1,84 @@
+{
+  "mode": "SINGLE_COURIER",
+  "singleCourier": "DIGYLOG",
+  "fallbackCourier": "DIGYLOG",
+  "autoDispatchEnabled": true,
+  "scheduledTime": "19:30",
+  "cityRoutingRules": [
+    {
+      "id": "rule-casa-rabat",
+      "name": "Grand Casablanca & Rabat",
+      "cities": [
+        "Casablanca",
+        "Rabat",
+        "Mohammedia",
+        "Salé",
+        "Témara",
+        "Bouskoura",
+        "Dar Bouazza",
+        "Nouaceur"
+      ],
+      "courier": "CATHEDIS",
+      "isActive": true
+    },
+    {
+      "id": "rule-nord",
+      "name": "Région Nord & Fès/Meknès",
+      "cities": [
+        "Tanger",
+        "Tétouan",
+        "Fès",
+        "Meknès",
+        "Kenitra",
+        "Larache",
+        "Nador",
+        "Oujda"
+      ],
+      "courier": "AMEEX",
+      "isActive": true
+    },
+    {
+      "id": "rule-sud",
+      "name": "Région Sud & Marrakech",
+      "cities": [
+        "Marrakech",
+        "Agadir",
+        "Essaouira",
+        "Taroudant",
+        "Ouarzazate",
+        "Guelmim",
+        "Laâyoune",
+        "Dakhla"
+      ],
+      "courier": "OZONE",
+      "isActive": true
+    },
+    {
+      "id": "rule-senegal",
+      "name": "Sénégal (Dakar & Régions)",
+      "cities": [
+        "Dakar",
+        "Pikine",
+        "Guédiawaye",
+        "Rufisque",
+        "Thiès",
+        "Mbour",
+        "Saint-Louis",
+        "Touba"
+      ],
+      "courier": "DAKAR_EXPRESS",
+      "isActive": true
+    }
+  ],
+  "lastAutoDispatchAt": "2026-11-04T00:53:36.453Z",
+  "lastDispatchedCount": 1,
+  "customCouriers": [
+    {
+      "id": "DIGYLOG",
+      "name": "Digylog",
+      "country": "MA",
+      "phone": "0660302517",
+      "deliveryFee": 35
+    }
+  ]
+}

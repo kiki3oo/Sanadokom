@@ -1,0 +1,48 @@
+{
+  "suppliers": [
+    {
+      "id": "sup_casa_01",
+      "name": "Atlas Import Grossiste",
+      "contactPerson": "Haj Abdelilah",
+      "phone": "+212661234567",
+      "address": "Derb Omar, Rue Faidi Khalifa",
+      "city": "Casablanca",
+      "country": "MA",
+      "notes": "Fournisseur principal pour les diffuseurs et huiles essentielles.",
+      "totalPurchased": 45000,
+      "totalPaid": 35000,
+      "balanceDue": 10000,
+      "createdAt": "2026-10-04T01:52:05.769Z"
+    },
+    {
+      "id": "sup_rabat_02",
+      "name": "Cosmétique Bio Nature SARL",
+      "contactPerson": "Mme Nezha Bennani",
+      "phone": "+212662987654",
+      "address": "Zone Industrielle Ain Atiq",
+      "city": "Rabat",
+      "country": "MA",
+      "notes": "Laboratoire certifié, crèmes et sérums anti-taches.",
+      "totalPurchased": 28000,
+      "totalPaid": 28000,
+      "balanceDue": 0,
+      "createdAt": "2026-09-19T01:52:05.769Z"
+    },
+    {
+      "id": "sup_dakar_03",
+      "name": "Dakar Transit & Distribution Hub",
+      "contactPerson": "M. Ousmane Diop",
+      "phone": "+221776543210",
+      "address": "Zone Franche Industrielle",
+      "city": "Dakar",
+      "country": "SN",
+      "notes": "Arrivage maritime, stock tampon pour le Sénégal.",
+      "totalPurchased": 3500000,
+      "totalPaid": 2500000,
+      "balanceDue": 1000000,
+      "createdAt": "2026-10-14T01:52:05.770Z"
+    }
+  ],
+  "purchaseOrders": [],
+  "payments": []
+}
