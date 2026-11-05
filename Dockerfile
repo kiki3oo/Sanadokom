@@ -15,7 +15,7 @@ COPY . .
 # Set environment
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV DATABASE_URL="file:/app/prisma/dev.db"
+ENV DATABASE_URL="file:./dev.db"
 ENV HOSTNAME="0.0.0.0"
 
 # Generate Prisma client and build Next.js
