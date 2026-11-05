@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '@/context/StoreContext';
 import { useAuth } from '@/context/AuthContext';
 import AccessDenied from '@/components/AccessDenied';
@@ -33,11 +33,32 @@ import UtmBadge from '@/components/UtmBadge';
 import { useLanguage } from '@/context/LanguageContext';
 
 export default function OrdersPage() {
-  const { selectedStoreId, currentCountry } = useStore();
+  const { selectedStoreId, currentCountry, stores } = useStore();
   const { currentUser, hasPermission, canViewPage, isAdmin, isManager, isCallAgent, allUsers } = useAuth();
   const canMarkRemittance = (isAdmin || isManager || hasPermission('canManageRemittance')) && !isCallAgent;
   const canChangeDeliveryStatus = (isAdmin || isManager || hasPermission('canChangeDeliveryStatus')) && !isCallAgent;
   const { t } = useLanguage();
+
+  // Filter agents strictly by the stores of the active country / store selection
+  const countryAgents = useMemo(() => {
+    const targetStoreIds = selectedStoreId && selectedStoreId !== 'ALL'
+      ? selectedStoreId.split(',').map((id) => id.trim())
+      : stores.map((s) => s.id);
+
+    return allUsers.filter((u) => {
+      if (u.role !== 'CALL_AGENT') return false;
+      if (!u.permissions) return true;
+      try {
+        const p = typeof u.permissions === 'string' ? JSON.parse(u.permissions) : u.permissions;
+        if (Array.isArray(p.assignedStoreIds) && p.assignedStoreIds.length > 0) {
+          return p.assignedStoreIds.some((id: string) => targetStoreIds.includes(id));
+        }
+        return true;
+      } catch (e) {
+        return true;
+      }
+    });
+  }, [allUsers, stores, selectedStoreId]);
 
   const maskPhoneNumber = (phone?: string | null): string => {
     if (!phone) return '-';
@@ -601,13 +622,11 @@ export default function OrdersPage() {
                   className="bg-indigo-800 text-white text-xs rounded-lg px-3 py-1.5 font-semibold border border-indigo-700 focus:outline-none cursor-pointer"
                 >
                   <option value="">-- Choisir Agent --</option>
-                  {allUsers
-                    .filter((u) => u.role === 'CALL_AGENT')
-                    .map((u) => (
-                      <option key={u.id} value={u.id}>
-                        🎧 {u.name}
-                      </option>
-                    ))}
+                  {countryAgents.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      🎧 {u.name}
+                    </option>
+                  ))}
                 </select>
 
                 {topAgentForDispatch && (
@@ -657,13 +676,11 @@ export default function OrdersPage() {
               className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
             >
               <option value="ALL">{t('filter.allAgents')}</option>
-              {allUsers
-                .filter((u) => u.role === 'CALL_AGENT')
-                .map((u) => (
-                  <option key={u.id} value={u.id}>
-                    🎧 {u.name}
-                  </option>
-                ))}
+              {countryAgents.map((u) => (
+                <option key={u.id} value={u.id}>
+                  🎧 {u.name}
+                </option>
+              ))}
             </select>
           </div>
         )}

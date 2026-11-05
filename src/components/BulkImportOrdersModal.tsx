@@ -83,8 +83,21 @@ export default function BulkImportOrdersModal({
 
   // Filter Agents for the specific store
   const availableAgents = useMemo(() => {
-    return allUsers.filter((u) => u.role === 'CALL_AGENT' && u.active);
-  }, [allUsers]);
+    const targetStoreIds = targetStoreId ? [targetStoreId] : stores.map((s) => s.id);
+    return allUsers.filter((u) => {
+      if (u.role !== 'CALL_AGENT' || !u.active) return false;
+      if (!u.permissions) return true;
+      try {
+        const p = typeof u.permissions === 'string' ? JSON.parse(u.permissions) : u.permissions;
+        if (Array.isArray(p.assignedStoreIds) && p.assignedStoreIds.length > 0) {
+          return p.assignedStoreIds.some((id: string) => targetStoreIds.includes(id));
+        }
+        return true;
+      } catch (e) {
+        return true;
+      }
+    });
+  }, [allUsers, targetStoreId, stores]);
 
   // Selected Store Object
   const currentStore = useMemo(() => {
