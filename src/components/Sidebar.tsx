@@ -157,13 +157,13 @@ export default function Sidebar() {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="font-heading font-black text-sm tracking-tight text-white">COD PRESTIGE</span>
+            <span className="font-heading font-black text-sm tracking-tight text-white">SANADOKOM</span>
             <span className="px-1.5 py-0.5 text-[8px] font-black uppercase rounded-full bg-gradient-to-r from-amber-400/20 to-yellow-400/20 text-amber-300 border border-amber-400/30 tracking-wider">
-              ELITE
+              سندكم
             </span>
           </div>
           <span className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase block truncate">
-            Enterprise ERP
+            COD Operating System
           </span>
         </div>
       </div>

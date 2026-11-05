@@ -80,13 +80,13 @@ export default function LoginPage() {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-white font-black text-sm tracking-tight font-heading">COD PRESTIGE</span>
+              <span className="text-white font-black text-sm tracking-tight font-heading">SANADOKOM</span>
               <span className="px-1.5 py-0.2 text-[8px] font-black uppercase rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40">
-                ELITE
+                سندكم
               </span>
             </div>
             <span className="text-slate-400 text-[10px] font-semibold tracking-wider uppercase block">
-              Multi-Country E-Commerce Cloud
+              COD Operating System
             </span>
           </div>
         </div>

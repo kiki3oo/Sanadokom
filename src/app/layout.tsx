@@ -6,8 +6,8 @@ import { PresenceProvider } from '@/context/PresenceContext';
 import AppLayoutWrapper from '@/components/AppLayoutWrapper';
 
 export const metadata = {
-  title: 'COD Master SaaS - Plateforme E-commerce & Logistique Maroc',
-  description: 'Gestion multi-boutiques, stock, centre d appels, suivi livraisons et calcul de profit net.',
+  title: 'Sanadokom | سندكم - ERP E-Commerce & Logistique COD',
+  description: 'Sanadokom: Gestion multi-boutiques, stock en temps réel, centre d\'appels, suivi livraisons et calcul de profit net.',
 };
 
 export default function RootLayout({
