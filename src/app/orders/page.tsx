@@ -685,15 +685,6 @@ export default function OrdersPage() {
         {!isCallAgent && (
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowBulkModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0 cursor-pointer"
-              title={t('btn.bulkImport', '📁 Import Excel / CSV')}
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>{t('btn.bulkImport', '📁 Import Excel / CSV')}</span>
-            </button>
-
-            <button
               onClick={() => setShowManualModal(true)}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0 cursor-pointer"
               title={t('btn.manualOrder')}
