@@ -7,9 +7,9 @@ import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import AgentPresenceBadge from '@/components/AgentPresenceBadge';
 import SmartAlertHub from '@/components/SmartAlertHub';
-import { Store, Plus, LogOut, Shield, PhoneCall } from 'lucide-react';
+import { Store, Plus, LogOut, Shield, PhoneCall, Menu } from 'lucide-react';
 
-export default function Header() {
+export default function Header({ onToggleMobileMenu }: { onToggleMobileMenu?: () => void }) {
   const {
     selectedCountry,
     setSelectedCountry,
@@ -64,9 +64,20 @@ export default function Header() {
   };
 
   return (
-    <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-5 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+    <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
       {/* Left: Country Selector & Scoped Store Selector */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+        {/* Mobile Hamburger Toggle */}
+        <button
+          type="button"
+          onClick={onToggleMobileMenu}
+          className="p-2 -ml-1 rounded-xl text-slate-700 hover:text-slate-950 hover:bg-slate-100 md:hidden transition-colors cursor-pointer shrink-0"
+          title="Menu"
+          aria-label="Menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
         {/* 1. Sélecteur de Pays (Drapeau + Pays) */}
         {isCallAgent ? (
           availableCountries.length === 1 ? (
@@ -175,7 +186,7 @@ export default function Header() {
         {!isCallAgent && (
           <button
             onClick={handleOpenAddStore}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
             title={t('header.newProject')}
           >
             <Plus className="w-3.5 h-3.5 text-amber-400" />
@@ -202,7 +213,7 @@ export default function Header() {
         </div>
 
         {/* User Session & Role */}
-        <div className="flex items-center gap-2 bg-slate-50/90 hover:bg-slate-100 transition-colors border border-slate-200 rounded-xl p-1 px-2.5 shadow-2xs">
+        <div className="hidden md:flex items-center gap-2 bg-slate-50/90 hover:bg-slate-100 transition-colors border border-slate-200 rounded-xl p-1 px-2.5 shadow-2xs">
           {currentUser?.role === 'ADMIN' ? (
             <Shield className="w-3.5 h-3.5 text-amber-600 shrink-0" />
           ) : (

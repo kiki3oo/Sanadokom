@@ -30,6 +30,7 @@ import {
   Building2,
   Crown,
   Radio,
+  X,
 } from 'lucide-react';
 
 interface NavItem {
@@ -133,7 +134,12 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onClose?: () => void;
+}
+
+function SidebarBody({ isMobile, onClose }: { isMobile?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const { currentUser, canViewPage, isAdmin } = useAuth();
   const { t } = useLanguage();
@@ -146,26 +152,41 @@ export default function Sidebar() {
     .filter((group) => group.items.length > 0);
 
   return (
-    <aside className="w-64 bg-[#0B0F19] text-white flex flex-col shrink-0 min-h-screen border-r border-slate-800/80 shadow-2xl relative select-none z-20">
+    <div className="flex flex-col h-full relative select-none">
       {/* Top Ambient Glow Effect */}
       <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-amber-500/5 via-indigo-500/5 to-transparent pointer-events-none" />
 
       {/* Brand Header: Luxury Prestige Emblem */}
-      <div className="h-16 flex items-center px-4 gap-3 border-b border-slate-800/80 bg-slate-950/40 relative">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 flex items-center justify-center font-bold text-slate-950 shadow-md shadow-amber-500/25 border border-yellow-200/50 shrink-0">
-          <Crown className="w-5 h-5 fill-slate-950" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="font-heading font-black text-sm tracking-tight text-white">SANADOKOM</span>
-            <span className="px-1.5 py-0.5 text-[8px] font-black uppercase rounded-full bg-gradient-to-r from-amber-400/20 to-yellow-400/20 text-amber-300 border border-amber-400/30 tracking-wider">
-              سندكم
+      <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800/80 bg-slate-950/40 relative shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 flex items-center justify-center font-bold text-slate-950 shadow-md shadow-amber-500/25 border border-yellow-200/50 shrink-0">
+            <Crown className="w-5 h-5 fill-slate-950" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="font-heading font-black text-sm tracking-tight text-white">SANADOKOM</span>
+              <span className="px-1.5 py-0.5 text-[8px] font-black uppercase rounded-full bg-gradient-to-r from-amber-400/20 to-yellow-400/20 text-amber-300 border border-amber-400/30 tracking-wider">
+                سندكم
+              </span>
+            </div>
+            <span className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase block truncate">
+              COD Operating System
             </span>
           </div>
-          <span className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase block truncate">
-            COD Operating System
-          </span>
         </div>
+
+        {/* Close Button on Mobile Drawer */}
+        {isMobile && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-850 transition-colors cursor-pointer"
+            title="Fermer"
+            aria-label="Fermer le menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Navigation Groups */}
@@ -215,6 +236,7 @@ export default function Sidebar() {
                     <Link
                       key={item.href}
                       href={item.href}
+                      onClick={() => onClose?.()}
                       className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all relative group ${
                         isActive
                           ? 'bg-gradient-to-r from-slate-800/90 via-slate-800/60 to-slate-900/40 text-white font-bold border-l-2 border-amber-400 shadow-md shadow-black/20'
@@ -254,7 +276,7 @@ export default function Sidebar() {
       </nav>
 
       {/* System Status & Executive Account Footer */}
-      <div className="p-3 border-t border-slate-800/80 bg-slate-950/60 relative">
+      <div className="p-3 border-t border-slate-800/80 bg-slate-950/60 relative shrink-0">
         <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
           <span className="flex items-center gap-1.5">
             <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
@@ -281,6 +303,34 @@ export default function Sidebar() {
           </div>
         </div>
       </div>
-    </aside>
+    </div>
+  );
+}
+
+export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
+  return (
+    <>
+      {/* Desktop Persistent Sidebar (md+) */}
+      <aside className="hidden md:flex w-64 bg-[#0B0F19] text-white flex-col shrink-0 min-h-screen border-r border-slate-800/80 shadow-2xl relative select-none z-20">
+        <SidebarBody />
+      </aside>
+
+      {/* Mobile Slide-in Drawer (< md) */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          {/* Backdrop Overlay */}
+          <div
+            className="fixed inset-0 bg-black/75 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            onClick={onClose}
+            aria-hidden="true"
+          />
+
+          {/* Drawer Body */}
+          <aside className="relative w-72 max-w-[85vw] bg-[#0B0F19] text-white flex flex-col h-full shadow-2xl z-50 border-r border-slate-800/80 animate-in slide-in-from-left duration-200 select-none">
+            <SidebarBody isMobile onClose={onClose} />
+          </aside>
+        </div>
+      )}
+    </>
   );
 }
