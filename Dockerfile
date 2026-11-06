@@ -29,4 +29,4 @@ RUN chmod -R 777 /app/prisma
 EXPOSE 3000
 EXPOSE 80
 
-CMD ["sh", "-c", "npx prisma generate && npx prisma db push && npx next start -H 0.0.0.0"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma db push && node prisma/seed.js && npx next start -H 0.0.0.0"]

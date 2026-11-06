@@ -103,7 +103,7 @@ export async function GET(req: NextRequest) {
     // 5. Enrich each Product with the 4 Stock States
     const enrichedProducts = products.map((p) => {
       const stockWarehouse = p.stockQuantity; // Stock actuel disponible en entrepôt
-      const stockTotalEntered = (p.stockInitial || 0) + (purchaseMap.get(p.id) || 0); // Stock total entré
+      const stockTotalEntered = purchaseMap.has(p.id) ? (purchaseMap.get(p.id) || 0) : (p.stockInitial || 0); // Stock total entré
       const stockInTransit = inTransitMap.get(p.id) || 0; // Stock en cours de livraison (sur le terrain)
       const stockDamaged = damageMap.get(p.id) || 0; // Stock cassé / défectueux (isolé)
 
