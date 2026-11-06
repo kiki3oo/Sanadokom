@@ -71,7 +71,7 @@ const StoreContext = createContext<StoreContextType>({
 });
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const { isCallAgent, assignedStoreIds } = useAuth();
+  const { currentUser, isCallAgent, assignedStoreIds } = useAuth();
 
   const [selectedCountry, setSelectedCountryState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -146,8 +146,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    fetchStores();
-  }, []);
+    if (currentUser) {
+      fetchStores();
+    }
+  }, [currentUser]);
 
   // Compute all stores accessible to current user
   const allUserStores = useMemo(() => {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
+import { createSessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,6 +56,9 @@ export async function POST(req: NextRequest) {
       active: user.active,
     };
 
+    // Create secure session token
+    const token = await createSessionToken(user.id, user.role, user.email);
+
     // Log login action
     await logActivity({
       userName: user.name,
@@ -62,14 +66,24 @@ export async function POST(req: NextRequest) {
       action: 'USER_LOGIN',
       entity: 'USER',
       entityId: user.id,
-      details: `Connexion réussie de l utilisateur "${user.name}" (${user.role})`,
+      details: `Connexion réussie de l'utilisateur "${user.name}" (${user.role})`,
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Connexion réussie',
       user: safeUser,
     });
+
+    response.cookies.set(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+    });
+
+    return response;
   } catch (error: any) {
     console.error('Login error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

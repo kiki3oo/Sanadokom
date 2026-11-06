@@ -43,7 +43,8 @@ export interface AppUser {
 interface AuthContextType {
   currentUser: AppUser | null;
   allUsers: AppUser[];
-  setCurrentUser: (user: AppUser) => void;
+  isLoading: boolean;
+  setCurrentUser: (user: AppUser | null) => void;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: AppUser }>;
   logout: () => void;
   hasPermission: (perm: keyof UserPermissions) => boolean;
@@ -56,40 +57,37 @@ interface AuthContextType {
   isStoreAllowed: (storeId: string) => boolean;
 }
 
-const defaultAdminUser: AppUser = {
-  id: 'admin-default',
-  name: 'Yassine El Amrani',
-  email: 'admin@codsaas.com',
-  role: 'ADMIN',
-  commissionFee: 0,
-  active: true,
-};
-
 const AuthContext = createContext<AuthContextType>({
-  currentUser: defaultAdminUser,
+  currentUser: null,
   allUsers: [],
+  isLoading: true,
   setCurrentUser: () => {},
   login: async () => ({ success: false }),
   logout: () => {},
-  hasPermission: () => true,
-  canViewPage: () => true,
+  hasPermission: () => false,
+  canViewPage: () => false,
   refreshUsers: () => {},
-  isAdmin: true,
+  isAdmin: false,
   isCallAgent: false,
-  isManager: true,
+  isManager: false,
   assignedStoreIds: [],
-  isStoreAllowed: () => true,
+  isStoreAllowed: () => false,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setLocalCurrentUser] = useState<AppUser>(defaultAdminUser);
+  const [currentUser, setLocalCurrentUser] = useState<AppUser | null>(null);
   const [allUsers, setAllUsers] = useState<AppUser[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Helper to update current user and persist in localStorage
-  const setCurrentUser = (user: AppUser) => {
+  const setCurrentUser = (user: AppUser | null) => {
     setLocalCurrentUser(user);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('cod_current_user', JSON.stringify(user));
+      if (user) {
+        localStorage.setItem('cod_current_user', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('cod_current_user');
+      }
     }
   };
 
@@ -99,57 +97,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       if (data.success && data.users.length > 0) {
         setAllUsers(data.users);
-
-        // Check if there is already a saved user in localStorage
-        let savedUser: AppUser | null = null;
-        if (typeof window !== 'undefined') {
-          const raw = localStorage.getItem('cod_current_user');
-          if (raw) {
-            try {
-              savedUser = JSON.parse(raw);
-            } catch (err) {
-              console.error(err);
-            }
-          }
-        }
-
-        if (savedUser && savedUser.id) {
-          const refreshed = data.users.find((u: AppUser) => u.id === savedUser!.id);
-          if (refreshed) {
-            setLocalCurrentUser(refreshed);
-            localStorage.setItem('cod_current_user', JSON.stringify(refreshed));
-          } else {
-            setLocalCurrentUser(savedUser);
-          }
-        } else if (currentUser.id === 'admin-default') {
-          const admin = data.users.find((u: AppUser) => u.role === 'ADMIN') || data.users[0];
-          setLocalCurrentUser(admin);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('cod_current_user', JSON.stringify(admin));
-          }
-        }
       }
     } catch (e) {
       console.error('Failed to load users for auth', e);
     }
   };
 
+  // Check authentication session on mount via /api/auth/me
   useEffect(() => {
-    // Initial sync from localStorage before fetch completes
-    if (typeof window !== 'undefined') {
-      const raw = localStorage.getItem('cod_current_user');
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          if (parsed && parsed.id) {
-            setLocalCurrentUser(parsed);
+    let isMounted = true;
+    async function checkSession() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.user) {
+            if (isMounted) {
+              setLocalCurrentUser(data.user);
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('cod_current_user', JSON.stringify(data.user));
+              }
+              if (data.user.role === 'ADMIN') {
+                fetchUsers();
+              }
+            }
+            return;
           }
-        } catch (e) {
-          console.error(e);
+        }
+        // If not authenticated or error
+        if (isMounted) {
+          setLocalCurrentUser(null);
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('cod_current_user');
+          }
+        }
+      } catch (err) {
+        if (isMounted) {
+          setLocalCurrentUser(null);
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('cod_current_user');
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
         }
       }
     }
-    fetchUsers();
+
+    checkSession();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -162,6 +161,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       if (data.success && data.user) {
         setCurrentUser(data.user);
+        if (data.user.role === 'ADMIN') {
+          fetchUsers();
+        }
         return { success: true, user: data.user };
       }
       return { success: false, error: data.error || 'Identifiants invalides' };
@@ -170,7 +172,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {}
+    setCurrentUser(null);
     if (typeof window !== 'undefined') {
       localStorage.removeItem('cod_current_user');
       window.location.href = '/login';
@@ -273,6 +279,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         currentUser,
         allUsers,
+        isLoading,
         setCurrentUser,
         login,
         logout,

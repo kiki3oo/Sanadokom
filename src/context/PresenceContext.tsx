@@ -76,6 +76,10 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch all agents presence
   const refreshPresence = useCallback(async () => {
+    if (!currentUser?.id) {
+      setLoading(false);
+      return;
+    }
     try {
       const url =
         selectedStoreId && selectedStoreId !== 'ALL'

@@ -57,12 +57,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickLogin = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setError('');
-  };
-
   return (
     <div
       dir={language === 'ar' ? 'rtl' : 'ltr'}
@@ -178,43 +172,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Accounts Helper */}
-          <div className="mt-6 pt-5 border-t border-slate-100">
-            <span className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2.5 text-center">
-              {t('login.quickAccess')}
-            </span>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('agent.salma@codsaas.com', 'agent123')}
-                className="p-2.5 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50/70 to-teal-50/40 hover:bg-emerald-100/80 text-left transition-all text-xs cursor-pointer group shadow-2xs"
-              >
-                <div className="flex items-center gap-1.5 text-emerald-900 font-extrabold text-[11px]">
-                  <PhoneCall className="w-3 h-3 text-emerald-600" />
-                  <span>Salma (Agent)</span>
-                </div>
-                <div className="text-[10px] text-emerald-700 font-mono mt-0.5 truncate">
-                  agent.salma@codsaas.com
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin@codsaas.com', 'admin123')}
-                className="p-2.5 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50/70 to-yellow-50/40 hover:bg-amber-100/80 text-left transition-all text-xs cursor-pointer group shadow-2xs"
-              >
-                <div className="flex items-center gap-1.5 text-amber-950 font-extrabold text-[11px]">
-                  <Crown className="w-3 h-3 text-amber-600" />
-                  <span>Yassine (Admin)</span>
-                </div>
-                <div className="text-[10px] text-amber-800 font-mono mt-0.5 truncate">
-                  admin@codsaas.com
-                </div>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
