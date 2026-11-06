@@ -399,10 +399,10 @@ export default function ConfirmationManagementPage() {
       )}
 
       {/* 2. Page Navigation Tabs */}
-      <div className="bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200 w-fit flex flex-wrap items-center gap-2">
+      <div className="bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200 w-full sm:w-fit flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
         <button
           onClick={() => setActiveTab('performance')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'performance'
               ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200'
               : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
@@ -415,7 +415,7 @@ export default function ConfirmationManagementPage() {
         {canManageStrategy && (
           <button
             onClick={() => setActiveTab('settings')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'settings'
                 ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-700'
                 : 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100/80 border border-indigo-200'
@@ -435,12 +435,12 @@ export default function ConfirmationManagementPage() {
       {activeTab === 'performance' || !canManageStrategy ? (
         <>
           {/* 3. Filters & Sorting Toolbar */}
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
             {/* Period Pills */}
-            <div className="flex flex-wrap items-center gap-1.5 bg-slate-100/70 p-1 rounded-xl border border-slate-200/60 w-fit">
+            <div className="flex items-center gap-1.5 bg-slate-100/70 p-1 rounded-xl border border-slate-200/60 overflow-x-auto max-w-full w-full sm:w-auto no-scrollbar scroll-smooth whitespace-nowrap">
               <button
                 onClick={() => setPeriod('today')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 whitespace-nowrap cursor-pointer ${
                   period === 'today'
                     ? 'bg-slate-900 text-white shadow-2xs font-bold'
                     : 'text-slate-600 hover:bg-white hover:text-slate-900'
@@ -452,7 +452,7 @@ export default function ConfirmationManagementPage() {
 
               <button
                 onClick={() => setPeriod('yesterday')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 whitespace-nowrap cursor-pointer ${
                   period === 'yesterday'
                     ? 'bg-slate-900 text-white shadow-2xs font-bold'
                     : 'text-slate-600 hover:bg-white hover:text-slate-900'
@@ -464,7 +464,7 @@ export default function ConfirmationManagementPage() {
 
               <button
                 onClick={() => setPeriod('7days')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 whitespace-nowrap cursor-pointer ${
                   period === '7days'
                     ? 'bg-slate-900 text-white shadow-2xs font-bold'
                     : 'text-slate-600 hover:bg-white hover:text-slate-900'
@@ -476,7 +476,7 @@ export default function ConfirmationManagementPage() {
 
               <button
                 onClick={() => setPeriod('month')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 whitespace-nowrap cursor-pointer ${
                   period === 'month'
                     ? 'bg-slate-900 text-white shadow-2xs font-bold'
                     : 'text-slate-600 hover:bg-white hover:text-slate-900'
@@ -488,7 +488,7 @@ export default function ConfirmationManagementPage() {
 
               <button
                 onClick={() => setPeriod('max')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 whitespace-nowrap cursor-pointer ${
                   period === 'max'
                     ? 'bg-slate-900 text-white shadow-2xs font-bold'
                     : 'text-slate-600 hover:bg-white hover:text-slate-900'
@@ -500,20 +500,20 @@ export default function ConfirmationManagementPage() {
 
               <button
                 onClick={() => setShowCustomModal(true)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 whitespace-nowrap cursor-pointer ${
                   period === 'custom'
-                    ? 'bg-slate-900 text-white shadow-2xs font-bold'
+                    ? 'bg-indigo-600 text-white shadow-2xs font-bold'
                     : 'text-slate-600 hover:bg-white hover:text-slate-900'
                 }`}
               >
-                <Calendar className="w-3 h-3 text-slate-400" />
+                <Calendar className="w-3 h-3 text-indigo-400" />
                 <span>{t('conf.custom', 'Custom')}</span>
               </button>
             </div>
 
             {/* Sort & Metric Selector */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center bg-white p-1 rounded-xl border border-slate-200 text-xs font-semibold shadow-2xs">
+            <div className="flex items-center gap-2 overflow-x-auto max-w-full w-full sm:w-auto no-scrollbar scroll-smooth whitespace-nowrap">
+              <div className="flex items-center bg-white p-1 rounded-xl border border-slate-200 text-xs font-semibold shadow-2xs shrink-0">
                 <button
                   onClick={() => setSortByMetric('conv')}
                   className={`inline-flex items-center gap-1 px-3 py-1 rounded-lg transition-all ${
