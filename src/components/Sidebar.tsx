@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useStore } from '@/context/StoreContext';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   LayoutDashboard,
@@ -31,6 +32,8 @@ import {
   Crown,
   Radio,
   X,
+  Store,
+  Globe,
 } from 'lucide-react';
 
 interface NavItem {
@@ -142,7 +145,16 @@ interface SidebarProps {
 function SidebarBody({ isMobile, onClose }: { isMobile?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const { currentUser, canViewPage, isAdmin } = useAuth();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
+  const {
+    selectedCountry,
+    setSelectedCountry,
+    availableCountries,
+    currentCountry,
+    selectedStoreId,
+    setSelectedStoreId,
+    stores,
+  } = useStore();
 
   const visibleGroups = navGroups
     .map((group) => ({
@@ -188,6 +200,74 @@ function SidebarBody({ isMobile, onClose }: { isMobile?: boolean; onClose?: () =
           </button>
         )}
       </div>
+
+      {/* Mobile-Only Quick Scope Control Hub */}
+      {isMobile && (
+        <div className="p-3 mx-2.5 mt-2.5 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800 shadow-xl space-y-2.5 shrink-0">
+          {/* Active Store Selector */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-amber-400 block mb-1">
+              🛍️ {t('nav.stock', 'Boutique Active')}
+            </label>
+            <select
+              value={selectedStoreId}
+              onChange={(e) => setSelectedStoreId(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-2.5 py-2 text-xs font-bold text-white focus:outline-none cursor-pointer"
+            >
+              {stores.length > 1 && (
+                <option value={stores.map((s) => s.id).join(',')}>
+                  🌟 {t('header.allStoresOfCountry')} ({currentCountry.name})
+                </option>
+              )}
+              {stores.map((s) => (
+                <option key={s.id} value={s.id}>
+                  🛍️ {s.name} ({s.currency})
+                </option>
+              ))}
+              {stores.length === 0 && (
+                <option value="NONE">{t('header.noStoreOfCountry')} ({currentCountry.name})</option>
+              )}
+            </select>
+          </div>
+
+          {/* Country & Language Row */}
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80">
+            {/* Country Selector */}
+            <div>
+              <label className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                🌍 {t('common.country', 'Marché')}
+              </label>
+              <select
+                value={selectedCountry}
+                onChange={(e) => setSelectedCountry(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-2 py-1.5 text-xs font-extrabold text-amber-300 focus:outline-none cursor-pointer"
+              >
+                {availableCountries.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.flag} {c.code}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Language Selector */}
+            <div>
+              <label className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                🌐 {t('common.language', 'Langue')}
+              </label>
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as any)}
+                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-2 py-1.5 text-xs font-extrabold text-slate-200 focus:outline-none cursor-pointer"
+              >
+                <option value="ar">🇲🇦 العربية</option>
+                <option value="fr">🇫🇷 FR</option>
+                <option value="en">🇬🇧 EN</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Navigation Groups */}
       <nav className="flex-1 px-2.5 py-3 space-y-3 overflow-y-auto custom-scrollbar relative">
@@ -320,13 +400,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         <div className="fixed inset-0 z-50 md:hidden flex">
           {/* Backdrop Overlay */}
           <div
-            className="fixed inset-0 bg-black/75 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            className="fixed inset-0 bg-black/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
             onClick={onClose}
             aria-hidden="true"
           />
 
           {/* Drawer Body */}
-          <aside className="relative w-72 max-w-[85vw] bg-[#0B0F19] text-white flex flex-col h-full shadow-2xl z-50 border-r border-slate-800/80 animate-in slide-in-from-left duration-200 select-none">
+          <aside className="relative w-80 max-w-[88vw] bg-[#0B0F19] text-white flex flex-col h-full shadow-2xl z-50 border-r border-slate-800/80 animate-in slide-in-from-left rtl:slide-in-from-right duration-200 select-none">
             <SidebarBody isMobile onClose={onClose} />
           </aside>
         </div>

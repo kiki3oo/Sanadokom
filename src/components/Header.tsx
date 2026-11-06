@@ -64,9 +64,9 @@ export default function Header({ onToggleMobileMenu }: { onToggleMobileMenu?: ()
   };
 
   return (
-    <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-      {/* Left: Country Selector & Scoped Store Selector */}
-      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+    <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs max-w-full overflow-hidden">
+      {/* Left: Hamburger & Country Selector (Store Selector hidden on mobile, accessible in Drawer) */}
+      <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
         {/* Mobile Hamburger Toggle */}
         <button
           type="button"
@@ -81,17 +81,18 @@ export default function Header({ onToggleMobileMenu }: { onToggleMobileMenu?: ()
         {/* 1. Sélecteur de Pays (Drapeau + Pays) */}
         {isCallAgent ? (
           availableCountries.length === 1 ? (
-            <div className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 transition-colors px-3 py-1.5 rounded-xl border border-slate-200 text-slate-900 font-black text-xs shadow-2xs">
+            <div className="flex items-center gap-1 sm:gap-1.5 bg-slate-50 hover:bg-slate-100 transition-colors px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200 text-slate-900 font-black text-xs shadow-2xs shrink-0">
               <span className="text-base">{availableCountries[0].flag}</span>
-              <span>{availableCountries[0].name}</span>
+              <span className="hidden sm:inline">{availableCountries[0].name}</span>
+              <span className="sm:hidden text-[11px] font-extrabold">{availableCountries[0].code}</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs transition-all">
-              <span className="text-base ml-2">{currentCountry.flag}</span>
+            <div className="flex items-center gap-1 bg-slate-50 hover:bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs transition-all shrink-0">
+              <span className="text-base ml-1 sm:ml-2">{currentCountry.flag}</span>
               <select
                 value={selectedCountry}
                 onChange={(e) => setSelectedCountry(e.target.value)}
-                className="bg-transparent text-xs font-black text-slate-900 pr-6 py-1 focus:outline-none cursor-pointer"
+                className="bg-transparent text-xs font-black text-slate-900 pr-5 sm:pr-6 py-1 focus:outline-none cursor-pointer max-w-[100px] sm:max-w-none truncate"
               >
                 {availableCountries.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -103,12 +104,12 @@ export default function Header({ onToggleMobileMenu }: { onToggleMobileMenu?: ()
           )
         ) : (
           /* Admin & Manager Country Switcher */
-          <div className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100/90 transition-all p-1 rounded-xl border border-slate-200 shadow-2xs">
-            <span className="text-base ml-2">{currentCountry.flag}</span>
+          <div className="flex items-center gap-1 bg-slate-50 hover:bg-slate-100/90 transition-all p-1 rounded-xl border border-slate-200 shadow-2xs shrink-0">
+            <span className="text-base ml-1 sm:ml-2">{currentCountry.flag}</span>
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
-              className="bg-transparent text-xs font-black text-slate-900 pr-6 py-1 focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs font-black text-slate-900 pr-4 sm:pr-6 py-1 focus:outline-none cursor-pointer max-w-[110px] sm:max-w-none truncate"
               title="Changer de pays"
             >
               {availableCountries.map((c) => (
@@ -120,73 +121,75 @@ export default function Header({ onToggleMobileMenu }: { onToggleMobileMenu?: ()
           </div>
         )}
 
-        {/* 2. Sélecteur de Boutique (uniquement les boutiques du pays sélectionné) */}
-        {isCallAgent ? (
-          stores.length === 1 ? (
-            /* Single assigned store badge */
-            <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-yellow-50 px-3 py-1.5 rounded-xl border border-amber-200/90 text-amber-950 font-bold text-xs shadow-2xs">
-              <Store className="w-4 h-4 text-amber-600" />
-              <span>🛍️ {stores[0]?.name || t('nav.allModules')}</span>
-              <span className="text-[10px] bg-amber-200/80 text-amber-950 px-1.5 py-0.5 rounded-md font-extrabold ml-1 border border-amber-300">
-                {t('header.assigned')}
-              </span>
-            </div>
-          ) : stores.length > 1 ? (
-            /* Multiple assigned stores in this country */
-            <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-50/80 to-yellow-50/60 p-1 rounded-xl border border-amber-200 shadow-2xs">
-              <Store className="w-4 h-4 text-amber-600 ml-2" />
+        {/* 2. Sélecteur de Boutique (uniquement affiché sur desktop/tablette sm+, sur mobile il est dans le Menu) */}
+        <div className="hidden sm:flex items-center">
+          {isCallAgent ? (
+            stores.length === 1 ? (
+              /* Single assigned store badge */
+              <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-yellow-50 px-3 py-1.5 rounded-xl border border-amber-200/90 text-amber-950 font-bold text-xs shadow-2xs">
+                <Store className="w-4 h-4 text-amber-600" />
+                <span className="truncate max-w-[140px]">🛍️ {stores[0]?.name || t('nav.allModules')}</span>
+                <span className="text-[10px] bg-amber-200/80 text-amber-950 px-1.5 py-0.5 rounded-md font-extrabold ml-1 border border-amber-300">
+                  {t('header.assigned')}
+                </span>
+              </div>
+            ) : stores.length > 1 ? (
+              /* Multiple assigned stores in this country */
+              <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-50/80 to-yellow-50/60 p-1 rounded-xl border border-amber-200 shadow-2xs">
+                <Store className="w-4 h-4 text-amber-600 ml-2" />
+                <select
+                  value={selectedStoreId}
+                  onChange={(e) => setSelectedStoreId(e.target.value)}
+                  className="bg-transparent text-xs font-extrabold text-amber-950 pr-6 py-1 focus:outline-none cursor-pointer max-w-[180px] truncate"
+                >
+                  <option value={stores.map((s) => s.id).join(',')}>
+                    {t('header.allStoresOfCountry')} ({currentCountry.name})
+                  </option>
+                  {stores.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      🛍️ {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200 text-rose-700 font-semibold text-xs">
+                <Store className="w-4 h-4 text-rose-500" />
+                <span>{t('header.noStoreOfCountry')} ({currentCountry.name})</span>
+              </div>
+            )
+          ) : (
+            /* Admin / Manager Scoped Store Selector */
+            <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
+              <Store className="w-4 h-4 text-indigo-600 ml-2" />
               <select
                 value={selectedStoreId}
                 onChange={(e) => setSelectedStoreId(e.target.value)}
-                className="bg-transparent text-xs font-extrabold text-amber-950 pr-6 py-1 focus:outline-none cursor-pointer"
+                className="bg-transparent text-xs font-extrabold text-slate-900 pr-6 py-1 focus:outline-none cursor-pointer max-w-[190px] truncate"
               >
-                <option value={stores.map((s) => s.id).join(',')}>
-                  {t('header.allStoresOfCountry')} ({currentCountry.name})
-                </option>
+                {stores.length > 1 && (
+                  <option value={stores.map((s) => s.id).join(',')}>
+                    {t('header.allStoresOfCountry')} ({currentCountry.name})
+                  </option>
+                )}
                 {stores.map((s) => (
                   <option key={s.id} value={s.id}>
                     🛍️ {s.name}
                   </option>
                 ))}
+                {stores.length === 0 && (
+                  <option value="NONE">{t('header.noStoreOfCountry')} ({currentCountry.name})</option>
+                )}
               </select>
             </div>
-          ) : (
-            <div className="flex items-center gap-2 bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200 text-rose-700 font-semibold text-xs">
-              <Store className="w-4 h-4 text-rose-500" />
-              <span>{t('header.noStoreOfCountry')} ({currentCountry.name})</span>
-            </div>
-          )
-        ) : (
-          /* Admin / Manager Scoped Store Selector */
-          <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
-            <Store className="w-4 h-4 text-indigo-600 ml-2" />
-            <select
-              value={selectedStoreId}
-              onChange={(e) => setSelectedStoreId(e.target.value)}
-              className="bg-transparent text-xs font-extrabold text-slate-900 pr-6 py-1 focus:outline-none cursor-pointer"
-            >
-              {stores.length > 1 && (
-                <option value={stores.map((s) => s.id).join(',')}>
-                  {t('header.allStoresOfCountry')} ({currentCountry.name})
-                </option>
-              )}
-              {stores.map((s) => (
-                <option key={s.id} value={s.id}>
-                  🛍️ {s.name}
-                </option>
-              ))}
-              {stores.length === 0 && (
-                <option value="NONE">{t('header.noStoreOfCountry')} ({currentCountry.name})</option>
-              )}
-            </select>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* New Store button: Only for Admin / Manager */}
         {!isCallAgent && (
           <button
             onClick={handleOpenAddStore}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
+            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
             title={t('header.newProject')}
           >
             <Plus className="w-3.5 h-3.5 text-amber-400" />
@@ -196,23 +199,29 @@ export default function Header({ onToggleMobileMenu }: { onToggleMobileMenu?: ()
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
         {/* Smart Operational Alerts Hub (Notifications Bell & Morning Brief) */}
         <SmartAlertHub />
 
-        {/* Live Agents Presence Indicator & Dropdown (Managers & Admin only) */}
-        {isManager && <AgentPresenceBadge />}
+        {/* Live Agents Presence Indicator (Desktop only in header, accessible in drawer for mobile) */}
+        {isManager && (
+          <div className="hidden sm:block">
+            <AgentPresenceBadge />
+          </div>
+        )}
 
-        {/* Language Switcher Dropdown */}
-        <LanguageSwitcher />
+        {/* Language Switcher Dropdown (Desktop only in header, accessible in drawer for mobile) */}
+        <div className="hidden sm:block">
+          <LanguageSwitcher />
+        </div>
 
         {/* Currency Tag */}
-        <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-800 text-xs font-black border border-emerald-200/90 shadow-2xs">
+        <div className="hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-800 text-xs font-black border border-emerald-200/90 shadow-2xs">
           <span>{currentCountry.flag}</span>
           <span className="font-heading tracking-tight">{t('header.currencyLabel')} {currentCountry.currency}</span>
         </div>
 
-        {/* User Session & Role */}
+        {/* User Session & Role (Desktop only) */}
         <div className="hidden md:flex items-center gap-2 bg-slate-50/90 hover:bg-slate-100 transition-colors border border-slate-200 rounded-xl p-1 px-2.5 shadow-2xs">
           {currentUser?.role === 'ADMIN' ? (
             <Shield className="w-3.5 h-3.5 text-amber-600 shrink-0" />
@@ -233,7 +242,7 @@ export default function Header({ onToggleMobileMenu }: { onToggleMobileMenu?: ()
                   const found = allUsers.find((u) => u.id === e.target.value);
                   if (found) setCurrentUser(found);
                 }}
-                className="bg-transparent text-xs font-bold text-slate-900 focus:outline-none cursor-pointer"
+                className="bg-transparent text-xs font-bold text-slate-900 focus:outline-none cursor-pointer max-w-[150px] truncate"
               >
                 {allUsers.length > 0 ? (
                   allUsers.map((u) => (
@@ -246,7 +255,7 @@ export default function Header({ onToggleMobileMenu }: { onToggleMobileMenu?: ()
                 )}
               </select>
             ) : (
-              <span className="text-xs font-bold text-slate-900 block">
+              <span className="text-xs font-bold text-slate-900 block truncate max-w-[120px]">
                 {currentUser?.name || 'Agent'}
               </span>
             )}
@@ -261,7 +270,7 @@ export default function Header({ onToggleMobileMenu }: { onToggleMobileMenu?: ()
         {/* Logout Button */}
         <button
           onClick={logout}
-          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+          className="p-1.5 sm:p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer shrink-0"
           title={t('login.logout')}
         >
           <LogOut className="w-4 h-4" />

@@ -457,10 +457,10 @@ export default function OrdersPage() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex items-center gap-1 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200 text-xs font-bold overflow-x-auto max-w-full shadow-2xs relative z-10">
+        <div className="flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200 text-xs font-bold overflow-x-auto max-w-full w-full sm:w-auto no-scrollbar scroll-smooth whitespace-nowrap shadow-2xs relative z-10 shrink-0">
           <button
             onClick={() => setStatusFilter('ALL')}
-            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
               statusFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -468,7 +468,7 @@ export default function OrdersPage() {
           </button>
           <button
             onClick={() => setStatusFilter('CONFIRMED')}
-            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
               statusFilter === 'CONFIRMED' ? 'bg-indigo-600 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -476,7 +476,7 @@ export default function OrdersPage() {
           </button>
           <button
             onClick={() => setStatusFilter('SHIPPED')}
-            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
               statusFilter === 'SHIPPED' ? 'bg-blue-600 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -484,7 +484,7 @@ export default function OrdersPage() {
           </button>
           <button
             onClick={() => setStatusFilter('EN_COURS_LIVRAISON')}
-            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap ${
               statusFilter === 'EN_COURS_LIVRAISON'
                 ? 'bg-cyan-600 text-white shadow-xs font-black'
                 : 'text-cyan-800 bg-cyan-50/80 hover:bg-cyan-100 border border-cyan-200'
@@ -495,7 +495,7 @@ export default function OrdersPage() {
           </button>
           <button
             onClick={() => setStatusFilter('DELIVERED')}
-            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
               statusFilter === 'DELIVERED' ? 'bg-emerald-600 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -503,7 +503,7 @@ export default function OrdersPage() {
           </button>
           <button
             onClick={() => setStatusFilter('RETURNED')}
-            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
               statusFilter === 'RETURNED' ? 'bg-rose-600 text-white shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -511,7 +511,7 @@ export default function OrdersPage() {
           </button>
           <button
             onClick={() => setStatusFilter('INCIDENTS_LIVRAISON')}
-            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap ${
               statusFilter === 'INCIDENTS_LIVRAISON'
                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-xs font-black'
                 : 'text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200'
@@ -521,7 +521,7 @@ export default function OrdersPage() {
           </button>
           <button
             onClick={() => setStatusFilter('SAUVE_A_RELIVRER')}
-            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap ${
               statusFilter === 'SAUVE_A_RELIVRER'
                 ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-xs font-black'
                 : 'text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200'
@@ -747,7 +747,7 @@ export default function OrdersPage() {
           <div className="p-12 text-center text-xs text-slate-500">{t('table.noData')}</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[720px]">
               <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
                 <tr>
                   {!isCallAgent && (

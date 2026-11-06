@@ -798,26 +798,26 @@ export default function CallCenterPage() {
           </div>
 
           {/* Quick Filter Tabs */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-semibold">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold overflow-x-auto max-w-full w-full sm:w-auto no-scrollbar scroll-smooth whitespace-nowrap">
             <button
               onClick={() => setStatusFilter('PENDING')}
-              className={`px-3 py-1.5 rounded-md transition-all ${
-                statusFilter === 'PENDING' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              className={`px-3 py-1.5 rounded-lg transition-all shrink-0 whitespace-nowrap cursor-pointer ${
+                statusFilter === 'PENDING' ? 'bg-white text-indigo-600 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {t('cc.newLeads')}
             </button>
             <button
               onClick={() => setStatusFilter('NO_ANSWER')}
-              className={`px-3 py-1.5 rounded-md transition-all ${
-                statusFilter === 'NO_ANSWER' ? 'bg-white text-amber-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              className={`px-3 py-1.5 rounded-lg transition-all shrink-0 whitespace-nowrap cursor-pointer ${
+                statusFilter === 'NO_ANSWER' ? 'bg-white text-amber-600 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {t('cc.noAnswerTab')}
             </button>
             <button
               onClick={() => setStatusFilter('CALLBACK')}
-              className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer ${
                 statusFilter === 'CALLBACK' ? 'bg-white text-blue-600 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -835,7 +835,7 @@ export default function CallCenterPage() {
             </button>
             <button
               onClick={() => setStatusFilter('SUIVI_LIVRAISON')}
-              className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer ${
                 statusFilter === 'SUIVI_LIVRAISON'
                   ? 'bg-rose-600 text-white font-bold shadow-xs'
                   : 'text-rose-600 hover:text-rose-800 hover:bg-rose-50'
@@ -846,8 +846,8 @@ export default function CallCenterPage() {
             </button>
             <button
               onClick={() => setStatusFilter('ALL')}
-              className={`px-3 py-1.5 rounded-md transition-all ${
-                statusFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              className={`px-3 py-1.5 rounded-lg transition-all shrink-0 whitespace-nowrap cursor-pointer ${
+                statusFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {t('status.all')}
@@ -855,10 +855,10 @@ export default function CallCenterPage() {
           </div>
 
           {/* Stock Availability Filter Pills */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-semibold">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold overflow-x-auto max-w-full w-full sm:w-auto no-scrollbar scroll-smooth whitespace-nowrap">
             <button
               onClick={() => setStockFilter('ALL')}
-              className={`px-2.5 py-1.5 rounded-md transition-all ${
+              className={`px-2.5 py-1.5 rounded-lg transition-all shrink-0 whitespace-nowrap cursor-pointer ${
                 stockFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -866,7 +866,7 @@ export default function CallCenterPage() {
             </button>
             <button
               onClick={() => setStockFilter('IN_STOCK')}
-              className={`px-2.5 py-1.5 rounded-md transition-all flex items-center gap-1 ${
+              className={`px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1 shrink-0 whitespace-nowrap cursor-pointer ${
                 stockFilter === 'IN_STOCK' ? 'bg-emerald-600 text-white shadow-xs font-black' : 'text-emerald-700 hover:bg-emerald-50'
               }`}
               title="Afficher uniquement les commandes avec stock disponible"
@@ -876,7 +876,7 @@ export default function CallCenterPage() {
             </button>
             <button
               onClick={() => setStockFilter('OUT_OF_STOCK')}
-              className={`px-2.5 py-1.5 rounded-md transition-all flex items-center gap-1 ${
+              className={`px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1 shrink-0 whitespace-nowrap cursor-pointer ${
                 stockFilter === 'OUT_OF_STOCK' ? 'bg-rose-600 text-white shadow-xs font-black' : 'text-rose-700 hover:bg-rose-50'
               }`}
               title="Commandes avec articles en rupture de stock"
@@ -965,7 +965,7 @@ export default function CallCenterPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[700px]">
               <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">{t('table.order')}</th>

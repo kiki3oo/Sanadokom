@@ -280,7 +280,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Period Pills & Filter Selectors */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
           {/* 1. Period Selector */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">{t('period.title')}</label>
@@ -409,7 +409,7 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-5 bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-2xl border border-slate-700/80 shadow-xl shrink-0">
+          <div className="flex items-center justify-between sm:justify-start gap-4 sm:gap-5 bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-2xl border border-slate-700/80 shadow-xl w-full lg:w-auto">
             <div>
               <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">ROAS Réel (Sur Livré)</div>
               <div className="text-3xl font-black text-amber-400 mt-0.5 font-heading">{metrics.realRoas}x</div>

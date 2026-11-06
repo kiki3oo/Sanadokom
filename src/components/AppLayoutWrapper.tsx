@@ -27,11 +27,11 @@ export default function AppLayoutWrapper({ children }: { children: React.ReactNo
   }
 
   return (
-    <div dir={dir} className="flex min-h-screen bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white">
+    <div dir={dir} className="flex min-h-screen bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-hidden">
       <Sidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
         <Header onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)} />
-        <main className="flex-1 p-3.5 sm:p-5 lg:p-7 overflow-y-auto bg-gradient-to-b from-slate-50 via-slate-50/70 to-slate-100/50">
+        <main className="flex-1 p-3 sm:p-5 lg:p-7 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-slate-50 via-slate-50/70 to-slate-100/50">
           <div className="max-w-[1700px] mx-auto w-full">
             {children}
           </div>
