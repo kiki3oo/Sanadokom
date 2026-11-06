@@ -140,8 +140,16 @@ export default function AuditLogsPage() {
   const countryUsers = React.useMemo(() => {
     const storeIds = stores.map((s) => s.id);
     return allUsers.filter((u) => {
-      if (u.role === 'ADMIN') return true;
-      const assigned = (u as any).permissions?.assignedStoreIds || (u as any).assignedStoreIds;
+      if (u.role === 'ADMIN' || u.role === 'LOGISTICS_MANAGER') return true;
+      let assigned = null;
+      if (u.permissions) {
+        try {
+          const p = typeof u.permissions === 'string' ? JSON.parse(u.permissions) : u.permissions;
+          assigned = p.assignedStoreIds;
+        } catch (e) {}
+      } else if ((u as any).assignedStoreIds) {
+        assigned = (u as any).assignedStoreIds;
+      }
       if (!assigned || !Array.isArray(assigned) || assigned.length === 0) return true;
       return assigned.some((sid: string) => storeIds.includes(sid));
     });

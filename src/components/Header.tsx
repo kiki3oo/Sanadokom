@@ -35,6 +35,34 @@ export default function Header({ onToggleMobileMenu }: { onToggleMobileMenu?: ()
     setShowAddStoreModal(true);
   };
 
+  // Filter users for the switcher: Always include admins, and filter agents strictly by the active country/stores
+  const countryUsers = React.useMemo(() => {
+    const targetStoreIds =
+      selectedStoreId && selectedStoreId !== 'ALL' && selectedStoreId !== 'NONE'
+        ? selectedStoreId.split(',').map((id) => id.trim())
+        : stores.map((s) => s.id);
+
+    return allUsers.filter((u) => {
+      // 1. Always keep Admins and Logistics Managers in the switcher list
+      if (u.role === 'ADMIN' || u.role === 'LOGISTICS_MANAGER') return true;
+
+      // 2. Keep currently selected user so select doesn't break
+      if (currentUser?.id === u.id) return true;
+
+      // 3. For Call Agents: match assignedStoreIds with target stores of the current country
+      if (u.permissions) {
+        try {
+          const p = typeof u.permissions === 'string' ? JSON.parse(u.permissions) : u.permissions;
+          if (Array.isArray(p.assignedStoreIds) && p.assignedStoreIds.length > 0) {
+            return p.assignedStoreIds.some((id: string) => targetStoreIds.includes(id));
+          }
+        } catch (e) {}
+      }
+
+      return false;
+    });
+  }, [allUsers, stores, selectedStoreId, currentUser?.id]);
+
   const handleCreateStore = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStoreName || !newStoreSlug) return;
@@ -245,14 +273,14 @@ export default function Header({ onToggleMobileMenu }: { onToggleMobileMenu?: ()
                 }}
                 className="bg-transparent text-xs font-bold text-slate-900 focus:outline-none cursor-pointer max-w-[150px] truncate"
               >
-                {allUsers.length > 0 ? (
-                  allUsers.map((u) => (
+                {countryUsers.length > 0 ? (
+                  countryUsers.map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.name} ({u.role === 'ADMIN' ? '👑 Admin' : '🎧 Agent'})
                     </option>
                   ))
                 ) : (
-                  <option value="admin-default">Yassine El Amrani (👑 Admin)</option>
+                  <option value="admin-default">{currentUser?.name || 'Younes OUAKRIM'} (👑 Admin)</option>
                 )}
               </select>
             ) : (
