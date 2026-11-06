@@ -85,7 +85,92 @@ export async function POST(req: NextRequest) {
     // Clean phone number (remove spaces, dashes)
     const cleanPhone = customerPhone.replace(/[^0-9+]/g, '');
 
-    // 2. Anti-Duplicate Check (Check if same phone placed an order in the last 24 hours)
+    // 2. Anti-Duplicate & Upsell Check
+    const isUpsellRequest = body.isUpsell === true || body.action === 'upsell';
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+    if (isUpsellRequest) {
+      const recentOrder = await prisma.order.findFirst({
+        where: {
+          storeId: store.id,
+          customerPhone: cleanPhone,
+          createdAt: { gte: twoHoursAgo },
+        },
+        include: { items: true },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (recentOrder) {
+        let addedAmount = 0;
+        let addedCost = 0;
+        let upsellProductName = '';
+
+        if (items && Array.isArray(items)) {
+          for (const item of items) {
+            const qty = Number(item.quantity) || 1;
+            const price = Number(item.unitPrice) || 0;
+            let product = null;
+            if (item.sku) product = await prisma.product.findUnique({ where: { sku: item.sku } });
+            if (!product && item.productId) product = await prisma.product.findUnique({ where: { id: item.productId } });
+            if (!product && (item.sku || item.productName || item.name)) {
+              const skuToUse = item.sku || `SKU-${Date.now().toString(36).toUpperCase()}`;
+              product = await prisma.product.findUnique({ where: { sku: skuToUse } });
+              if (!product) {
+                product = await prisma.product.create({
+                  data: {
+                    storeId: store.id,
+                    sku: skuToUse,
+                    name: item.productName || item.name || skuToUse,
+                    sellingPrice: price > 0 ? price : 0,
+                    costPrice: 0,
+                    stockInitial: 500,
+                    stockQuantity: 500,
+                  },
+                });
+              }
+            }
+            if (product) {
+              const finalPrice = price > 0 ? price : product.sellingPrice;
+              addedAmount += finalPrice * qty;
+              addedCost += product.costPrice * qty;
+              upsellProductName = product.name;
+              await prisma.orderItem.create({
+                data: {
+                  orderId: recentOrder.id,
+                  productId: product.id,
+                  quantity: qty,
+                  unitPrice: finalPrice,
+                  unitCost: product.costPrice,
+                },
+              });
+            }
+          }
+        }
+
+        const newTotal = rawTotal ? parseFloat(rawTotal) : recentOrder.totalAmount + addedAmount;
+        const updated = await prisma.order.update({
+          where: { id: recentOrder.id },
+          data: {
+            totalAmount: newTotal,
+            costAmount: recentOrder.costAmount + addedCost,
+            upsell: upsellProductName || recentOrder.upsell || 'Upsell en ligne',
+            agentNotes: [
+              recentOrder.agentNotes,
+              `[Upsell accepté en ligne: +${addedAmount} ${store.currency}]`,
+            ]
+              .filter(Boolean)
+              .join(' | '),
+          },
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: 'Upsell added to existing order',
+          order: updated,
+        });
+      }
+    }
+
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const existingRecentOrder = await prisma.order.findFirst({
       where: {
@@ -143,6 +228,9 @@ export async function POST(req: NextRequest) {
 
     if (items && Array.isArray(items) && items.length > 0) {
       for (const item of items) {
+        const qty = Number(item.quantity) || 1;
+        const price = Number(item.unitPrice) || 0;
+
         let product = null;
         if (item.sku) {
           product = await prisma.product.findUnique({ where: { sku: item.sku } });
@@ -150,20 +238,39 @@ export async function POST(req: NextRequest) {
           product = await prisma.product.findUnique({ where: { id: item.productId } });
         }
 
-        const qty = item.quantity || 1;
-        const price = item.unitPrice || (product ? product.sellingPrice : 0);
+        if (!product && (item.sku || item.productName || item.name)) {
+          const skuToUse = item.sku || `SKU-${Date.now().toString(36).toUpperCase()}`;
+          const existingBySku = await prisma.product.findUnique({ where: { sku: skuToUse } });
+          if (existingBySku) {
+            product = existingBySku;
+          } else {
+            product = await prisma.product.create({
+              data: {
+                storeId: store.id,
+                sku: skuToUse,
+                name: item.productName || item.name || skuToUse,
+                sellingPrice: price > 0 ? price : 0,
+                costPrice: 0,
+                stockInitial: 500,
+                stockQuantity: 500,
+              },
+            });
+          }
+        }
+
+        const finalPrice = price > 0 ? price : (product ? product.sellingPrice : 0);
         const cost = product ? product.costPrice : 0;
 
         if (product) {
           costAmount += cost * qty;
           if (!rawTotal) {
-            totalAmount += price * qty;
+            totalAmount += finalPrice * qty;
           }
 
           orderItemsToCreate.push({
             productId: product.id,
             quantity: qty,
-            unitPrice: price,
+            unitPrice: finalPrice,
             unitCost: cost,
           });
         }
