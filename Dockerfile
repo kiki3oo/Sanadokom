@@ -29,4 +29,4 @@ RUN chmod -R 777 /app/prisma
 EXPOSE 3000
 EXPOSE 80
 
-CMD ["sh", "-c", "npx prisma generate && npx prisma db push && node prisma/seed.js && npx next start -H 0.0.0.0"]
+CMD ["sh", "-c", "chmod -R 777 /app/prisma 2>/dev/null || true; npx prisma db push --accept-data-loss || true; node prisma/seed.js || true; npx next start -H 0.0.0.0 -p ${PORT:-3000}"]
