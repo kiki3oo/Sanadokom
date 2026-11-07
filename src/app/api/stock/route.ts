@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
+import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -248,6 +249,17 @@ export async function POST(req: NextRequest) {
     // Action 3: Update existing product details (Prix d'achat, Prix de vente, Nom, Seuil)
     if (action === 'UPDATE') {
       const { productId, name, description, costPrice, sellingPrice, alertThreshold, userName, userRole } = body;
+
+      // Vérification stricte : Réservé exclusivement à l'ADMIN
+      const sessionCookie = req.cookies.get(SESSION_COOKIE_NAME)?.value;
+      if (sessionCookie) {
+        const session = await verifySessionToken(sessionCookie);
+        if (session && session.role !== 'ADMIN') {
+          return NextResponse.json({ error: 'Action réservée exclusivement à l administrateur' }, { status: 403 });
+        }
+      } else if (userRole && userRole !== 'ADMIN') {
+        return NextResponse.json({ error: 'Action réservée exclusivement à l administrateur' }, { status: 403 });
+      }
 
       if (!productId) {
         return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });

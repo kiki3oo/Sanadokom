@@ -546,11 +546,11 @@ export default function StockPage() {
                             <Lock className="w-3 h-3 text-slate-400" />
                             <span>Confidentiel</span>
                           </span>
-                        ) : canManageStock ? (
+                        ) : isAdmin ? (
                           <button
                             onClick={() => openEditModal(product)}
                             className="group inline-flex items-center gap-1.5 font-semibold text-slate-700 hover:text-indigo-600 px-2 py-1 rounded-md hover:bg-indigo-50 transition-colors cursor-pointer"
-                            title="Cliquer pour modifier le prix d'achat"
+                            title="Modifier le prix d'achat (Réservé à l'Admin)"
                           >
                             <span>{product.costPrice} {currency}</span>
                             <Pencil className="w-3 h-3 text-slate-400 group-hover:text-indigo-600 transition-colors" />
@@ -635,14 +635,16 @@ export default function StockPage() {
                       {canManageStock && (
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => openEditModal(product)}
-                              className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-semibold text-[11px] border border-indigo-200 transition-colors flex items-center gap-1 cursor-pointer"
-                              title="Modifier le prix d'achat, prix de vente ou nom"
-                            >
-                              <Pencil className="w-3 h-3 text-indigo-600" />
-                              <span>Modifier</span>
-                            </button>
+                            {isAdmin && (
+                              <button
+                                onClick={() => openEditModal(product)}
+                                className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-semibold text-[11px] border border-indigo-200 transition-colors flex items-center gap-1 cursor-pointer"
+                                title="Modifier le prix d'achat, prix de vente ou nom (Réservé Admin)"
+                              >
+                                <Pencil className="w-3 h-3 text-indigo-600" />
+                                <span>Modifier</span>
+                              </button>
+                            )}
 
                             <button
                               onClick={() => openAdjustModal(product, 'PURCHASE')}
@@ -936,7 +938,7 @@ export default function StockPage() {
       )}
 
       {/* Modal Edit Product Details (Prix d'achat, Prix de vente, Nom, Seuil) */}
-      {canManageStock && showEditProductModal && editingProduct && (
+      {isAdmin && showEditProductModal && editingProduct && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-start justify-between mb-4">
