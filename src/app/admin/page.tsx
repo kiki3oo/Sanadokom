@@ -815,22 +815,26 @@ export default function AdminPage() {
 
       {/* MODAL 1: CRÉER UN UTILISATEUR */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg sm:max-w-xl w-full border border-slate-200 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Fixed Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0 bg-white">
               <div>
                 <h3 className="text-base font-extrabold text-slate-900">Créer un Nouveau Compte</h3>
                 <p className="text-xs text-slate-500">Ajoutez un agent de confirmation ou un gestionnaire.</p>
               </div>
               <button
+                type="button"
                 onClick={() => setShowAddModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center text-sm font-bold transition-colors cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateUser} className="space-y-3">
+            <form onSubmit={handleCreateUser} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              {/* Scrollable Content Body */}
+              <div className="p-6 overflow-y-auto space-y-3.5 flex-1 overscroll-contain">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Nom Complet</label>
                 <input
@@ -1199,17 +1203,20 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              </div>
+
+              {/* Fixed Sticky Footer */}
+              <div className="px-6 py-4 border-t border-slate-200/80 bg-slate-50/90 backdrop-blur-xs flex items-center justify-end gap-2.5 flex-shrink-0 rounded-b-2xl">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-xl"
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200/70 rounded-xl transition-colors cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl"
+                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
                   Créer le Compte
                 </button>
@@ -1221,9 +1228,10 @@ export default function AdminPage() {
 
       {/* MODAL 2: MODIFIER / CHANGER MOT DE PASSE */}
       {showEditModal && selectedUser && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg sm:max-w-xl w-full border border-slate-200 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Fixed Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0 bg-white">
               <div>
                 <h3 className="text-base font-extrabold text-slate-900">
                   Modifier : {selectedUser.name}
@@ -1231,14 +1239,17 @@ export default function AdminPage() {
                 <p className="text-xs text-slate-500">Mettre à jour les accès ou changer le mot de passe.</p>
               </div>
               <button
+                type="button"
                 onClick={() => setShowEditModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center text-sm font-bold transition-colors cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleUpdateUser} className="space-y-3">
+            <form onSubmit={handleUpdateUser} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              {/* Scrollable Content Body */}
+              <div className="p-6 overflow-y-auto space-y-3.5 flex-1 overscroll-contain">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Nom Complet</label>
                 <input
@@ -1603,17 +1614,20 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              </div>
+
+              {/* Fixed Sticky Footer */}
+              <div className="px-6 py-4 border-t border-slate-200/80 bg-slate-50/90 backdrop-blur-xs flex items-center justify-end gap-2.5 flex-shrink-0 rounded-b-2xl">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-xl"
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200/70 rounded-xl transition-colors cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl"
+                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
                   Enregistrer Modifications
                 </button>
@@ -1624,10 +1638,10 @@ export default function AdminPage() {
       )}
       {/* MODAL 3: GESTION DE PRÉSENCE, ABSENCE & REMPLACEMENT */}
       {showAbsenceModal && absenceUser && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-hidden">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg sm:max-w-xl w-full border border-slate-200 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0 bg-white">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-black text-lg border border-amber-200">
                   🏖️
@@ -1650,7 +1664,8 @@ export default function AdminPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveAbsence} className="space-y-4">
+            <form onSubmit={handleSaveAbsence} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="p-6 overflow-y-auto space-y-4 flex-1 overscroll-contain">
               {/* Status Chooser */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -1865,12 +1880,14 @@ export default function AdminPage() {
                 </div>
               )}
 
+              </div>
+
               {/* Actions Footer */}
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="px-6 py-4 border-t border-slate-200/80 bg-slate-50/90 backdrop-blur-xs flex items-center justify-end gap-2.5 flex-shrink-0 rounded-b-3xl">
                 <button
                   type="button"
                   onClick={() => setShowAbsenceModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-xl cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200/70 rounded-xl transition-colors cursor-pointer"
                 >
                   Annuler
                 </button>
