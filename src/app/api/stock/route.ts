@@ -245,6 +245,46 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, product });
     }
 
+    // Action 3: Update existing product details (Prix d'achat, Prix de vente, Nom, Seuil)
+    if (action === 'UPDATE') {
+      const { productId, name, description, costPrice, sellingPrice, alertThreshold, userName, userRole } = body;
+
+      if (!productId) {
+        return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
+      }
+
+      const existing = await prisma.product.findUnique({ where: { id: productId } });
+      if (!existing) {
+        return NextResponse.json({ error: 'Produit non trouvé' }, { status: 404 });
+      }
+
+      const updateData: any = {};
+      if (name !== undefined && name.trim()) updateData.name = name.trim();
+      if (description !== undefined) updateData.description = description || null;
+      if (costPrice !== undefined) updateData.costPrice = parseFloat(costPrice || 0);
+      if (sellingPrice !== undefined) updateData.sellingPrice = parseFloat(sellingPrice || 0);
+      if (alertThreshold !== undefined) updateData.alertThreshold = parseInt(alertThreshold || 10);
+
+      const updated = await prisma.product.update({
+        where: { id: productId },
+        data: updateData,
+      });
+
+      await logActivity({
+        userName: userName || 'Admin',
+        userRole: userRole || 'ADMIN',
+        action: 'STOCK_UPDATE',
+        entity: 'PRODUCT',
+        entityId: productId,
+        storeId: existing.storeId,
+        oldValue: `Achat: ${existing.costPrice} MAD | Vente: ${existing.sellingPrice} MAD`,
+        newValue: `Achat: ${updated.costPrice} MAD | Vente: ${updated.sellingPrice} MAD`,
+        details: `A modifié les tarifs/paramètres du produit "${updated.name}" (${updated.sku}) : Prix Achat = ${updated.costPrice} MAD, Prix Vente = ${updated.sellingPrice} MAD`,
+      });
+
+      return NextResponse.json({ success: true, product: updated });
+    }
+
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error: any) {
     console.error('Error in POST /api/stock:', error);

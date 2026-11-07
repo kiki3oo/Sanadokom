@@ -21,6 +21,7 @@ import {
   Archive,
   RefreshCw,
   XCircle,
+  Pencil,
 } from 'lucide-react';
 
 export default function StockPage() {
@@ -59,6 +60,14 @@ export default function StockPage() {
   const [adjustQty, setAdjustQty] = useState('');
   const [adjustRef, setAdjustRef] = useState('');
   const [adjustNotes, setAdjustNotes] = useState('');
+
+  // Edit Product Form (Prix d'achat, Prix de vente, Nom, Seuil)
+  const [showEditProductModal, setShowEditProductModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editCostPrice, setEditCostPrice] = useState('');
+  const [editSellingPrice, setEditSellingPrice] = useState('');
+  const [editAlertThreshold, setEditAlertThreshold] = useState('10');
 
   const fetchStock = async () => {
     setLoading(true);
@@ -171,6 +180,47 @@ export default function StockPage() {
     setAdjustRef(defaultType === 'DAMAGE' ? 'CASSE-RETOUR' : '');
     setAdjustNotes(defaultType === 'DAMAGE' ? 'Article abîmé / défectueux mis en quarantaine' : '');
     setShowAdjustModal(true);
+  };
+
+  const openEditModal = (product: any) => {
+    setEditingProduct(product);
+    setEditName(product.name || '');
+    setEditCostPrice(product.costPrice?.toString() || '');
+    setEditSellingPrice(product.sellingPrice?.toString() || '');
+    setEditAlertThreshold(product.alertThreshold?.toString() || '10');
+    setShowEditProductModal(true);
+  };
+
+  const handleUpdateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    try {
+      const res = await fetch('/api/stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'UPDATE',
+          productId: editingProduct.id,
+          name: editName,
+          costPrice: editCostPrice,
+          sellingPrice: editSellingPrice,
+          alertThreshold: editAlertThreshold,
+          userName: currentUser?.name || 'Admin',
+          userRole: currentUser?.role || 'ADMIN',
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setShowEditProductModal(false);
+        setEditingProduct(null);
+        fetchStock();
+      } else {
+        alert(data.error || 'Erreur lors de la mise à jour du produit');
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const filteredProducts = useMemo(() => {
@@ -496,6 +546,15 @@ export default function StockPage() {
                             <Lock className="w-3 h-3 text-slate-400" />
                             <span>Confidentiel</span>
                           </span>
+                        ) : canManageStock ? (
+                          <button
+                            onClick={() => openEditModal(product)}
+                            className="group inline-flex items-center gap-1.5 font-semibold text-slate-700 hover:text-indigo-600 px-2 py-1 rounded-md hover:bg-indigo-50 transition-colors cursor-pointer"
+                            title="Cliquer pour modifier le prix d'achat"
+                          >
+                            <span>{product.costPrice} {currency}</span>
+                            <Pencil className="w-3 h-3 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                          </button>
                         ) : (
                           <span className="font-semibold text-slate-700">
                             {product.costPrice} {currency}
@@ -576,6 +635,15 @@ export default function StockPage() {
                       {canManageStock && (
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => openEditModal(product)}
+                              className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-semibold text-[11px] border border-indigo-200 transition-colors flex items-center gap-1 cursor-pointer"
+                              title="Modifier le prix d'achat, prix de vente ou nom"
+                            >
+                              <Pencil className="w-3 h-3 text-indigo-600" />
+                              <span>Modifier</span>
+                            </button>
+
                             <button
                               onClick={() => openAdjustModal(product, 'PURCHASE')}
                               className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg font-semibold text-[11px] border border-slate-200 transition-colors"
@@ -860,6 +928,111 @@ export default function StockPage() {
                   }`}
                 >
                   {adjustType === 'DAMAGE' ? 'Mettre en Quarantaine' : 'Valider le mouvement'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit Product Details (Prix d'achat, Prix de vente, Nom, Seuil) */}
+      {canManageStock && showEditProductModal && editingProduct && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-1.5">
+                  <Pencil className="w-4 h-4 text-indigo-600" />
+                  <span>Modifier le Produit</span>
+                </h2>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  SKU: {editingProduct.sku}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowEditProductModal(false)}
+                className="text-slate-400 hover:text-slate-600 text-lg leading-none cursor-pointer"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateProduct} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Nom du Produit</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
+                  <label className="block text-xs font-bold text-indigo-950 mb-1">
+                    Prix Achat COGS ({editingProduct.store?.currency || currentStore?.currency || 'MAD'})
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={editCostPrice}
+                    onChange={(e) => setEditCostPrice(e.target.value)}
+                    className="w-full text-xs font-bold text-slate-900 bg-white border border-indigo-200 rounded-lg p-2 focus:border-indigo-500 focus:outline-none"
+                  />
+                  <span className="text-[10px] text-indigo-600 mt-1 block">
+                    Coût unitaire d&apos;achat usine
+                  </span>
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <label className="block text-xs font-bold text-slate-800 mb-1">
+                    Prix Vente COD ({editingProduct.store?.currency || currentStore?.currency || 'MAD'})
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={editSellingPrice}
+                    onChange={(e) => setEditSellingPrice(e.target.value)}
+                    className="w-full text-xs font-bold text-slate-900 bg-white border border-slate-300 rounded-lg p-2 focus:border-indigo-500 focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-1 block">
+                    Prix public affiché au client
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Seuil Alerte Stock Faible</label>
+                <input
+                  type="number"
+                  required
+                  value={editAlertThreshold}
+                  onChange={(e) => setEditAlertThreshold(e.target.value)}
+                  className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-[11px] leading-relaxed">
+                💡 <span className="font-semibold">Remarque :</span> La modification du prix d&apos;achat actualisera instantanément le calcul de la marge nette (Profit) pour toutes les futures analyses et commandes associées.
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditProductModal(false)}
+                  className="px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-xs transition-colors cursor-pointer"
+                >
+                  Enregistrer les modifications
                 </button>
               </div>
             </form>
