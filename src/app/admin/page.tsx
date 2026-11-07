@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '@/context/StoreContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { usePresence } from '@/context/PresenceContext';
 
 const defaultAgentPerms: UserPermissions = {
   viewCallCenter: true,
@@ -56,6 +57,7 @@ const defaultAgentPerms: UserPermissions = {
 export default function AdminPage() {
   const { canViewPage, refreshUsers: refreshAuthUsers } = useAuth();
   const { allStores, stores, currentCountry, selectedCountry } = useStore();
+  const { agents: liveAgents, refreshPresence: refreshLivePresence } = usePresence();
   const { t } = useLanguage();
   const storeList = allStores && allStores.length > 0 ? allStores : stores;
   const [users, setUsers] = useState<any[]>([]);
@@ -760,16 +762,110 @@ export default function AdminPage() {
                         );
                       }
 
+                      // Real-Time Live Presence
+                      const liveAgent = liveAgents.find((la) => la.id === u.id);
+                      const liveStatus = liveAgent?.status || 'OFFLINE';
+
+                      if (liveStatus === 'ONLINE') {
+                        return (
+                          <div className="flex flex-col items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAbsence(u)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs hover:bg-emerald-100 transition-colors cursor-pointer"
+                              title="Agent connecté - Cliquer pour gérer l'absence"
+                            >
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                              </span>
+                              <span>🟢 En ligne</span>
+                            </button>
+                            {liveAgent?.currentActivity && (
+                              <span
+                                className="text-[9px] text-emerald-700 font-medium max-w-[140px] truncate"
+                                title={liveAgent.currentActivity}
+                              >
+                                {liveAgent.currentActivity}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      if (liveStatus === 'BUSY') {
+                        return (
+                          <div className="flex flex-col items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAbsence(u)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs animate-pulse hover:bg-amber-100 transition-colors cursor-pointer"
+                              title="En cours d'appel - Cliquer pour gérer l'absence"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                              <span>🟡 En appel</span>
+                            </button>
+                            {liveAgent?.currentOrderNumber && (
+                              <span className="text-[9px] text-amber-800 font-mono font-bold">
+                                #{liveAgent.currentOrderNumber}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      if (liveStatus === 'PAUSED') {
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAbsence(u)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-800 border border-orange-200 hover:bg-orange-100 transition-colors cursor-pointer"
+                            title="En pause - Cliquer pour gérer l'absence"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                            <span>🟠 En pause</span>
+                          </button>
+                        );
+                      }
+
+                      if (liveStatus === 'IDLE') {
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAbsence(u)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-yellow-50 text-yellow-800 border border-yellow-200 hover:bg-yellow-100 transition-colors cursor-pointer"
+                            title="Inactif - Cliquer pour gérer l'absence"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-yellow-400"></span>
+                            <span>🟡 Inactif</span>
+                          </button>
+                        );
+                      }
+
                       return (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenAbsence(u)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
-                          title="Cliquer pour gérer la présence / absence"
-                        >
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          <span>Actif (Présent)</span>
-                        </button>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAbsence(u)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition-colors cursor-pointer"
+                            title="Déconnecté - Cliquer pour gérer l'absence"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                            <span>⚪ Hors ligne</span>
+                          </button>
+                          {liveAgent?.lastHeartbeat && (
+                            <span className="text-[9px] text-slate-400">
+                              {(() => {
+                                const sec = Math.floor((Date.now() - liveAgent.lastHeartbeat) / 1000);
+                                if (sec < 60) return "Vu à l'instant";
+                                const min = Math.floor(sec / 60);
+                                if (min < 60) return `Vu il y a ${min}m`;
+                                const hr = Math.floor(min / 60);
+                                return `Vu il y a ${hr}h`;
+                              })()}
+                            </span>
+                          )}
+                        </div>
                       );
                     })()}
                   </td>

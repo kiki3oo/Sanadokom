@@ -14,7 +14,10 @@ export async function GET(req: NextRequest) {
 
     // 1. Fetch all agents from DB
     const dbAgents = await prisma.user.findMany({
-      where: { role: 'CALL_AGENT', active: true },
+      where: {
+        role: { in: ['CALL_AGENT', 'LOGISTICS_MANAGER', 'AGENT'] },
+        active: true,
+      },
       select: {
         id: true,
         name: true,
@@ -44,11 +47,14 @@ export async function GET(req: NextRequest) {
                   : agent.permissions
                 : null;
               const assigned = perms?.assignedStoreIds;
-              if (assigned && Array.isArray(assigned) && assigned.length > 0) {
-                return assigned.some((sid: string) => targetStoreIds.includes(sid));
+              // If agent has no assignedStoreIds, they work on ALL boutiques (global access)
+              if (!assigned || !Array.isArray(assigned) || assigned.length === 0) {
+                return true;
               }
-            } catch (e) {}
-            return false;
+              return assigned.some((sid: string) => targetStoreIds.includes(sid));
+            } catch (e) {
+              return true;
+            }
           });
 
     const agentIds = filteredDbAgents.map((a) => a.id);

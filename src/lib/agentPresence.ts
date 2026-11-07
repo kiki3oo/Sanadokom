@@ -14,8 +14,17 @@ export interface AgentPresenceRecord {
   lastActionAt: number; // ms
 }
 
-// Global in-memory presence map
-const presenceMap = new Map<string, AgentPresenceRecord>();
+// Global in-memory presence map (persists across Next.js API chunks)
+const globalForPresence = globalThis as unknown as {
+  __sanadokom_presenceMap?: Map<string, AgentPresenceRecord>;
+};
+
+export const presenceMap: Map<string, AgentPresenceRecord> =
+  globalForPresence.__sanadokom_presenceMap || new Map<string, AgentPresenceRecord>();
+
+if (!globalForPresence.__sanadokom_presenceMap) {
+  globalForPresence.__sanadokom_presenceMap = presenceMap;
+}
 
 // Presence timeouts (in milliseconds)
 const ONLINE_TIMEOUT_MS = 90 * 1000;   // 90 seconds = actively online

@@ -11,12 +11,23 @@ interface LeadLock {
 
 // Global in-memory locks map (persists across API requests in Node runtime)
 const LOCK_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes auto-release timeout
-const activeLocks = new Map<string, LeadLock>();
+
+const globalForLocks = globalThis as unknown as {
+  __sanadokom_activeLocks?: Map<string, LeadLock>;
+  _lockEvents?: LockEventEmitter;
+};
+
+const activeLocks: Map<string, LeadLock> =
+  globalForLocks.__sanadokom_activeLocks || new Map<string, LeadLock>();
+
+if (!globalForLocks.__sanadokom_activeLocks) {
+  globalForLocks.__sanadokom_activeLocks = activeLocks;
+}
 
 // Global Event Emitter for Real-Time Lock Broadcasts
 class LockEventEmitter extends EventEmitter {}
-export const lockEvents: LockEventEmitter = (global as any)._lockEvents || new LockEventEmitter();
-(global as any)._lockEvents = lockEvents;
+export const lockEvents: LockEventEmitter = globalForLocks._lockEvents || new LockEventEmitter();
+globalForLocks._lockEvents = lockEvents;
 lockEvents.setMaxListeners(200);
 
 function broadcastLocks() {

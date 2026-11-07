@@ -69,6 +69,16 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
   const [myStatusIntent, setLocalStatusIntent] = useState<'AVAILABLE' | 'PAUSED'>('AVAILABLE');
   const myStatusIntentRef = useRef<'AVAILABLE' | 'PAUSED'>('AVAILABLE');
 
+  const currentUserRef = useRef(currentUser);
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
+
+  const selectedStoreIdRef = useRef(selectedStoreId);
+  useEffect(() => {
+    selectedStoreIdRef.current = selectedStoreId;
+  }, [selectedStoreId]);
+
   // Keep ref synced
   useEffect(() => {
     myStatusIntentRef.current = myStatusIntent;
@@ -76,14 +86,11 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch all agents presence
   const refreshPresence = useCallback(async () => {
-    if (!currentUser?.id) {
-      setLoading(false);
-      return;
-    }
     try {
+      const storeId = selectedStoreIdRef.current;
       const url =
-        selectedStoreId && selectedStoreId !== 'ALL'
-          ? `/api/agents/presence?storeId=${encodeURIComponent(selectedStoreId)}`
+        storeId && storeId !== 'ALL'
+          ? `/api/agents/presence?storeId=${encodeURIComponent(storeId)}`
           : '/api/agents/presence';
       const res = await fetch(url);
       const data = await res.json();
@@ -96,20 +103,21 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [selectedStoreId]);
+  }, []);
 
   // Send Heartbeat
   const sendHeartbeat = useCallback(
     async (extra?: { activity?: string; orderId?: string; orderNumber?: string }) => {
-      if (!currentUser?.id) return;
+      const user = currentUserRef.current;
+      if (!user?.id) return;
       try {
         await fetch('/api/agents/presence', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            agentId: currentUser.id,
-            agentName: currentUser.name,
-            role: currentUser.role,
+            agentId: user.id,
+            agentName: user.name,
+            role: user.role,
             currentPage: typeof window !== 'undefined' ? window.location.pathname : '',
             statusIntent: myStatusIntentRef.current,
             currentActivity: extra?.activity,
@@ -121,20 +129,21 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
         console.error('Error sending presence heartbeat:', err);
       }
     },
-    [currentUser]
+    []
   );
 
   // Set Agent Status Intent (Available or Paused)
   const setMyStatusIntent = async (intent: 'AVAILABLE' | 'PAUSED') => {
     setLocalStatusIntent(intent);
     myStatusIntentRef.current = intent;
-    if (currentUser?.id) {
+    const user = currentUserRef.current;
+    if (user?.id) {
       try {
         await fetch('/api/agents/presence', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            agentId: currentUser.id,
+            agentId: user.id,
             action: 'SET_STATUS_INTENT',
             statusIntent: intent,
           }),
@@ -152,11 +161,16 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
     refreshPresence();
   };
 
-  // Initial load and periodic heartbeats
+  // Immediate sync when currentUser or selectedStoreId changes
   useEffect(() => {
+    if (currentUser?.id) {
+      sendHeartbeat();
+    }
     refreshPresence();
-    sendHeartbeat();
+  }, [currentUser?.id, selectedStoreId, sendHeartbeat, refreshPresence]);
 
+  // Periodic heartbeats and polling
+  useEffect(() => {
     // Heartbeat every 20s
     const heartbeatInterval = setInterval(() => {
       sendHeartbeat();
@@ -167,21 +181,23 @@ export function PresenceProvider({ children }: { children: React.ReactNode }) {
       refreshPresence();
     }, 8000);
 
-    // On visibility change (tab refocus)
-    const handleVisibilityChange = () => {
+    // On visibility change or window focus
+    const handleSync = () => {
       if (document.visibilityState === 'visible') {
         sendHeartbeat();
         refreshPresence();
       }
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleSync);
+    window.addEventListener('focus', handleSync);
 
     return () => {
       clearInterval(heartbeatInterval);
       clearInterval(pollInterval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleSync);
+      window.removeEventListener('focus', handleSync);
     };
-  }, [currentUser?.id, sendHeartbeat, refreshPresence]);
+  }, [sendHeartbeat, refreshPresence]);
 
   return (
     <PresenceContext.Provider

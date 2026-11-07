@@ -232,9 +232,9 @@ export default function Header({ onToggleMobileMenu }: { onToggleMobileMenu?: ()
         {/* Smart Operational Alerts Hub (Notifications Bell & Morning Brief) */}
         <SmartAlertHub />
 
-        {/* Live Agents Presence Indicator (Desktop only in header, accessible in drawer for mobile) */}
+        {/* Live Agents Presence Indicator */}
         {isManager && (
-          <div className="hidden sm:block">
+          <div className="flex items-center">
             <AgentPresenceBadge />
           </div>
         )}
