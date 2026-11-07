@@ -67,6 +67,19 @@ async function main() {
     },
   });
 
+  const storeMagneSteps = await prisma.store.upsert({
+    where: { slug: 'magnesteps-maroc' },
+    update: {
+      webhookSecret: 'whsec_magnesteps_maroc_2026',
+    },
+    create: {
+      name: 'MagneSteps Maroc 🇲🇦',
+      slug: 'magnesteps-maroc',
+      currency: 'MAD',
+      webhookSecret: 'whsec_magnesteps_maroc_2026',
+    },
+  });
+
   // 3. Create 7 Official ROVANX Products with 100 units each
   const rovanxProductsList = [
     {
@@ -192,6 +205,32 @@ async function main() {
       });
     }
   }
+
+  // 3.1 Create MagneSteps Official Product
+  const magneProduct = await prisma.product.upsert({
+    where: { sku: 'MAGNE-STEPS-01' },
+    update: {
+      storeId: storeMagneSteps.id,
+      name: 'فرشات MagneSteps الطبية الأصلية',
+      description: 'فرشات السيليكون المغناطيسية الأصلية للتدليك وتسكين آلام الظهر والمفاصل',
+      sellingPrice: 199.0,
+      costPrice: 35.0,
+      stockQuantity: 500,
+      stockInitial: 500,
+    },
+    create: {
+      storeId: storeMagneSteps.id,
+      sku: 'MAGNE-STEPS-01',
+      name: 'فرشات MagneSteps الطبية الأصلية',
+      description: 'فرشات السيليكون المغناطيسية الأصلية للتدليك وتسكين آلام الظهر والمفاصل',
+      sellingPrice: 199.0,
+      costPrice: 35.0,
+      packagingFee: 5.0,
+      stockInitial: 500,
+      stockQuantity: 500,
+      alertThreshold: 20,
+    },
+  });
 
   // 4. Courier Configurations for Rovanx Maroc
   await prisma.courierConfig.upsert({
