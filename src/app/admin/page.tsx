@@ -126,6 +126,7 @@ export default function AdminPage() {
   const [role, setRole] = useState('CALL_AGENT');
   const [commissionFee, setCommissionFee] = useState('10.0');
   const [upsellCommissionFee, setUpsellCommissionFee] = useState('5.0');
+  const [bankCountry, setBankCountry] = useState<'MA' | 'SN'>('MA');
   const [bankName, setBankName] = useState('CIH Bank');
   const [bankRib, setBankRib] = useState('');
 
@@ -137,6 +138,7 @@ export default function AdminPage() {
   const [editRole, setEditRole] = useState('CALL_AGENT');
   const [editCommissionFee, setEditCommissionFee] = useState('10.0');
   const [editUpsellCommissionFee, setEditUpsellCommissionFee] = useState('5.0');
+  const [editBankCountry, setEditBankCountry] = useState<'MA' | 'SN'>('MA');
   const [editBankName, setEditBankName] = useState('CIH Bank');
   const [editBankRib, setEditBankRib] = useState('');
 
@@ -205,7 +207,8 @@ export default function AdminPage() {
   };
 
   const handleOpenAdd = () => {
-    const isSn = userCountryFilter === 'SN' || currentCountry?.code === 'SN';
+    const isSn = userCountryFilter === 'SN' || currentCountry?.code === 'SN' || selectedCountry === 'SN';
+    setBankCountry(isSn ? 'SN' : 'MA');
     setName('');
     setEmail('');
     setPassword('');
@@ -255,6 +258,7 @@ export default function AdminPage() {
       userPerms.assignedStoreIds = [];
     }
     const isSn = getUserCountryCode(user) === 'SN';
+    setEditBankCountry(isSn ? 'SN' : 'MA');
     const upsellFee =
       userPerms.upsellCommissionFee !== undefined
         ? userPerms.upsellCommissionFee.toString()
@@ -1035,65 +1039,86 @@ export default function AdminPage() {
 
                   {/* Coordonnées Bancaires de l'Agent */}
                   <div className="bg-emerald-50/60 p-3.5 rounded-xl border border-emerald-200">
-                    <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
                       <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
                         <CreditCard className="w-4 h-4 text-emerald-600" />
                         <span>Coordonnées Bancaires / Mobile Money</span>
                       </span>
-                      <span className="text-[10px] bg-emerald-200/60 text-emerald-900 px-2 py-0.5 rounded font-bold">
-                        Virement Commissions
-                      </span>
+
+                      {/* Country Selector for Bank */}
+                      <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-emerald-200 shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBankCountry('MA');
+                            if (!['CIH Bank', 'Attijariwafa Bank', 'Banque Populaire', 'Bank of Africa', 'Al Barid Bank', 'CFG Bank', 'Société Générale', 'Crédit Agricole', 'Crédit du Maroc'].includes(bankName)) {
+                              setBankName('CIH Bank');
+                            }
+                          }}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                            bankCountry === 'MA'
+                              ? 'bg-emerald-600 text-white shadow-2xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          🇲🇦 Maroc
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBankCountry('SN');
+                            if (!['Wave Mobile Money', 'Orange Money Sénégal', 'Free Money Sénégal', 'Ecobank Sénégal', 'CBAO Groupe Attijariwafa', 'SGBS Sénégal', 'Bank of Africa Sénégal'].includes(bankName)) {
+                              setBankName('Wave Mobile Money');
+                            }
+                          }}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                            bankCountry === 'SN'
+                              ? 'bg-emerald-600 text-white shadow-2xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          🇸🇳 Sénégal
+                        </button>
+                      </div>
                     </div>
+
                     <p className="text-[11px] text-emerald-800/80 mb-2.5">
-                      Renseignez la banque, Mobile Money (Wave, Orange Money) ou le RIB de l'agent.
+                      {bankCountry === 'SN'
+                        ? 'Renseignez le compte Mobile Money (Wave, Orange Money) ou la banque au Sénégal.'
+                        : 'Renseignez la banque marocaine et le RIB à 24 chiffres pour les virements.'}
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Banque / Portefeuille de l'Agent
+                          {bankCountry === 'SN' ? 'Portefeuille / Banque (Sénégal)' : 'Banque (Maroc)'}
                         </label>
                         <select
                           value={bankName}
                           onChange={(e) => setBankName(e.target.value)}
                           className="w-full text-xs border border-slate-300 rounded-xl p-2.5 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                         >
-                          {(userCountryFilter === 'SN' || currentCountry?.code === 'SN') ? (
+                          {bankCountry === 'SN' ? (
                             <>
-                              <optgroup label="🇸🇳 Sénégal (Mobile Money & Banques)">
-                                <option value="Wave Mobile Money">Wave Mobile Money 🇸🇳</option>
-                                <option value="Orange Money Sénégal">Orange Money Sénégal 🇸🇳</option>
-                                <option value="Free Money Sénégal">Free Money Sénégal 🇸🇳</option>
-                                <option value="Ecobank Sénégal">Ecobank Sénégal</option>
-                                <option value="CBAO Groupe Attijariwafa">CBAO Groupe Attijariwafa (Sénégal)</option>
-                                <option value="SGBS Sénégal">Société Générale Sénégal (SGBS)</option>
-                                <option value="Bank of Africa Sénégal">Bank of Africa Sénégal</option>
-                              </optgroup>
-                              <optgroup label="🇲🇦 Maroc (Banques)">
-                                <option value="CIH Bank">CIH Bank</option>
-                                <option value="Attijariwafa Bank">Attijariwafa Bank</option>
-                                <option value="Banque Populaire">Banque Populaire (Chaabi)</option>
-                              </optgroup>
+                              <option value="Wave Mobile Money">Wave Mobile Money 🇸🇳</option>
+                              <option value="Orange Money Sénégal">Orange Money Sénégal 🇸🇳</option>
+                              <option value="Free Money Sénégal">Free Money Sénégal 🇸🇳</option>
+                              <option value="Ecobank Sénégal">Ecobank Sénégal</option>
+                              <option value="CBAO Groupe Attijariwafa">CBAO Groupe Attijariwafa (Sénégal)</option>
+                              <option value="SGBS Sénégal">Société Générale Sénégal (SGBS)</option>
+                              <option value="Bank of Africa Sénégal">Bank of Africa Sénégal</option>
                             </>
                           ) : (
                             <>
-                              <optgroup label="🇲🇦 Maroc (Banques)">
-                                <option value="CIH Bank">CIH Bank</option>
-                                <option value="Attijariwafa Bank">Attijariwafa Bank</option>
-                                <option value="Banque Populaire">Banque Populaire (Chaabi)</option>
-                                <option value="Bank of Africa">Bank of Africa (BMCE)</option>
-                                <option value="Al Barid Bank">Al Barid Bank</option>
-                                <option value="CFG Bank">CFG Bank</option>
-                                <option value="Société Générale">Société Générale Maroc</option>
-                                <option value="Crédit Agricole">Crédit Agricole du Maroc</option>
-                                <option value="Crédit du Maroc">Crédit du Maroc</option>
-                              </optgroup>
-                              <optgroup label="🇸🇳 Sénégal (Mobile Money & Banques)">
-                                <option value="Wave Mobile Money">Wave Mobile Money 🇸🇳</option>
-                                <option value="Orange Money Sénégal">Orange Money Sénégal 🇸🇳</option>
-                                <option value="Free Money Sénégal">Free Money Sénégal 🇸🇳</option>
-                                <option value="Ecobank Sénégal">Ecobank Sénégal</option>
-                              </optgroup>
+                              <option value="CIH Bank">CIH Bank</option>
+                              <option value="Attijariwafa Bank">Attijariwafa Bank</option>
+                              <option value="Banque Populaire">Banque Populaire (Chaabi)</option>
+                              <option value="Bank of Africa">Bank of Africa (BMCE)</option>
+                              <option value="Al Barid Bank">Al Barid Bank</option>
+                              <option value="CFG Bank">CFG Bank</option>
+                              <option value="Société Générale">Société Générale Maroc</option>
+                              <option value="Crédit Agricole">Crédit Agricole du Maroc</option>
+                              <option value="Crédit du Maroc">Crédit du Maroc</option>
                             </>
                           )}
                           <option value="Autre">Autre Banque / Compte</option>
@@ -1102,12 +1127,12 @@ export default function AdminPage() {
 
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">
-                          RIB Bancaire (24 chiffres)
+                          {bankCountry === 'SN' ? 'Numéro Mobile Money / RIB' : 'RIB Bancaire (24 chiffres)'}
                         </label>
                         <input
                           type="text"
-                          maxLength={32}
-                          placeholder="Ex: 230 780 0000000000000000 00"
+                          maxLength={34}
+                          placeholder={bankCountry === 'SN' ? 'Ex: +221 77 123 45 67 ou RIB' : 'Ex: 230 780 0000000000000000 00'}
                           value={bankRib}
                           onChange={(e) => setBankRib(e.target.value)}
                           className="w-full text-xs border border-slate-300 rounded-xl p-2.5 font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
@@ -1446,65 +1471,86 @@ export default function AdminPage() {
 
                   {/* Coordonnées Bancaires de l'Agent */}
                   <div className="bg-emerald-50/60 p-3.5 rounded-xl border border-emerald-200">
-                    <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
                       <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
                         <CreditCard className="w-4 h-4 text-emerald-600" />
                         <span>Coordonnées Bancaires / Mobile Money</span>
                       </span>
-                      <span className="text-[10px] bg-emerald-200/60 text-emerald-900 px-2 py-0.5 rounded font-bold">
-                        Virement Commissions
-                      </span>
+
+                      {/* Country Selector for Bank */}
+                      <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-emerald-200 shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditBankCountry('MA');
+                            if (!['CIH Bank', 'Attijariwafa Bank', 'Banque Populaire', 'Bank of Africa', 'Al Barid Bank', 'CFG Bank', 'Société Générale', 'Crédit Agricole', 'Crédit du Maroc'].includes(editBankName)) {
+                              setEditBankName('CIH Bank');
+                            }
+                          }}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                            editBankCountry === 'MA'
+                              ? 'bg-emerald-600 text-white shadow-2xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          🇲🇦 Maroc
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditBankCountry('SN');
+                            if (!['Wave Mobile Money', 'Orange Money Sénégal', 'Free Money Sénégal', 'Ecobank Sénégal', 'CBAO Groupe Attijariwafa', 'SGBS Sénégal', 'Bank of Africa Sénégal'].includes(editBankName)) {
+                              setEditBankName('Wave Mobile Money');
+                            }
+                          }}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                            editBankCountry === 'SN'
+                              ? 'bg-emerald-600 text-white shadow-2xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          🇸🇳 Sénégal
+                        </button>
+                      </div>
                     </div>
+
                     <p className="text-[11px] text-emerald-800/80 mb-2.5">
-                      Renseignez la banque, Mobile Money (Wave, Orange Money) ou le RIB de l'agent.
+                      {editBankCountry === 'SN'
+                        ? 'Renseignez le compte Mobile Money (Wave, Orange Money) ou la banque au Sénégal.'
+                        : 'Renseignez la banque marocaine et le RIB à 24 chiffres pour les virements.'}
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Banque / Portefeuille de l'Agent
+                          {editBankCountry === 'SN' ? 'Portefeuille / Banque (Sénégal)' : 'Banque (Maroc)'}
                         </label>
                         <select
                           value={editBankName}
                           onChange={(e) => setEditBankName(e.target.value)}
                           className="w-full text-xs border border-slate-300 rounded-xl p-2.5 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                         >
-                          {(selectedUser && getUserCountryCode(selectedUser) === 'SN') ? (
+                          {editBankCountry === 'SN' ? (
                             <>
-                              <optgroup label="🇸🇳 Sénégal (Mobile Money & Banques)">
-                                <option value="Wave Mobile Money">Wave Mobile Money 🇸🇳</option>
-                                <option value="Orange Money Sénégal">Orange Money Sénégal 🇸🇳</option>
-                                <option value="Free Money Sénégal">Free Money Sénégal 🇸🇳</option>
-                                <option value="Ecobank Sénégal">Ecobank Sénégal</option>
-                                <option value="CBAO Groupe Attijariwafa">CBAO Groupe Attijariwafa (Sénégal)</option>
-                                <option value="SGBS Sénégal">Société Générale Sénégal (SGBS)</option>
-                                <option value="Bank of Africa Sénégal">Bank of Africa Sénégal</option>
-                              </optgroup>
-                              <optgroup label="🇲🇦 Maroc (Banques)">
-                                <option value="CIH Bank">CIH Bank</option>
-                                <option value="Attijariwafa Bank">Attijariwafa Bank</option>
-                                <option value="Banque Populaire">Banque Populaire (Chaabi)</option>
-                              </optgroup>
+                              <option value="Wave Mobile Money">Wave Mobile Money 🇸🇳</option>
+                              <option value="Orange Money Sénégal">Orange Money Sénégal 🇸🇳</option>
+                              <option value="Free Money Sénégal">Free Money Sénégal 🇸🇳</option>
+                              <option value="Ecobank Sénégal">Ecobank Sénégal</option>
+                              <option value="CBAO Groupe Attijariwafa">CBAO Groupe Attijariwafa (Sénégal)</option>
+                              <option value="SGBS Sénégal">Société Générale Sénégal (SGBS)</option>
+                              <option value="Bank of Africa Sénégal">Bank of Africa Sénégal</option>
                             </>
                           ) : (
                             <>
-                              <optgroup label="🇲🇦 Maroc (Banques)">
-                                <option value="CIH Bank">CIH Bank</option>
-                                <option value="Attijariwafa Bank">Attijariwafa Bank</option>
-                                <option value="Banque Populaire">Banque Populaire (Chaabi)</option>
-                                <option value="Bank of Africa">Bank of Africa (BMCE)</option>
-                                <option value="Al Barid Bank">Al Barid Bank</option>
-                                <option value="CFG Bank">CFG Bank</option>
-                                <option value="Société Générale">Société Générale Maroc</option>
-                                <option value="Crédit Agricole">Crédit Agricole du Maroc</option>
-                                <option value="Crédit du Maroc">Crédit du Maroc</option>
-                              </optgroup>
-                              <optgroup label="🇸🇳 Sénégal (Mobile Money & Banques)">
-                                <option value="Wave Mobile Money">Wave Mobile Money 🇸🇳</option>
-                                <option value="Orange Money Sénégal">Orange Money Sénégal 🇸🇳</option>
-                                <option value="Free Money Sénégal">Free Money Sénégal 🇸🇳</option>
-                                <option value="Ecobank Sénégal">Ecobank Sénégal</option>
-                              </optgroup>
+                              <option value="CIH Bank">CIH Bank</option>
+                              <option value="Attijariwafa Bank">Attijariwafa Bank</option>
+                              <option value="Banque Populaire">Banque Populaire (Chaabi)</option>
+                              <option value="Bank of Africa">Bank of Africa (BMCE)</option>
+                              <option value="Al Barid Bank">Al Barid Bank</option>
+                              <option value="CFG Bank">CFG Bank</option>
+                              <option value="Société Générale">Société Générale Maroc</option>
+                              <option value="Crédit Agricole">Crédit Agricole du Maroc</option>
+                              <option value="Crédit du Maroc">Crédit du Maroc</option>
                             </>
                           )}
                           <option value="Autre">Autre Banque / Compte</option>
@@ -1513,12 +1559,12 @@ export default function AdminPage() {
 
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">
-                          RIB Bancaire (24 chiffres)
+                          {editBankCountry === 'SN' ? 'Numéro Mobile Money / RIB' : 'RIB Bancaire (24 chiffres)'}
                         </label>
                         <input
                           type="text"
-                          maxLength={32}
-                          placeholder="Ex: 230 780 0000000000000000 00"
+                          maxLength={34}
+                          placeholder={editBankCountry === 'SN' ? 'Ex: +221 77 123 45 67 ou RIB' : 'Ex: 230 780 0000000000000000 00'}
                           value={editBankRib}
                           onChange={(e) => setEditBankRib(e.target.value)}
                           className="w-full text-xs border border-slate-300 rounded-xl p-2.5 font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
