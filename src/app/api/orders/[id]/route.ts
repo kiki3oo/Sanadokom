@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
 import { addDeliveryAlert, resolveDeliveryAlert } from '@/lib/deliveryAlerts';
+import { dispatchOutgoingWebhook } from '@/lib/outgoingWebhooks';
 
 export async function GET(
   req: NextRequest,
@@ -318,6 +319,23 @@ export async function PATCH(
         newValue: status || currentOrder.status,
         details: `Commande #${currentOrder.orderNumber} modifiée : ${changes.join(' | ')}`,
       });
+    }
+
+    // Trigger Outgoing Webhook on status changes
+    if (status && status !== currentOrder.status) {
+      const eventName =
+        status === 'CONFIRMED'
+          ? 'order.confirmed'
+          : status === 'DELIVERED'
+          ? 'order.delivered'
+          : status === 'CANCELLED'
+          ? 'order.cancelled'
+          : null;
+      if (eventName) {
+        dispatchOutgoingWebhook(eventName as any, updatedOrder, updatedOrder.store).catch((e) =>
+          console.error('Outgoing webhook status dispatch error:', e)
+        );
+      }
     }
 
     return NextResponse.json({ success: true, order: updatedOrder });

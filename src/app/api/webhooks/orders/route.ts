@@ -8,6 +8,7 @@ import {
   formatWhatsAppMessage,
   WhatsAppMessageLog,
 } from '@/lib/whatsappBot';
+import { dispatchOutgoingWebhook } from '@/lib/outgoingWebhooks';
 
 export async function POST(req: NextRequest) {
   try {
@@ -373,6 +374,11 @@ export async function POST(req: NextRequest) {
     } catch (waErr) {
       console.error('WhatsApp Bot Auto-queue error:', waErr);
     }
+
+    // 9. Dispatch Outgoing Webhook (n8n node / automation workflows)
+    dispatchOutgoingWebhook('order.created', order, store).catch((e) =>
+      console.error('Outgoing webhook dispatch error:', e)
+    );
 
     return NextResponse.json({
       success: true,

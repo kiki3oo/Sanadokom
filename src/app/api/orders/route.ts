@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
 import { enrichOrdersWithCustomerProfiles } from '@/lib/customerHistory';
+import { dispatchOutgoingWebhook } from '@/lib/outgoingWebhooks';
 
 export const dynamic = 'force-dynamic';
 
@@ -283,6 +284,11 @@ export async function POST(req: NextRequest) {
       newValue: orderStatus,
       details: `A créé manuellement la commande #${order.orderNumber} via [${order.source}] (Client: ${order.customerName}, Montant: ${totalAmount} MAD, Statut: ${orderStatus})${upsell ? ` | UpSell: "${upsell}"` : ''}`,
     });
+
+    // Trigger Outgoing Webhook (n8n node / automations)
+    dispatchOutgoingWebhook('order.created', order, order.store).catch((e) =>
+      console.error('Outgoing webhook dispatch error:', e)
+    );
 
     return NextResponse.json({
       success: true,

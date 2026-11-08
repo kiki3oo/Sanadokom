@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { fetchFacebookAdSpend } from '@/lib/facebook';
+import {
+  loadWebhookConfig,
+  saveWebhookConfig,
+  loadWebhookLogs,
+  testOutgoingWebhook,
+} from '@/lib/outgoingWebhooks';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +28,16 @@ export async function GET(req: NextRequest) {
       include: { store: true },
     });
 
-    return NextResponse.json({ success: true, fbSettings, courierConfigs });
+    const n8nWebhookConfig = loadWebhookConfig();
+    const n8nWebhookLogs = loadWebhookLogs();
+
+    return NextResponse.json({
+      success: true,
+      fbSettings,
+      courierConfigs,
+      n8nWebhookConfig,
+      n8nWebhookLogs,
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -114,6 +129,27 @@ export async function POST(req: NextRequest) {
       });
 
       return NextResponse.json({ success: true, courierConfig: updated });
+    }
+
+    // 3. n8n / Outgoing Webhook Configuration Save
+    if (type === 'N8N_WEBHOOK') {
+      const { config } = body;
+      const updated = saveWebhookConfig(config);
+      return NextResponse.json({ success: true, n8nWebhookConfig: updated });
+    }
+
+    // 4. Test n8n Webhook Node
+    if (type === 'TEST_N8N_WEBHOOK') {
+      const { url, secret } = body;
+      if (!url) {
+        return NextResponse.json({ error: 'URL Webhook requise pour le test' }, { status: 400 });
+      }
+      let storeObj = null;
+      if (storeId && storeId !== 'ALL') {
+        storeObj = await prisma.store.findUnique({ where: { id: storeId } });
+      }
+      const testResult = await testOutgoingWebhook(url, secret, storeObj);
+      return NextResponse.json({ success: true, testResult });
     }
 
     return NextResponse.json({ error: 'Invalid integration type' }, { status: 400 });

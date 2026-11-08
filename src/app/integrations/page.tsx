@@ -27,13 +27,39 @@ import {
   Trash2,
   Layers,
   FileSpreadsheet,
+  Send,
+  ExternalLink,
+  Play,
+  Globe,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 
 export default function IntegrationsPage() {
   const { selectedStoreId, stores, currentStore } = useStore();
   const { canViewPage, currentUser } = useAuth();
-  const [activeTab, setActiveTab] = useState<'WEBHOOK' | 'FACEBOOK' | 'SHIPPING_WORKFLOW' | 'COURIER_API'>('SHIPPING_WORKFLOW');
+  const [activeTab, setActiveTab] = useState<'SHIPPING_WORKFLOW' | 'COURIER_API' | 'WEBHOOK' | 'N8N_AUTOMATION' | 'FACEBOOK'>('N8N_AUTOMATION');
   const [copied, setCopied] = useState(false);
+
+  // n8n & Outgoing Webhook State
+  const [n8nConfig, setN8nConfig] = useState<any>({
+    enabled: true,
+    url: '',
+    secret: '',
+    events: {
+      orderCreated: true,
+      orderConfirmed: true,
+      orderDelivered: false,
+      orderCancelled: false,
+    },
+    storeUrls: {},
+  });
+  const [n8nLogs, setN8nLogs] = useState<any[]>([]);
+  const [n8nSaving, setN8nSaving] = useState(false);
+  const [n8nTesting, setN8nTesting] = useState(false);
+  const [n8nTestResult, setN8nTestResult] = useState<any | null>(null);
+  const [showPayloadModal, setShowPayloadModal] = useState(false);
+  const [selectedPayloadData, setSelectedPayloadData] = useState<any | null>(null);
 
   // Facebook Form State
   const [fbPixelId, setFbPixelId] = useState('');
@@ -78,11 +104,20 @@ export default function IntegrationsPage() {
 
   // Load existing settings
   const loadSettings = async () => {
-    if (!selectedStoreId || selectedStoreId === 'ALL' || selectedStoreId.includes(',')) return;
     try {
-      const res = await fetch(`/api/integrations?storeId=${selectedStoreId}`);
+      const url =
+        selectedStoreId && selectedStoreId !== 'ALL' && !selectedStoreId.includes(',')
+          ? `/api/integrations?storeId=${selectedStoreId}`
+          : '/api/integrations';
+      const res = await fetch(url);
       const data = await res.json();
       if (data.success) {
+        if (data.n8nWebhookConfig) {
+          setN8nConfig(data.n8nWebhookConfig);
+        }
+        if (data.n8nWebhookLogs) {
+          setN8nLogs(data.n8nWebhookLogs);
+        }
         if (data.fbSettings && data.fbSettings.length > 0) {
           const fb = data.fbSettings[0];
           setFbPixelId(fb.pixelId || '');
@@ -107,6 +142,70 @@ export default function IntegrationsPage() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleSaveN8n = async () => {
+    setN8nSaving(true);
+    try {
+      const res = await fetch('/api/integrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'N8N_WEBHOOK',
+          storeId: selectedStoreId || 'ALL',
+          config: n8nConfig,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setN8nConfig(data.n8nWebhookConfig);
+        alert('✅ Configuration n8n enregistrée avec succès !');
+      } else {
+        alert(data.error || 'Erreur lors de l enregistrement');
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setN8nSaving(false);
+    }
+  };
+
+  const handleTestN8n = async () => {
+    const targetUrl =
+      selectedStoreId && selectedStoreId !== 'ALL' && n8nConfig.storeUrls?.[selectedStoreId]
+        ? n8nConfig.storeUrls[selectedStoreId]
+        : n8nConfig.url;
+
+    if (!targetUrl || !targetUrl.trim().startsWith('http')) {
+      alert('Veuillez renseigner une URL valide pour votre Webhook n8n (ex: https://n8n.votredomaine.com/webhook/...)');
+      return;
+    }
+
+    setN8nTesting(true);
+    setN8nTestResult(null);
+    try {
+      const res = await fetch('/api/integrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'TEST_N8N_WEBHOOK',
+          storeId: selectedStoreId || 'ALL',
+          url: targetUrl.trim(),
+          secret: n8nConfig.secret,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.testResult) {
+        setN8nTestResult(data.testResult);
+        loadSettings();
+      } else {
+        alert(data.error || 'Échec du test');
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setN8nTesting(false);
     }
   };
 
@@ -422,6 +521,15 @@ async function submitOrderToSaaS(formData) {
           >
             <Code2 className="w-3.5 h-3.5" />
             <span>Webhooks Landing Pages</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('N8N_AUTOMATION')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all whitespace-nowrap ${
+              activeTab === 'N8N_AUTOMATION' ? 'bg-white text-orange-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Zap className="w-3.5 h-3.5 text-orange-500" />
+            <span>n8n & Automations</span>
           </button>
           <button
             onClick={() => setActiveTab('FACEBOOK')}
@@ -1020,6 +1128,483 @@ async function submitOrderToSaaS(formData) {
         </div>
       )}
 
+      {/* TAB: N8N & OUTGOING WEBHOOKS */}
+      {activeTab === 'N8N_AUTOMATION' && (
+        <div className="space-y-6">
+          {/* Top Banner Card */}
+          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 rounded-2xl shadow-md border border-slate-800">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>Webhook Sortant n8n & Automations</span>
+                </div>
+                <h2 className="text-xl font-black tracking-tight">Déclencheur n8n Automatisé (Nouvelles Commandes)</h2>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Dès qu un client passe commande sur votre site web ou votre landing page, Sanadokom envoie instantanément un webhook HTTP POST complet vers votre Node <strong>Webhook n8n</strong> pour alimenter vos Google Sheets, déclencher des notifications Telegram / WhatsApp, ou synchroniser votre CRM.
+                </p>
+              </div>
+
+              {/* Status Toggle Box */}
+              <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/15 w-full lg:w-auto min-w-[260px] space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-300">Statut du Déclencheur :</span>
+                  <span
+                    className={`text-xs font-extrabold px-2.5 py-1 rounded-full border ${
+                      n8nConfig.enabled
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
+                        : 'bg-slate-700 text-slate-400 border-slate-600'
+                    }`}
+                  >
+                    {n8nConfig.enabled ? '🟢 Actif' : '⚪ Inactif'}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = { ...n8nConfig, enabled: !n8nConfig.enabled };
+                    setN8nConfig(updated);
+                  }}
+                  className={`w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer ${
+                    n8nConfig.enabled
+                      ? 'bg-rose-500/90 hover:bg-rose-600 text-white'
+                      : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                  }`}
+                >
+                  {n8nConfig.enabled ? 'Désactiver le Déclencheur' : 'Activer le Déclencheur'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Configuration Form Card */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-orange-500" />
+                  <span>Coordonnées de Connexion du Webhook n8n</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Indiquez l URL où n8n écoute vos nouvelles commandes entrantes.
+                </p>
+              </div>
+
+              {selectedStoreId && selectedStoreId !== 'ALL' && (
+                <span className="text-xs font-bold text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                  🛍️ Boutique sélectionnée : {currentStore?.name || selectedStoreId}
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <span>URL Webhook n8n (Méthode POST)</span>
+                    <span className="text-rose-500">*</span>
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-normal">
+                    Node Webhook dans n8n
+                  </span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="url"
+                    required
+                    placeholder="https://n8n.votre-serveur.com/webhook/rovanx-commandes"
+                    value={
+                      selectedStoreId && selectedStoreId !== 'ALL' && n8nConfig.storeUrls?.[selectedStoreId] !== undefined
+                        ? n8nConfig.storeUrls[selectedStoreId]
+                        : n8nConfig.url
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (selectedStoreId && selectedStoreId !== 'ALL') {
+                        setN8nConfig({
+                          ...n8nConfig,
+                          storeUrls: { ...(n8nConfig.storeUrls || {}), [selectedStoreId]: val },
+                        });
+                      } else {
+                        setN8nConfig({ ...n8nConfig, url: val });
+                      }
+                    }}
+                    className="w-full text-xs font-mono border border-slate-300 rounded-xl p-3 pr-24 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-slate-50/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const clip = await navigator.clipboard.readText();
+                        if (clip && clip.startsWith('http')) {
+                          if (selectedStoreId && selectedStoreId !== 'ALL') {
+                            setN8nConfig({
+                              ...n8nConfig,
+                              storeUrls: { ...(n8nConfig.storeUrls || {}), [selectedStoreId]: clip },
+                            });
+                          } else {
+                            setN8nConfig({ ...n8nConfig, url: clip });
+                          }
+                        }
+                      } catch (e) {}
+                    }}
+                    className="absolute right-2 top-2 px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg text-[11px] font-bold transition-colors cursor-pointer shadow-2xs"
+                  >
+                    Coller
+                  </button>
+                </div>
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  Collez l URL <strong>Production URL</strong> générée par le Node Webhook dans n8n (ou Test URL pendant vos essais).
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Clé Secrète / Secret Token (Optionnel)</span>
+                  <span className="text-[11px] text-slate-400 font-normal">Sécurisation du Webhook</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: n8n_secret_991823"
+                  value={n8nConfig.secret || ''}
+                  onChange={(e) => setN8nConfig({ ...n8nConfig, secret: e.target.value })}
+                  className="w-full text-xs font-mono border border-slate-300 rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  Envoyé dans les en-têtes HTTP <code>x-webhook-secret</code> et <code>Authorization: Bearer &lt;token&gt;</code> pour vérifier que la requête provient bien de Sanadokom.
+                </span>
+              </div>
+
+              {/* Event Triggers Checkboxes */}
+              <div className="pt-2">
+                <label className="block text-xs font-bold text-slate-700 mb-2">
+                  Événements Déclencheurs (Quand envoyer le Webhook à n8n) :
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition-all bg-orange-50/20 border-orange-200">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(n8nConfig.events?.orderCreated)}
+                      onChange={(e) =>
+                        setN8nConfig({
+                          ...n8nConfig,
+                          events: { ...n8nConfig.events, orderCreated: e.target.checked },
+                        })
+                      }
+                      className="mt-0.5 rounded text-orange-600 focus:ring-orange-500 w-4 h-4"
+                    />
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block flex items-center gap-1.5">
+                        <span>⚡ Nouvelle commande reçue</span>
+                        <span className="text-[10px] font-mono bg-orange-100 text-orange-800 px-1.5 py-0.2 rounded font-extrabold">
+                          order.created
+                        </span>
+                      </span>
+                      <span className="text-[11px] text-slate-500 block mt-0.5">
+                        Dès qu un client passe commande sur votre site ou landing page.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition-all">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(n8nConfig.events?.orderConfirmed)}
+                      onChange={(e) =>
+                        setN8nConfig({
+                          ...n8nConfig,
+                          events: { ...n8nConfig.events, orderConfirmed: e.target.checked },
+                        })
+                      }
+                      className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                    />
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block flex items-center gap-1.5">
+                        <span>🎧 Commande confirmée</span>
+                        <span className="text-[10px] font-mono bg-indigo-50 text-indigo-700 px-1.5 py-0.2 rounded font-extrabold">
+                          order.confirmed
+                        </span>
+                      </span>
+                      <span className="text-[11px] text-slate-500 block mt-0.5">
+                        Dès qu un agent d appel valide la commande avec le client.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition-all">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(n8nConfig.events?.orderDelivered)}
+                      onChange={(e) =>
+                        setN8nConfig({
+                          ...n8nConfig,
+                          events: { ...n8nConfig.events, orderDelivered: e.target.checked },
+                        })
+                      }
+                      className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                    />
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block flex items-center gap-1.5">
+                        <span>🚚 Commande livrée</span>
+                        <span className="text-[10px] font-mono bg-emerald-50 text-emerald-700 px-1.5 py-0.2 rounded font-extrabold">
+                          order.delivered
+                        </span>
+                      </span>
+                      <span className="text-[11px] text-slate-500 block mt-0.5">
+                        Dès que le transporteur livre le colis au client.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition-all">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(n8nConfig.events?.orderCancelled)}
+                      onChange={(e) =>
+                        setN8nConfig({
+                          ...n8nConfig,
+                          events: { ...n8nConfig.events, orderCancelled: e.target.checked },
+                        })
+                      }
+                      className="mt-0.5 rounded text-rose-600 focus:ring-rose-500 w-4 h-4"
+                    />
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 block flex items-center gap-1.5">
+                        <span>❌ Commande annulée</span>
+                        <span className="text-[10px] font-mono bg-rose-50 text-rose-700 px-1.5 py-0.2 rounded font-extrabold">
+                          order.cancelled
+                        </span>
+                      </span>
+                      <span className="text-[11px] text-slate-500 block mt-0.5">
+                        Dès qu une commande est annulée ou refusée.
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleSaveN8n}
+                  disabled={n8nSaving}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white rounded-xl text-xs font-extrabold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>{n8nSaving ? 'Enregistrement...' : 'Enregistrer la Configuration'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleTestN8n}
+                  disabled={n8nTesting}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-xs font-extrabold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Send className={`w-4 h-4 text-orange-400 ${n8nTesting ? 'animate-bounce' : ''}`} />
+                  <span>{n8nTesting ? 'Test en cours vers n8n...' : '⚡ Tester le Webhook n8n Maintenant'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Test Result Feedback Box */}
+          {n8nTestResult && (
+            <div
+              className={`p-5 rounded-2xl border transition-all animate-in fade-in duration-150 ${
+                n8nTestResult.success
+                  ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950'
+                  : 'bg-rose-50/90 border-rose-300 text-rose-950'
+              }`}
+            >
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                      n8nTestResult.success ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
+                    }`}
+                  >
+                    {n8nTestResult.success ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black">
+                      {n8nTestResult.success
+                        ? `✅ Test Réussi ! n8n a répondu HTTP ${n8nTestResult.statusCode || 200} OK en ${n8nTestResult.responseTimeMs}ms`
+                        : `❌ Échec du Test vers n8n`}
+                    </h4>
+                    <p className="text-xs mt-0.5 opacity-90">
+                      {n8nTestResult.success
+                        ? 'Votre Node Webhook n8n a bien reçu la commande test avec tous les paramètres du client et des produits !'
+                        : n8nTestResult.error || 'n8n n a pas répondu avec un statut 200.'}
+                    </p>
+                    {n8nTestResult.responseBody && (
+                      <p className="text-[11px] font-mono mt-1 opacity-75">
+                        Réponse de n8n : {n8nTestResult.responseBody}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {n8nTestResult.payloadSent && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPayloadData(n8nTestResult.payloadSent);
+                      setShowPayloadModal(true);
+                    }}
+                    className="px-3.5 py-1.5 bg-white text-slate-800 border border-slate-200 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
+                  >
+                    Inspecter le JSON envoyé
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 3-Step Setup Guide */}
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4">
+            <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+              <Zap className="w-4 h-4 text-orange-500" />
+              <span>Comment configurer votre Node Webhook dans n8n en 3 étapes simples :</span>
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-2">
+                <div className="w-7 h-7 rounded-lg bg-orange-100 text-orange-700 font-black text-xs flex items-center justify-center">
+                  1
+                </div>
+                <h4 className="text-xs font-bold text-slate-900">Ajoutez le Node Webhook</h4>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Dans votre canvas n8n, cliquez sur <strong>+</strong> et ajoutez le trigger <strong>Webhook</strong> officiel.
+                </p>
+              </div>
+
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-2">
+                <div className="w-7 h-7 rounded-lg bg-orange-100 text-orange-700 font-black text-xs flex items-center justify-center">
+                  2
+                </div>
+                <h4 className="text-xs font-bold text-slate-900">Réglez sur POST & Immediately</h4>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Configurez <strong>HTTP Method: POST</strong>, <strong>Path: rovanx-orders</strong>, et <strong>Respond: Immediately</strong> (sur réception).
+                </p>
+              </div>
+
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-2">
+                <div className="w-7 h-7 rounded-lg bg-orange-100 text-orange-700 font-black text-xs flex items-center justify-center">
+                  3
+                </div>
+                <h4 className="text-xs font-bold text-slate-900">Collez l URL & Cliquez sur Tester</h4>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Copiez la <strong>Production URL</strong> depuis n8n, collez-la ci-dessus, et cliquez sur <strong>Tester</strong>. n8n recevra tous les champs en temps réel !
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Live Delivery Logs */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-slate-600" />
+                  <span>Journal des Déclenchements Réents vers n8n</span>
+                </h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Historique en direct des requêtes envoyées à votre serveur n8n.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={loadSettings}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                title="Actualiser"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                  <tr>
+                    <th className="py-3 px-4">Date & Heure</th>
+                    <th className="py-3 px-4">Événement</th>
+                    <th className="py-3 px-4">Commande & Client</th>
+                    <th className="py-3 px-4">URL n8n</th>
+                    <th className="py-3 px-4 text-center">Statut HTTP</th>
+                    <th className="py-3 px-4 text-center">Temps</th>
+                    <th className="py-3 px-4 text-right">Détails</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {n8nLogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-xs text-slate-400">
+                        Aucun déclenchement enregistré pour l instant. Cliquez sur "Tester le Webhook n8n" ou passez une commande test sur votre site web !
+                      </td>
+                    </tr>
+                  ) : (
+                    n8nLogs.slice(0, 15).map((log) => (
+                      <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-3 px-4 font-mono text-slate-500 text-[11px]">
+                          {new Date(log.timestamp).toLocaleString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                          })}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-orange-50 text-orange-800 border border-orange-200 font-mono">
+                            {log.event}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-slate-900 font-mono">{log.orderNumber}</div>
+                          <div className="text-[11px] text-slate-400">{log.customerName}</div>
+                        </td>
+                        <td className="py-3 px-4 max-w-[200px] truncate font-mono text-[11px] text-slate-600" title={log.targetUrl}>
+                          {log.targetUrl}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                              log.status === 'SUCCESS'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-rose-50 text-rose-700 border border-rose-200'
+                            }`}
+                          >
+                            {log.statusCode ? `HTTP ${log.statusCode}` : 'Échec Réseau'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center font-mono text-[11px] text-slate-600">
+                          {log.responseTimeMs}ms
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedPayloadData(log.payloadSample);
+                              setShowPayloadModal(true);
+                            }}
+                            className="px-2.5 py-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                          >
+                            Voir JSON
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* TAB: FACEBOOK ADS & CAPI */}
       {activeTab === 'FACEBOOK' && (
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-4">
@@ -1303,6 +1888,63 @@ async function submitOrderToSaaS(formData) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* n8n Payload Inspection Modal */}
+      {showPayloadModal && selectedPayloadData && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-black">
+                  ⚡
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Payload JSON Envoyé à n8n</h3>
+                  <p className="text-xs text-slate-500">Structure exacte envoyée au Webhook Node n8n</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPayloadModal(false)}
+                className="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xl font-bold cursor-pointer"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto my-4 bg-slate-950 rounded-xl p-4 border border-slate-800">
+              <pre className="text-xs font-mono text-emerald-400 whitespace-pre-wrap break-all select-all">
+                {JSON.stringify(selectedPayloadData, null, 2)}
+              </pre>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100 shrink-0">
+              <span className="text-xs text-slate-500">
+                Vous pouvez copier ce JSON dans n8n pour configurer vos expressions.
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(JSON.stringify(selectedPayloadData, null, 2));
+                    alert('JSON copié dans le presse-papiers !');
+                  }}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg cursor-pointer transition-colors shadow-xs"
+                >
+                  Copier le JSON
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPayloadModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer"
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
