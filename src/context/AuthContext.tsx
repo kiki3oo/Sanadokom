@@ -255,6 +255,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (path === '/admin') return hasPermission('viewAdmin');
     if (path === '/audit-logs') return hasPermission('viewAdmin');
     if (path === '/productivity') return hasPermission('viewConfirmers') || isAdmin;
+    if (path === '/media-buyer') return isManager || isAdmin;
     if (path === '/confirmation') return hasPermission('viewConfirmers') || currentUser?.role === 'CALL_AGENT' || isAdmin;
 
     return true;

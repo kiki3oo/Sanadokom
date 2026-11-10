@@ -71,6 +71,19 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    id: 'marketing',
+    titleKey: 'nav.group.marketing',
+    fallbackTitle: 'Marketing & Media Buyer IA 🧠',
+    groupIcon: Sparkles,
+    dotGlow: 'bg-violet-400 shadow-[0_0_10px_rgba(167,139,250,0.9)]',
+    iconBg: 'bg-violet-500/15',
+    iconBorder: 'border-violet-400/30',
+    iconColor: 'text-violet-400',
+    items: [
+      { transKey: 'nav.mediaBuyer', fallback: 'Media Buyer & Winning Products 🏆', href: '/media-buyer', icon: Sparkles, badge: 'IA' },
+    ],
+  },
+  {
     id: 'callCenter',
     titleKey: 'nav.group.callCenter',
     fallbackTitle: 'Centre d\'Appel & Ventes',

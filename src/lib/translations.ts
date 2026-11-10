@@ -130,6 +130,16 @@ export const translations: Translations = {
     fr: 'Comptabilité & Facturation',
     en: 'Finance & Invoicing',
   },
+  'nav.group.marketing': {
+    ar: 'التسويق والميديا باير الذكي 🧠',
+    fr: 'Marketing & Media Buyer IA 🧠',
+    en: 'Marketing & AI Media Buyer 🧠',
+  },
+  'nav.mediaBuyer': {
+    ar: 'الميديا باير والمنتجات الرابحة 🏆',
+    fr: 'Media Buyer & Winning Products 🏆',
+    en: 'Media Buyer & Winning Products 🏆',
+  },
   'nav.group.admin': {
     ar: 'الإدارة والفريق',
     fr: 'Administration & Équipe',
