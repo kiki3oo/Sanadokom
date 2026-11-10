@@ -68,7 +68,8 @@ export async function POST(req: NextRequest) {
     if (action === 'GENERATE_IDEAS') {
       const niche = body.niche || 'BEAUTY';
       const prompt = body.prompt || '';
-      const ideas = generateAiProductIdeas(niche, prompt);
+      const country = body.country || 'ALL';
+      const ideas = generateAiProductIdeas(niche, prompt, country);
       return NextResponse.json({
         success: true,
         ideas,

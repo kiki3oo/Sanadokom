@@ -33,6 +33,9 @@ import {
   Check,
   Send,
   HelpCircle,
+  Globe,
+  Package,
+  Video,
 } from 'lucide-react';
 import { WinningProduct, ProductAnalysisResult } from '@/lib/marketingAi';
 
@@ -57,9 +60,13 @@ export default function MediaBuyerPage() {
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedType, setSelectedType] = useState('ALL');
 
+  // Product Details Modal
+  const [selectedProductDetails, setSelectedProductDetails] = useState<WinningProduct | null>(null);
+
   // AI Generator Modal
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiNiche, setAiNiche] = useState('BEAUTY');
+  const [aiCountry, setAiCountry] = useState('ALL');
   const [aiCustomPrompt, setAiCustomPrompt] = useState('');
   const [aiGenerating, setAiGenerating] = useState(false);
 
@@ -184,6 +191,7 @@ export default function MediaBuyerPage() {
       productUrl: '',
       description: wp.descriptionAr || wp.description,
     });
+    setSelectedProductDetails(null);
     setActiveTab('PRODUCT_VALIDATOR');
     // Auto-trigger analysis
     triggerAnalysis({
@@ -231,6 +239,7 @@ export default function MediaBuyerPage() {
         body: JSON.stringify({
           action: 'GENERATE_IDEAS',
           niche: aiNiche,
+          country: aiCountry,
           prompt: aiCustomPrompt,
         }),
       });
@@ -277,6 +286,27 @@ export default function MediaBuyerPage() {
     } catch (e) {}
   };
 
+  // URL Helpers
+  const getMetaAdLibraryUrl = (p: WinningProduct, countryCode: string = 'ALL') => {
+    const query = encodeURIComponent(p.metaAdLibraryKeyword || p.title);
+    return `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${countryCode}&q=${query}&sort_data[direction]=desc&sort_data[mode]=relevancy_monthly_grouped`;
+  };
+
+  const getTikTokSearchUrl = (p: WinningProduct) => {
+    const query = encodeURIComponent(p.tikTokSearchKeyword || p.title);
+    return `https://www.tiktok.com/search?q=${query}`;
+  };
+
+  const getAliExpressUrl = (p: WinningProduct) => {
+    const query = encodeURIComponent(p.aliExpressSearchKeyword || p.metaAdLibraryKeyword || p.title);
+    return `https://www.aliexpress.com/wholesale?SearchText=${query}`;
+  };
+
+  const getGoogleVideoAdsUrl = (p: WinningProduct) => {
+    const query = encodeURIComponent((p.metaAdLibraryKeyword || p.title) + ' video ads');
+    return `https://www.google.com/search?tbm=vid&q=${query}`;
+  };
+
   return (
     <div className={`p-4 md:p-8 max-w-7xl mx-auto space-y-6 ${isRtl ? 'font-sans' : ''}`}>
       {/* Top Banner & Header - Clean Prestige Theme */}
@@ -294,7 +324,7 @@ export default function MediaBuyerPage() {
               <Sparkles className="w-6 h-6 text-amber-500" />
             </h1>
             <p className="text-xs md:text-sm text-slate-600 max-w-2xl leading-relaxed font-medium">
-              محرك ذكي متكامل: يكتشف المنتجات الأكثر مبيعاً وتريند في المغرب، يحلل أرباح الـ COD وهامش الـ Break-even CPA، ويراقب حملاتك الإعلانية يومياً لإيقاف الخاسر وتكبير الرابح.
+              محرك ذكي متكامل: يكتشف المنتجات الأكثر مبيعاً وتريند في المغرب وكافة أسواق العالم، يحلل أرباح الـ COD وهامش الـ Break-even CPA، ويراقب حملاتك الإعلانية يومياً لإيقاف الخاسر وتكبير الرابح.
             </p>
           </div>
 
@@ -378,7 +408,7 @@ export default function MediaBuyerPage() {
                 />
               </div>
 
-              {/* Quick Selectors */}
+              {/* Quick Selectors: Niches & Worldwide Markets */}
               <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                 {/* Niche */}
                 <select
@@ -392,18 +422,23 @@ export default function MediaBuyerPage() {
                   <option value="CAR">🚗 إكسسوارات السيارات (Car)</option>
                   <option value="HEALTH">🏋️ الصحة والمفاصل (Health)</option>
                   <option value="GADGETS">⚡ الأدوات الذكية (Gadgets)</option>
+                  <option value="HOME">🏠 المنزل والديكور (Home)</option>
+                  <option value="PETS">🐾 الحيوانات الأليفة (Pets)</option>
                 </select>
 
-                {/* Country */}
+                {/* Country / Market - All Worldwide Markets */}
                 <select
                   value={selectedCountry}
                   onChange={(e) => setSelectedCountry(e.target.value)}
                   className="text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-800 cursor-pointer focus:bg-white"
                 >
-                  <option value="ALL">جميع الأسواق 🌍</option>
+                  <option value="ALL">🌍 جميع أسواق العالم (Worldwide)</option>
                   <option value="MA">🇲🇦 المغرب (Morocco)</option>
-                  <option value="SN">🇸🇳 السنغال (Senegal)</option>
-                  <option value="GCC">🇸🇦 دول الخليج (GCC)</option>
+                  <option value="US">🇺🇸 الولايات المتحدة (USA)</option>
+                  <option value="FR">🇫🇷 فرنسا وأوروبا (France & EU)</option>
+                  <option value="GCC">🇸🇦 دول الخليج والسعودية (GCC)</option>
+                  <option value="SN">🇸🇳 السنغال وغرب إفريقيا (Senegal)</option>
+                  <option value="GLOBAL">🌐 التريندات العالمية (Global Trends)</option>
                 </select>
 
                 {/* Status */}
@@ -503,17 +538,15 @@ export default function MediaBuyerPage() {
                     ? { text: '🟢 صاعد بقوة', bg: 'bg-emerald-600 text-white' }
                     : { text: '🌲 مبيعات مستقرة', bg: 'bg-blue-600 text-white' };
 
-                const metaAdLibraryUrl = `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=MA&q=${encodeURIComponent(
-                  p.metaAdLibraryKeyword || p.title
-                )}`;
-                const tikTokUrl = `https://www.tiktok.com/search?q=${encodeURIComponent(
-                  p.tikTokSearchKeyword || p.title
-                )}`;
+                const globalMetaUrl = getMetaAdLibraryUrl(p, 'ALL');
+                const localMetaUrl = getMetaAdLibraryUrl(p, p.country === 'GLOBAL' ? 'ALL' : p.country);
+                const tikTokUrl = getTikTokSearchUrl(p);
 
                 return (
                   <div
                     key={p.id}
-                    className="bg-white rounded-3xl border border-slate-200/90 hover:border-indigo-400 transition-all duration-300 shadow-sm hover:shadow-xl flex flex-col overflow-hidden group"
+                    className="bg-white rounded-3xl border border-slate-200/90 hover:border-indigo-400 transition-all duration-300 shadow-sm hover:shadow-xl flex flex-col overflow-hidden group cursor-pointer"
+                    onClick={() => setSelectedProductDetails(p)}
                   >
                     {/* Image Thumbnail with Strong Contrast Overlay */}
                     <div className="relative h-52 bg-slate-100 overflow-hidden">
@@ -537,7 +570,7 @@ export default function MediaBuyerPage() {
                       </div>
                       <div className="absolute top-3 right-3 z-10">
                         <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-white text-slate-900 shadow-md border border-slate-200">
-                          🇲🇦 {p.country === 'MA' ? 'المغرب' : p.country}
+                          {p.countryFlag || '🌍'} {p.countryNameAr || p.country}
                         </span>
                       </div>
 
@@ -545,7 +578,7 @@ export default function MediaBuyerPage() {
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent p-3 pt-8 text-white flex items-center justify-between text-xs z-10">
                         <span className="font-extrabold text-emerald-400 text-xs flex items-center gap-1">
                           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                          <span>ربح متوقع: +{p.netProfitPerUnit} DH / طلب</span>
+                          <span>ربح متوقع: +{p.netProfitPerUnit} {p.currency || 'DH'} / طلب</span>
                         </span>
                         <span className="text-[11px] font-bold text-slate-200 bg-white/20 px-2 py-0.5 rounded-md">
                           تأكيد: {p.estConfirmationRate}%
@@ -554,9 +587,9 @@ export default function MediaBuyerPage() {
                     </div>
 
                     {/* Card Body */}
-                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-black text-slate-900 line-clamp-2 leading-snug" title={p.titleAr || p.title}>
+                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4" onClick={(e) => e.stopPropagation()}>
+                      <div className="space-y-2 cursor-pointer" onClick={() => setSelectedProductDetails(p)}>
+                        <h3 className="text-sm font-black text-slate-900 line-clamp-2 leading-snug group-hover:text-indigo-600 transition-colors" title={p.titleAr || p.title}>
                           {p.titleAr || p.title}
                         </h3>
                         <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed font-medium">
@@ -568,11 +601,11 @@ export default function MediaBuyerPage() {
                       <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-slate-50 border border-slate-200/90 text-center">
                         <div>
                           <div className="text-[10px] font-bold text-slate-500">سعر الجملة</div>
-                          <div className="text-xs font-black text-slate-900">{p.wholesalePrice} DH</div>
+                          <div className="text-xs font-black text-slate-900">{p.wholesalePrice} {p.currency || 'DH'}</div>
                         </div>
                         <div>
                           <div className="text-[10px] font-bold text-slate-500">سعر البيع المقترح</div>
-                          <div className="text-sm font-black text-indigo-600">{p.retailPrice} DH</div>
+                          <div className="text-sm font-black text-indigo-600">{p.retailPrice} {p.currency || 'DH'}</div>
                         </div>
                         <div>
                           <div className="text-[10px] font-bold text-slate-500">المنافسون</div>
@@ -593,23 +626,23 @@ export default function MediaBuyerPage() {
                         </ul>
                       </div>
 
-                      {/* External Search Links */}
+                      {/* External Search Links: Guaranteed Global Results */}
                       <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
                         <a
-                          href={metaAdLibraryUrl}
+                          href={globalMetaUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-1 py-2 px-2.5 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-                          title="شاهد إعلانات المنافسين الشغالة حالياً في فيسبوك"
+                          className="flex-1 py-2 px-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                          title="شاهد جميع إعلانات فيسبوك الشغالة حالياً حول العالم"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
-                          <span>إعلانات فيسبوك</span>
+                          <span>إعلانات فيسبوك (عالمي)</span>
                         </a>
                         <a
                           href={tikTokUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-1 py-2 px-2.5 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                          className="flex-1 py-2 px-2 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs"
                           title="شاهد فيديوهات وتريندات تيك توك"
                         >
                           <Play className="w-3.5 h-3.5 text-pink-400 fill-pink-400" />
@@ -617,20 +650,267 @@ export default function MediaBuyerPage() {
                         </a>
                       </div>
 
-                      {/* Primary Action Button: Transfer to Validator */}
-                      <button
-                        onClick={() => handleSendToValidator(p)}
-                        className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white text-xs font-black shadow-md shadow-indigo-600/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
-                      >
-                        <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
-                        <span>تحليل وتجهيز إعلانات هذا المنتج 🚀</span>
-                      </button>
+                      {/* Action Buttons: View Details & Launch */}
+                      <div className="grid grid-cols-3 gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedProductDetails(p)}
+                          className="col-span-1 py-3 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                          title="عرض ملف المنتج بالكامل والموردين"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>التفاصيل 👁️</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSendToValidator(p)}
+                          className="col-span-2 py-3 px-3 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white text-xs font-black shadow-md shadow-indigo-600/25 flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98"
+                        >
+                          <Zap className="w-4 h-4 text-amber-300 fill-amber-300 shrink-0" />
+                          <span className="truncate">تجهيز الإعلانات والسكريبت 🚀</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: تفاصيل المنتج الكاملة (PRODUCT DOSSIER 360°)                      */}
+      {/* ========================================================================= */}
+      {selectedProductDetails && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 md:p-8 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col space-y-6 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100 shrink-0">
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    {selectedProductDetails.countryFlag || '🌍'} {selectedProductDetails.countryNameAr || selectedProductDetails.country}
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-800 border border-slate-200">
+                    {selectedProductDetails.niche}
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    {selectedProductDetails.status}
+                  </span>
+                </div>
+                <h3 className="text-lg md:text-xl font-black text-slate-900 font-heading leading-snug">
+                  {selectedProductDetails.titleAr || selectedProductDetails.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedProductDetails(null)}
+                className="w-9 h-9 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center text-2xl font-bold cursor-pointer shrink-0"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Scrollable Content Body */}
+            <div className="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar">
+              {/* Product Visual & Economics Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {/* Image */}
+                <div className="rounded-2xl overflow-hidden bg-slate-100 h-56 border border-slate-200 shadow-xs relative">
+                  <img
+                    src={selectedProductDetails.imageUrl}
+                    alt={selectedProductDetails.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute bottom-2 left-2 right-2 bg-slate-950/80 backdrop-blur-xs text-white p-2 rounded-xl text-xs font-extrabold text-center text-emerald-400">
+                    ربح متوقع: +{selectedProductDetails.netProfitPerUnit} {selectedProductDetails.currency || 'DH'}
+                  </div>
+                </div>
+
+                {/* Economics Specs */}
+                <div className="md:col-span-2 grid grid-cols-2 gap-3">
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                    <span className="text-[11px] font-bold text-slate-500">سعر الشراء بالجملة</span>
+                    <div className="text-xl font-black text-slate-900">
+                      {selectedProductDetails.wholesalePrice} {selectedProductDetails.currency || 'DH'}
+                    </div>
+                    <span className="text-[10px] text-slate-400">سعر التوريد التقديري</span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-200 space-y-1">
+                    <span className="text-[11px] font-bold text-indigo-700">سعر البيع المقترح</span>
+                    <div className="text-xl font-black text-indigo-600">
+                      {selectedProductDetails.retailPrice} {selectedProductDetails.currency || 'DH'}
+                    </div>
+                    <span className="text-[10px] text-indigo-500 font-semibold">سعر المستهلك في السوق</span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
+                    <span className="text-[11px] font-bold text-emerald-700">نسبة التأكيد والتوصيل</span>
+                    <div className="text-lg font-black text-emerald-800">
+                      {selectedProductDetails.estConfirmationRate}% تأكيد | {selectedProductDetails.estDeliveryRate}% توصيل
+                    </div>
+                    <span className="text-[10px] text-emerald-600">تقدير واقعي للـ COD</span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1">
+                    <span className="text-[11px] font-bold text-amber-700">مؤشر المنافسة والتشبع</span>
+                    <div className="text-lg font-black text-amber-900">
+                      {selectedProductDetails.saturationScore < 35 ? '🟢 فرصة صعود ممتازة' : '🟡 منافسة متوسطة'}
+                    </div>
+                    <span className="text-[10px] text-amber-700">{selectedProductDetails.activeCompetitors || 10}+ معلنين نشطين</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                <h4 className="text-xs font-black text-slate-800">وصف وفكرة المنتج:</h4>
+                <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                  {selectedProductDetails.descriptionAr || selectedProductDetails.description}
+                </p>
+                {selectedProductDetails.description && (
+                  <p className="text-[11px] text-slate-500 font-sans italic pt-1 border-t border-slate-200/60">
+                    {selectedProductDetails.description}
+                  </p>
+                )}
+              </div>
+
+              {/* Why Winning Points */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>لماذا هذا المنتج رابح ويحقق مبيعات قوية؟</span>
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {(selectedProductDetails.whyWinningAr || selectedProductDetails.whyWinning || []).map((point, idx) => (
+                    <div key={idx} className="p-3 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-700 flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                        {idx + 1}
+                      </span>
+                      <span>{point}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Suggested Marketing Angles */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                  <Flame className="w-4 h-4 text-orange-500" />
+                  <span>الزوايا التسويقية المقترحة لتصوير الفيديوهات:</span>
+                </h4>
+                <div className="space-y-2">
+                  {(selectedProductDetails.suggestedAnglesAr || []).map((angle, idx) => (
+                    <div key={idx} className="p-3 rounded-xl bg-amber-50/70 border border-amber-200/90 text-xs text-amber-950 font-bold flex items-center gap-2">
+                      <span className="text-amber-600">🎯</span>
+                      <span>{angle}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Live Intelligence & Search Links (All Verified & Working) */}
+              <div className="p-5 rounded-3xl bg-slate-900 text-white space-y-3.5 shadow-md border border-slate-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-indigo-400" />
+                    <span className="text-xs font-black">أدوات التجسس والبحث المباشر عن هذا المنتج</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">تفتح في نافذة جديدة</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {/* Global Meta Ad Library */}
+                  <a
+                    href={getMetaAdLibraryUrl(selectedProductDetails, 'ALL')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-xs"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>إعلانات فيسبوك (عالمي 🌍)</span>
+                  </a>
+
+                  {/* Local Meta Ad Library */}
+                  <a
+                    href={getMetaAdLibraryUrl(selectedProductDetails, selectedProductDetails.country === 'GLOBAL' ? 'ALL' : selectedProductDetails.country)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
+                    <span>إعلانات فيسبوك ({selectedProductDetails.countryFlag || 'المحلي'})</span>
+                  </a>
+
+                  {/* TikTok Search */}
+                  <a
+                    href={getTikTokSearchUrl(selectedProductDetails)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
+                  >
+                    <Play className="w-3.5 h-3.5 text-pink-400 fill-pink-400" />
+                    <span>فيديوهات تيك توك 🎵</span>
+                  </a>
+
+                  {/* AliExpress Supplier Search */}
+                  <a
+                    href={getAliExpressUrl(selectedProductDetails)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black flex items-center justify-center gap-2 transition-colors shadow-xs"
+                  >
+                    <Package className="w-3.5 h-3.5" />
+                    <span>الموردين (AliExpress 📦)</span>
+                  </a>
+
+                  {/* Google Video Ads */}
+                  <a
+                    href={getGoogleVideoAdsUrl(selectedProductDetails)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
+                  >
+                    <Video className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>إعلانات فيديو (Google 🎬)</span>
+                  </a>
+
+                  {/* TikTok Creative Center */}
+                  <a
+                    href="https://ads.tiktok.com/business/creativecenter/inspiration/topads/pc/en"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
+                  >
+                    <Zap className="w-3.5 h-3.5 text-amber-300" />
+                    <span>TikTok Top Ads Center</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Bottom CTA */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setSelectedProductDetails(null)}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                إغلاق
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSendToValidator(selectedProductDetails)}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-black shadow-md shadow-indigo-600/25 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+              >
+                <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
+                <span>نقل لمحلل الحملات وتجهيز السكريبتات فوراً 🚀</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -698,6 +978,8 @@ export default function MediaBuyerPage() {
                   <option value="CAR">🚗 إكسسوارات السيارات</option>
                   <option value="HEALTH">🏋️ الصحة والعلاج الطبيعي</option>
                   <option value="GADGETS">⚡ إلكترونيات وأدوات ذكية</option>
+                  <option value="HOME">🏠 المنزل والديكور</option>
+                  <option value="PETS">🐾 مستلزمات الحيوانات الأليفة</option>
                 </select>
               </div>
 
@@ -1326,7 +1608,7 @@ export default function MediaBuyerPage() {
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-900 font-heading">توليد أفكار منتجات رابحة بالذكاء الاصطناعي</h3>
-                  <p className="text-xs text-slate-500 font-medium">اختر المجال الذي تريد العمل عليه وسيقوم الذكاء الاصطناعي بابتكار أفكار جديدة فوراً.</p>
+                  <p className="text-xs text-slate-500 font-medium">اختر المجال والسوق المستهدف وسيقوم الذكاء الاصطناعي بابتكار أفكار جديدة فوراً.</p>
                 </div>
               </div>
               <button
@@ -1349,6 +1631,23 @@ export default function MediaBuyerPage() {
                   <option value="KITCHEN">🍳 أدوات المطبخ والمنزل (Kitchen & Home Hacks)</option>
                   <option value="CAR">🚗 إكسسوارات السيارات الذكية (Car Accessories)</option>
                   <option value="HEALTH">🏋️ الصحة والعلاج الطبيعي (Health & Pain Relief)</option>
+                  <option value="PETS">🐾 الحيوانات الأليفة (Pet Supplies)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">السوق المستهدف (الدولة)</label>
+                <select
+                  value={aiCountry}
+                  onChange={(e) => setAiCountry(e.target.value)}
+                  className="w-full text-xs border border-slate-300 rounded-xl p-3 font-bold bg-white text-slate-800"
+                >
+                  <option value="ALL">🌍 السوق العالمي الشامل (Worldwide)</option>
+                  <option value="MA">🇲🇦 المغرب (Morocco)</option>
+                  <option value="US">🇺🇸 الولايات المتحدة (USA)</option>
+                  <option value="FR">🇫🇷 فرنسا وأوروبا (France & Europe)</option>
+                  <option value="GCC">🇸🇦 دول الخليج والسعودية (GCC)</option>
+                  <option value="SN">🇸🇳 السنغال وغرب إفريقيا (Senegal)</option>
                 </select>
               </div>
 
@@ -1356,7 +1655,7 @@ export default function MediaBuyerPage() {
                 <label className="block text-xs font-bold text-slate-700 mb-1">ملاحظة أو ميزانية خاصة (اختياري)</label>
                 <input
                   type="text"
-                  placeholder="مثال: منتجات خفيفة الوزن تناسب النساء في المغرب بسعر أقل من 250 درهم"
+                  placeholder="مثال: منتجات سهلة التوصيل بهامش ربح عالي لا تنكسر أثناء الشحن"
                   value={aiCustomPrompt}
                   onChange={(e) => setAiCustomPrompt(e.target.value)}
                   className="w-full text-xs border border-slate-300 rounded-xl p-3 font-semibold text-slate-800"
