@@ -11,7 +11,7 @@ import {
 import { researchMarkets } from '@/lib/marketResearch';
 import { isCampaignPeriod } from '@/lib/campaignSummary';
 import { prisma } from '@/lib/prisma';
-import { metaAccountId, metaSyncError, syncMetaCampaignSpend } from '@/lib/facebook/campaignSpend';
+import { metaAccountId, metaSyncError, sharedMetaConnectionId, syncMetaCampaignSpend } from '@/lib/facebook/campaignSpend';
 import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/session';
 
 async function campaignResponse(req: NextRequest, storeId: unknown, period: unknown) {
@@ -37,6 +37,16 @@ async function campaignResponse(req: NextRequest, storeId: unknown, period: unkn
     : undefined;
   let metaSyncWarning: string | undefined;
   const token = process.env.META_ADS_READ_TOKEN?.trim();
+  const shared = token && user.role === 'ADMIN' ? await prisma.metaAdsConnection.findUnique({
+    where: { id: sharedMetaConnectionId },
+  }) : null;
+  if (shared && token && shared.lastSyncAt && Date.now() - shared.lastSyncAt.getTime() >= 6 * 60 * 60 * 1000) {
+    try {
+      await syncMetaCampaignSpend(null, shared.accountId, token);
+    } catch (error) {
+      metaSyncWarning = metaSyncError(error);
+    }
+  }
   if (token && user.role === 'ADMIN' && storeId && !['ALL', 'NONE'].includes(storeId) && !storeId.includes(',')) {
     const account = await prisma.facebookSetting.findUnique({
       where: { storeId },
@@ -44,7 +54,7 @@ async function campaignResponse(req: NextRequest, storeId: unknown, period: unkn
     });
     const accountId = metaAccountId(account?.adAccountId);
     const stale = !account?.metaTimeZone || !account.lastSyncAt || Date.now() - account.lastSyncAt.getTime() >= 6 * 60 * 60 * 1000;
-    if (accountId && account?.autoSyncSpend && stale) {
+    if (accountId && accountId !== shared?.accountId && account?.autoSyncSpend && stale) {
       try {
         await syncMetaCampaignSpend(storeId, accountId, token);
       } catch (error) {
@@ -52,7 +62,7 @@ async function campaignResponse(req: NextRequest, storeId: unknown, period: unkn
       }
     }
   }
-  return NextResponse.json({ ...await getLiveCampaignAudits(storeId, period, allowedStores), metaSyncWarning });
+  return NextResponse.json({ ...await getLiveCampaignAudits(storeId, period, allowedStores, user.role === 'ADMIN'), metaSyncWarning });
 }
 
 export const dynamic = 'force-dynamic';

@@ -31,7 +31,9 @@ async function readGraph(url: URL, token: string, signal: AbortSignal) {
   return payload;
 }
 
-export async function syncMetaCampaignSpend(storeId: string, accountId: string, token: string, startedAt = new Date()) {
+export const sharedMetaConnectionId = 'shared';
+
+export async function syncMetaCampaignSpend(storeId: string | null, accountId: string, token: string, startedAt = new Date()) {
   const graph = new URL(`https://graph.facebook.com/v26.0/act_${accountId}`);
   graph.searchParams.set('fields', 'currency,timezone_name');
   const signal = AbortSignal.timeout(35_000);
@@ -47,7 +49,7 @@ export async function syncMetaCampaignSpend(storeId: string, accountId: string, 
   }).toString();
 
   const records = new Map<string, {
-    storeId: string; accountId: string; campaignId: string; campaignName: string;
+    storeId: string | null; accountId: string; campaignId: string; campaignName: string;
     day: string; currency: string; spend: number;
   }>();
   const cursors = new Set<string>();
@@ -80,22 +82,37 @@ export async function syncMetaCampaignSpend(storeId: string, accountId: string, 
   }
 
   await prisma.$transaction(async tx => {
-    const settings = await tx.facebookSetting.findMany({
-      where: { OR: [{ storeId }, { adAccountId: { in: [accountId, 'act_' + accountId] } }] },
-      select: { storeId: true, adAccountId: true, lastSyncAt: true },
-    });
-    const current = settings.find(setting => setting.storeId === storeId);
-    if (metaAccountId(current?.adAccountId) !== accountId || settings.some(setting => setting.storeId !== storeId)) {
-      throw new MetaReadError('Ce compte Meta doit être associé à une seule boutique.');
+    const shared = await tx.metaAdsConnection.findUnique({ where: { id: sharedMetaConnectionId } });
+    if (storeId === null) {
+      if (shared && shared.accountId !== accountId) throw new MetaReadError('Le compte Meta partagé a changé.');
+      if (shared?.lastSyncAt && shared.lastSyncAt > startedAt) return;
+    } else {
+      const settings = await tx.facebookSetting.findMany({
+        where: { OR: [{ storeId }, { adAccountId: { in: [accountId, 'act_' + accountId] } }] },
+        select: { storeId: true, adAccountId: true, lastSyncAt: true },
+      });
+      const current = settings.find(setting => setting.storeId === storeId);
+      if (shared?.accountId === accountId || metaAccountId(current?.adAccountId) !== accountId || settings.some(setting => setting.storeId !== storeId)) {
+        throw new MetaReadError('Ce compte Meta doit être associé à une seule boutique.');
+      }
+      if (current?.lastSyncAt && current.lastSyncAt > startedAt) return;
     }
-    if (current?.lastSyncAt && current.lastSyncAt > startedAt) return;
     // Replace the complete fetched range in one transaction, including days
     // for which Meta has since removed an insight row.
     await tx.metaCampaignSpend.deleteMany({ where: { accountId, day: { gte: dates.since, lte: dates.until } } });
     if (records.size) await tx.metaCampaignSpend.createMany({ data: Array.from(records.values()) });
-    await tx.facebookSetting.update({
-      where: { storeId }, data: { lastSyncAt: startedAt, metaTimeZone: account.timezone_name },
-    });
+    if (storeId === null) {
+      const sync = { lastSyncAt: startedAt, timeZone: account.timezone_name };
+      await tx.metaAdsConnection.upsert({
+        where: { id: sharedMetaConnectionId },
+        create: { id: sharedMetaConnectionId, accountId, ...sync },
+        update: sync,
+      });
+    } else {
+      await tx.facebookSetting.update({
+        where: { storeId }, data: { lastSyncAt: startedAt, metaTimeZone: account.timezone_name },
+      });
+    }
   });
   return { rows: records.size, ...dates, currency: account.currency };
 }

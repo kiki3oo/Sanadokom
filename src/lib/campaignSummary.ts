@@ -1,5 +1,5 @@
 import { prisma } from './prisma';
-import { metaAccountId, metaReportingDays } from './facebook/campaignSpend';
+import { metaAccountId, metaReportingDays, sharedMetaConnectionId } from './facebook/campaignSpend';
 
 export const campaignPeriods = ['today', '7d', '30d', 'all'] as const;
 export type CampaignPeriod = (typeof campaignPeriods)[number];
@@ -72,7 +72,7 @@ function withRates(counts: ReturnType<typeof emptyCounts>) {
   };
 }
 
-export async function getLiveCampaignAudits(storeId?: string, period: CampaignPeriod = 'all', allowedStores?: string[]) {
+export async function getLiveCampaignAudits(storeId?: string, period: CampaignPeriod = 'all', allowedStores?: string[], canAssign = false) {
   const requested = storeId && storeId !== 'ALL'
     ? storeId.split(',').map(id => id.trim()).filter(Boolean)
     : undefined;
@@ -109,37 +109,62 @@ export async function getLiveCampaignAudits(storeId?: string, period: CampaignPe
     (a.campaign ?? '').localeCompare(b.campaign ?? '') ||
     (a.source ?? '').localeCompare(b.source ?? ''));
 
+  const shared = await prisma.metaAdsConnection.findUnique({ where: { id: sharedMetaConnectionId } });
   const accounts = await prisma.facebookSetting.findMany({
     where: { storeId: stores ? { in: stores } : undefined, metaTimeZone: { not: null } },
     select: { storeId: true, adAccountId: true, lastSyncAt: true, metaTimeZone: true, store: { select: { name: true } } },
   });
   const metaAccounts = await Promise.all(accounts.flatMap(account => {
     const id = metaAccountId(account.adAccountId);
-    if (!id || !account.metaTimeZone || !account.lastSyncAt) return [];
+    if (!id || id === shared?.accountId || !account.metaTimeZone || !account.lastSyncAt) return [];
     return [summarizeMetaAccount(account.storeId, account.store.name, id, account.metaTimeZone, account.lastSyncAt, period, orderWindow)];
   }));
 
+  if (shared?.timeZone && shared.lastSyncAt) {
+    const assignments = await prisma.metaCampaignAssignment.findMany({
+      where: { accountId: shared.accountId },
+      select: { campaignId: true, storeId: true, store: { select: { name: true } } },
+    });
+    const byStore = new Map<string, { name: string; campaigns: Set<string> }>();
+    for (const assignment of assignments) {
+      if (stores && !stores.includes(assignment.storeId)) continue;
+      const entry = byStore.get(assignment.storeId) ?? { name: assignment.store.name, campaigns: new Set<string>() };
+      entry.campaigns.add(assignment.campaignId);
+      byStore.set(assignment.storeId, entry);
+    }
+    const { accountId, timeZone, lastSyncAt } = shared;
+    const sharedReports = await Promise.all(Array.from(byStore, ([id, entry]) =>
+      summarizeMetaAccount(id, entry.name, accountId, timeZone, lastSyncAt, period, orderWindow,
+        campaignId => entry.campaigns.has(campaignId))));
+    metaAccounts.push(...sharedReports.filter(report => report.rows.length));
+    if (canAssign) {
+      const assigned = new Set(assignments.map(assignment => assignment.campaignId));
+      metaAccounts.push(await summarizeMetaAccount(null, '', accountId, timeZone, lastSyncAt, period, orderWindow,
+        campaignId => !assigned.has(campaignId)));
+    }
+  }
   return { success: true, kpis: withRates(totals), campaigns, metaAccounts };
 }
 
 async function summarizeMetaAccount(
-  storeId: string, storeName: string, accountId: string, timeZone: string, lastSyncAt: Date,
+  storeId: string | null, storeName: string, accountId: string, timeZone: string, lastSyncAt: Date,
   period: CampaignPeriod, orderWindow: ReturnType<typeof campaignDateRange>,
+  acceptsCampaign?: (campaignId: string) => boolean,
 ) {
   const dayCount = period === 'today' ? 1 : period === '7d' ? 7 : 30;
   const dates = period === 'all' ? undefined : metaReportingDays(timeZone, dayCount);
   const coverage = metaReportingDays(timeZone, 30, lastSyncAt);
-  const comparable = !!dates && timeZone === 'Africa/Casablanca' &&
+  const comparable = storeId !== null && !!dates && timeZone === 'Africa/Casablanca' &&
     dates.since >= coverage.since && dates.until <= coverage.until;
   const insights = await prisma.metaCampaignSpend.findMany({
-    where: { storeId, accountId, day: dates ? { gte: dates.since, lte: dates.until } : undefined },
+    where: { storeId: acceptsCampaign ? undefined : storeId, accountId, day: dates ? { gte: dates.since, lte: dates.until } : undefined },
     orderBy: { day: 'desc' },
     select: { campaignId: true, campaignName: true, spend: true, currency: true },
   });
   const delivered = comparable ? await prisma.order.groupBy({
     by: ['metaCampaignId'],
     where: {
-      storeId, createdAt: orderWindow, metaCampaignId: { not: null },
+      storeId: storeId ?? undefined, createdAt: orderWindow, metaCampaignId: { not: null },
       status: { in: ['DELIVERED', 'PAID_TO_SELLER'] },
     },
     _count: { _all: true },
@@ -147,6 +172,7 @@ async function summarizeMetaAccount(
   const deliveries = new Map(delivered.map(row => [row.metaCampaignId, row._count._all]));
   const totals = new Map<string, { campaignId: string; name: string; currency: string; spend: number }>();
   for (const insight of insights) {
+    if (acceptsCampaign && !acceptsCampaign(insight.campaignId)) continue;
     const key = JSON.stringify([insight.campaignId, insight.currency]);
     const row = totals.get(key) ?? {
       campaignId: insight.campaignId, name: insight.campaignName, currency: insight.currency, spend: 0,
@@ -158,5 +184,5 @@ async function summarizeMetaAccount(
     const count = deliveries.get(row.campaignId) ?? 0;
     return { ...row, delivered: comparable ? count : null, costPerDelivery: count ? row.spend / count : null };
   }).sort((a, b) => b.spend - a.spend);
-  return { storeId, storeName, accountId, timeZone, lastSyncAt, comparable, rows };
+  return { storeId, storeName, accountId, timeZone, lastSyncAt, comparable, rows, shared: Boolean(acceptsCampaign) };
 }

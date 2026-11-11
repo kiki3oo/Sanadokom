@@ -39,6 +39,7 @@ model Store {
   expenses      Expense[]
   fbSettings    FacebookSetting?
   metaSpend     MetaCampaignSpend[]
+  metaCampaigns MetaCampaignAssignment[]
   courierConfig CourierConfig[]
 }
 
@@ -197,8 +198,8 @@ model FacebookSetting {
 }
 
 model MetaCampaignSpend {
-  storeId      String
-  store        Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId      String?
+  store        Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
   accountId    String
   campaignId   String
   campaignName String
@@ -208,6 +209,22 @@ model MetaCampaignSpend {
 
   @@id([accountId, campaignId, day])
   @@index([storeId, accountId, day])
+}
+
+model MetaAdsConnection {
+  id         String    @id
+  accountId  String
+  timeZone   String?
+  lastSyncAt DateTime?
+}
+
+model MetaCampaignAssignment {
+  accountId  String
+  campaignId String
+  storeId    String
+  store      Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@id([accountId, campaignId])
 }
 
 model CourierConfig {

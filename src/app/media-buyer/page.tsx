@@ -233,6 +233,50 @@ export default function MediaBuyerPage() {
   const [campaignRefresh, setCampaignRefresh] = useState(0);
   const [campaignPeriod, setCampaignPeriod] = useState<CampaignPeriod>('7d');
 
+  const [metaAdmin, setMetaAdmin] = useState<{ stores: { id: string; name: string }[]; tokenConfigured: boolean } | null>(null);
+  const [metaAccountInput, setMetaAccountInput] = useState('');
+  const [metaBusy, setMetaBusy] = useState(false);
+  const [metaNotice, setMetaNotice] = useState<{ error: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    if (activeTab !== 'MEDIA_BUYER_COPILOT') return;
+    const controller = new AbortController();
+    async function loadMetaControls() {
+      try {
+        const response = await fetch('/api/integrations/meta-ads', { signal: controller.signal });
+        if (!response.ok) return;
+        const data = await response.json();
+        setMetaAdmin({ stores: data.stores, tokenConfigured: data.tokenConfigured });
+        setMetaAccountInput(data.connection?.accountId ?? '');
+      } catch {
+        // Campaign reports can still load independently of the admin controls.
+      }
+    }
+    void loadMetaControls();
+    return () => controller.abort();
+  }, [activeTab]);
+
+  async function updateMetaCampaign(payload: { action: 'sync'; accountId: string } |
+    { action: 'assign'; accountId: string; campaignId: string; storeId: string | null }) {
+    setMetaBusy(true);
+    setMetaNotice(null);
+    try {
+      const response = await fetch('/api/integrations/meta-ads', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      setMetaNotice({ error: false, text: payload.action === 'assign'
+        ? (isAr ? 'تسجّل المتجر ديال الحملة.' : 'Affectation enregistrée.')
+        : (isAr ? `تزامنو ${data.rows} سطر ديال المصاريف حسب الحملة والنهار.` : `${data.rows} lignes campagne/jour synchronisées.`) });
+      setCampaignRefresh(value => value + 1);
+    } catch (error) {
+      setMetaNotice({ error: true, text: error instanceof Error ? error.message : 'Synchronisation indisponible.' });
+    } finally {
+      setMetaBusy(false);
+    }
+  }
+
   // 2. Fetch Stock Items for easy selection
   const fetchStock = async () => {
     try {
@@ -1051,6 +1095,25 @@ export default function MediaBuyerPage() {
 
           <div className="space-y-3 border-t border-slate-200 pt-4">
             <h3 className="font-bold">{isAr ? 'مصاريف حملات Meta' : 'Dépenses des campagnes Meta'}</h3>
+            {metaAdmin && (
+              <form className="flex flex-wrap items-end gap-3" onSubmit={event => {
+                event.preventDefault();
+                void updateMetaCampaign({ action: 'sync', accountId: metaAccountInput });
+              }}>
+                <label className="grid gap-1 text-sm text-slate-700">
+                  {isAr ? 'رقم الحساب الإعلاني المشترك' : 'ID du compte Meta partagé'}
+                  <input className="rounded-lg border border-slate-300 p-2" dir="ltr" value={metaAccountInput}
+                    onChange={event => setMetaAccountInput(event.target.value)} placeholder="act_…" required />
+                </label>
+                <button type="submit" disabled={metaBusy || !metaAdmin.tokenConfigured}
+                  className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                  {isAr ? 'زامن مصاريف Meta' : 'Synchroniser les dépenses Meta'}
+                </button>
+                {!metaAdmin.tokenConfigured && <p className="text-sm text-slate-600">META_ADS_READ_TOKEN</p>}
+              </form>
+            )}
+            {metaNotice && <p role={metaNotice.error ? 'alert' : 'status'}
+              className={metaNotice.error ? 'text-sm text-rose-700' : 'text-sm text-emerald-700'}>{metaNotice.text}</p>}
             {campaignData?.metaSyncWarning && (
               <p role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950">
                 {isAr ? 'تعذّر تحديث Meta. الأرقام المعروضة من آخر مزامنة ناجحة.' : campaignData.metaSyncWarning}
@@ -1058,18 +1121,18 @@ export default function MediaBuyerPage() {
             )}
             {campaignData && !campaignData.metaAccounts.length && (
               <p className="text-sm text-slate-600">
-                {isAr ? 'ربط حساب Meta من صفحة التكاملات ودير أول مزامنة.' : 'Connectez un compte Meta dans Intégrations et lancez une première synchronisation.'}
+                {isAr ? 'ما كايناش مصاريف Meta لهاد المتاجر فالفترة المختارة.' : 'Aucune dépense Meta pour les boutiques et la période sélectionnées.'}
               </p>
             )}
             {campaignData?.metaAccounts.map(account => (
-              <div key={account.storeId} className="space-y-2 rounded-xl border border-slate-200 p-4">
-                <h4 className="font-semibold">{account.storeName} · <bdi>act_{account.accountId}</bdi></h4>
+              <div key={JSON.stringify([account.accountId, account.storeId])} className="space-y-2 rounded-xl border border-slate-200 p-4">
+                <h4 className="font-semibold">{account.storeName || (isAr ? 'حملات بلا متجر' : 'Campagnes non affectées')} · <bdi>act_{account.accountId}</bdi></h4>
                 <p className="text-xs text-slate-600">
                   {isAr ? 'آخر مزامنة' : 'Dernière synchronisation'}{' '}
                   {new Date(account.lastSyncAt).toLocaleString(isAr ? 'ar-MA' : 'fr-MA', { timeZone: 'Africa/Casablanca' })}
                   {' · '}{account.timeZone}
                 </p>
-                {!account.comparable && (
+                {account.storeId && !account.comparable && (
                   <p className="text-xs text-slate-600">
                     {isAr ? 'المصاريف بتوقيت حساب Meta. تكلفة الطلب كتظهر ملي الفترة متزامنة والتوقيت مطابق للمغرب.' :
                       'Dépenses dans le fuseau Meta. Le coût par livraison nécessite une période synchronisée et le même fuseau que les commandes.'}
@@ -1081,7 +1144,9 @@ export default function MediaBuyerPage() {
                       <thead className="bg-slate-100 text-slate-700">
                         <tr>{(isAr ? ['الحملة', 'الصرف', 'طلبات مسلّمة مرتبطة', 'تكلفة الطلب المسلّم'] :
                           ['Campagne', 'Dépenses', 'Livraisons attribuées', 'Coût / livraison']).map(label =>
-                          <th key={label} scope="col" className="px-3 py-2 text-start">{label}</th>)}</tr>
+                          <th key={label} scope="col" className="px-3 py-2 text-start">{label}</th>)}
+                          {metaAdmin && account.shared && <th scope="col" className="px-3 py-2 text-start">{isAr ? 'المتجر' : 'Boutique'}</th>}
+                        </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200">
                         {account.rows.map(row => (
@@ -1090,6 +1155,19 @@ export default function MediaBuyerPage() {
                             <td className="whitespace-nowrap px-3 py-2">{row.spend.toFixed(2)} {row.currency}</td>
                             <td className="px-3 py-2">{row.delivered ?? '—'}</td>
                             <td className="whitespace-nowrap px-3 py-2">{row.costPerDelivery === null ? '—' : row.costPerDelivery.toFixed(2) + ' ' + row.currency}</td>
+                            {metaAdmin && account.shared && (
+                              <td className="px-3 py-2">
+                                <select className="rounded-lg border border-slate-300 p-2" value={account.storeId ?? ''}
+                                  aria-label={`${isAr ? 'المتجر ديال' : 'Boutique pour'} ${row.name || row.campaignId}`}
+                                  disabled={metaBusy} onChange={event => void updateMetaCampaign({
+                                    action: 'assign', accountId: account.accountId, campaignId: row.campaignId,
+                                    storeId: event.target.value || null,
+                                  })}>
+                                  <option value="">{isAr ? 'بلا متجر' : 'Non affectée'}</option>
+                                  {metaAdmin.stores.map(store => <option key={store.id} value={store.id}>{store.name}</option>)}
+                                </select>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>
