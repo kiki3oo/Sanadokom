@@ -34,6 +34,11 @@ export interface WinningProduct {
   tikTokTag?: string;
   aliExpressSearchKeyword?: string;
   suggestedAnglesAr: string[];
+  exactSpecificationAr?: string; // المواصفات الدقيقة التجارية للمنتج
+  sourcingLocationAr?: string;   // مكان التوريد الدقيق في المغرب أو عالمياً
+  adLongevityDays?: number;      // مدة استمرار الإعلانات النشطة بالأيام (مؤشر ربحية حاسم)
+  topPlatformAr?: string;        // المنصة الأكثر مبيعاً للإعلان
+  targetDemographicAr?: string;  // الشريحة الأكثر شراءً
   addedAt: string;
 }
 
@@ -173,6 +178,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'عرض الأسبوع الحصري: السيروم الأصلي + صابونة نيلة زرقاء مغربية هدية وتوصيل مجاني'
     ],
     addedAt: '2026-11-10T19:00:00Z',
+    exactSpecificationAr: 'عبوة زجاجية فاخرة 30ml مع قطارة | تركيز 10% فيتامين C نقي + 5% نياسيناميد وحمض الهيالورونيك',
+    sourcingLocationAr: 'مختبرات التجميل بالدار البيضاء (سيدي معاروف / عين السبع) أو جملة درب عمر بسعر 28 - 35 درهم',
+    adLongevityDays: 45,
+    topPlatformAr: 'Meta (Instagram) + TikTok Ads',
+    targetDemographicAr: 'النساء 22 - 48 سنة (المهتمات بإزالة التصبغات والكلف والروتين الصباحي)',
   },
   {
     id: 'wp-ma-cosm-2',
@@ -216,6 +226,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'عرض كورس العلاج المكثف: عبوتين بخصم 40% وتوصيل سريع حتى باب المنزل'
     ],
     addedAt: '2026-11-10T19:30:00Z',
+    exactSpecificationAr: 'زيت نقي 100% عبوة 60ml بقطارة مع البيوتين وزيت الخروع الأسود لتحفيز البصيلات وملء الفراغات',
+    sourcingLocationAr: 'معاصر الزيوت الطبيعية (مراكش / أكادير) أو درب عمر / كراج علال بالدار البيضاء بسعر 30 - 38 درهم',
+    adLongevityDays: 55,
+    topPlatformAr: 'TikTok Ads (فيروسي #rosemaryoil)',
+    targetDemographicAr: 'النساء (تساقط الشعر) + الرجال (تكثيف وإنبات اللحية)',
   },
   {
     id: 'wp-ma-supp-1',
@@ -259,6 +274,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'عرض كورس الراحة التامة: علبتين بـ 379 درهم وتوصيل مجاني لجميع مدن المغرب'
     ],
     addedAt: '2026-11-10T20:00:00Z',
+    exactSpecificationAr: 'عبوة محكمة 60 كبسولة نباتية | مغنيسيوم بيسجليسينات مخلبي عالي الامتصاص 500mg مع فيتامين B6',
+    sourcingLocationAr: 'مستوردو ومصنعو المكملات الغذائية المرخصة بالدار البيضاء بسعر 40 - 45 درهم',
+    adLongevityDays: 40,
+    topPlatformAr: 'Facebook Feed + Instagram Reels',
+    targetDemographicAr: 'الرجال والنساء 25 - 60 سنة (يعانون من الأرق، الإجهاد العضلي، والقلق)',
   },
   {
     id: 'wp-ma-supp-2',
@@ -302,6 +322,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'عرض باقة الحيوية: علبة أشواغاندا + علبة فيتامين د3 مجانية وشحن سريع'
     ],
     addedAt: '2026-11-10T20:30:00Z',
+    exactSpecificationAr: 'مستخلص جذور الأشواغاندا العضوية KSM-66 تركيز 600mg مع جينسنغ في عبوة 60 كبسولة',
+    sourcingLocationAr: 'جملة المكملات بالدار البيضاء أو الاستيراد المباشر من تركيا/الهند بسعر 45 - 50 درهم',
+    adLongevityDays: 48,
+    topPlatformAr: 'TikTok Ads + Instagram',
+    targetDemographicAr: 'الشباب والرياضيون والموظفون (محاربة التوتر، زيادة الطاقة، تقوية المناعة)',
   },
   {
     id: 'wp-ma-1',
@@ -345,6 +370,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'عرض خاص: الجهاز + سيروم مجاني وتوصيل مجاني'
     ],
     addedAt: '2026-11-09T10:00:00Z',
+    exactSpecificationAr: 'جهاز تقشير وتنظيف الوجه بالموجات فوق الصوتية 24KHz مع شاحن USB وقاعدة شحن و 3 أوضاع تشغيل',
+    sourcingLocationAr: 'مستوردو الإلكترونيات والتجميل بدرب عمر وباب مراكش بالدار البيضاء بسعر 40 - 45 درهم',
+    adLongevityDays: 60,
+    topPlatformAr: 'TikTok Ads (فيديوهات Satisfying)',
+    targetDemographicAr: 'الفتيات والنساء 18 - 35 سنة',
   },
   {
     id: 'wp-ma-2',
@@ -388,6 +418,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'عرض حبتين: واحدة لك وواحدة هدية للوالدة بسعر خاص'
     ],
     addedAt: '2026-11-09T11:00:00Z',
+    exactSpecificationAr: 'قطاعة خضار يدوية 14 في 1 بـ 8 شفرات ستانلس ستيل حادة مع حاوية سعة 1.5L ومقبض ضغط آمن',
+    sourcingLocationAr: 'مستوردو الأواني المنزلية بدرب عمر ودرب ميلا بالدار البيضاء بسعر 50 - 55 درهم',
+    adLongevityDays: 90,
+    topPlatformAr: 'Facebook Feed + Reels',
+    targetDemographicAr: 'ربات البيوت 25 - 55 سنة',
   },
   {
     id: 'wp-ma-3',
@@ -431,6 +466,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'عرض باقة: الحامل الذكي + كابل شحن سريع هدية'
     ],
     addedAt: '2026-11-09T12:00:00Z',
+    exactSpecificationAr: 'حامل سيارة بمستشعر حركة أوتوماتيكي للأشعة تحت الحمراء مع شاحن لاسلكي 15W سريع وقفل هوائي',
+    sourcingLocationAr: 'درب غلف ودرب عمر بالدار البيضاء بسعر 45 - 50 درهم',
+    adLongevityDays: 35,
+    topPlatformAr: 'Facebook + TikTok',
+    targetDemographicAr: 'الرجال وأصحاب السيارات 22 - 50 سنة',
   },
   {
     id: 'wp-ma-4',
@@ -474,6 +514,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'عرض الأسبوع: اشتري دعامة واحصل على الثانية بنصف السعر'
     ],
     addedAt: '2026-11-09T13:00:00Z',
+    exactSpecificationAr: 'دعامة ركبة طبية بضغط ثلاثي وأحزمة تثبيت متقاطعة قابلة للتعديل وممتصة للصدمات (Pack 2 Pièces)',
+    sourcingLocationAr: 'مستودعات المستلزمات الطبية بدرب عمر وشارع الفداء بالدار البيضاء بسعر 30 - 35 درهم للقطعة',
+    adLongevityDays: 75,
+    topPlatformAr: 'Facebook Ads (كبار السن والرياضة)',
+    targetDemographicAr: 'الرجال والنساء 35 - 65 سنة (آلام المفاصل والروماتيزم)',
   },
 
   // --- 🇺🇸 ÉTATS-UNIS (USA & GLOBAL TIKTOK WINNERS) ---
@@ -519,6 +564,8 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'عرض خاص: اشتري 2 واحصل على خصم 20% وشحن مجاني'
     ],
     addedAt: '2026-11-10T14:00:00Z',
+    exactSpecificationAr: 'مروحة رقبة بدون شفرات 360° قابلة لإعادة الشحن عبر Type-C ببطارية 4000mAh و 3 سرعات',
+    sourcingLocationAr: 'موردي أمازون FBA ومستودعات التوصيل السريع في أمريكا بسعر 5.5$',
   },
   {
     id: 'wp-us-2',
@@ -562,6 +609,8 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'باقة الألوان الصيفية مع شحن سريع مجاني'
     ],
     addedAt: '2026-11-10T14:30:00Z',
+    exactSpecificationAr: 'ممحاة إزالة الشعر الكريستالية بتقنية النانو غلاس المقاومة للماء والقابلة لإعادة الاستخدام بدون ألم',
+    sourcingLocationAr: 'مستودعات التوريد في أمريكا / AliExpress بسعر 1.8$',
   },
   {
     id: 'wp-us-3',
@@ -825,6 +874,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'عرض باقة الجمال الخليجي: عبوتين + سيروم محيط العينين مجاناً وتوصيل مجاني'
     ],
     addedAt: '2026-11-10T21:00:00Z',
+    exactSpecificationAr: 'كريم شد الوجه والرقبة الفوري بتركيبة ببتيدات الكولاجين البحري 50ml في عبوة كريستالية فاخرة',
+    sourcingLocationAr: 'مستودعات الشحن في الرياض ودبي بسعر 28 - 32 ريال',
+    adLongevityDays: 50,
+    topPlatformAr: 'Snapchat Ads + TikTok',
+    targetDemographicAr: 'النساء في الخليج والسعودية 28 - 55 سنة',
   },
   {
     id: 'wp-gcc-supp-1',
@@ -868,6 +922,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'عرض الكورس الثلاثي: 3 عبوات كولاجين تكفي 90 يوماً بسعر مخفض جداً وتوصيل فوري'
     ],
     addedAt: '2026-11-10T21:30:00Z',
+    exactSpecificationAr: 'بودرة كولاجين بحري متحلل نقي 300g بنكهة التوت البري مع فيتامين C وحمض الهيالورونيك',
+    sourcingLocationAr: 'مستوردو المكملات الصحية بالرياض ودبي بسعر 40 - 45 ريال',
+    adLongevityDays: 65,
+    topPlatformAr: 'Snapchat Ads + Instagram',
+    targetDemographicAr: 'النساء 30+ وأصحاب آلام المفاصل والخشونة في الخليج',
   },
   {
     id: 'wp-gcc-1',
@@ -911,6 +970,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'عرض خاص: مبخرة إلكترونية + علبة عود فاخرة وتوصيل سريع والدفع عند الاستلام'
     ],
     addedAt: '2026-11-10T17:30:00Z',
+    exactSpecificationAr: 'مبخرة شعر إلكترونية محمولة قابلة للشحن عبر USB مع مشطين للشعر والملابس وحقيبة مخملية فاخرة',
+    sourcingLocationAr: 'سوق الجملة بالرياض وجدة أو علي إكسبريس بسعر 25 - 30 ريال',
+    adLongevityDays: 80,
+    topPlatformAr: 'Snapchat Ads (الأكثر مبيعاً)',
+    targetDemographicAr: 'النساء والرجال في دول الخليج',
   },
   {
     id: 'wp-gcc-2',
@@ -954,6 +1018,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'عرض الأسبوع: اشتري قطعتين واحصل على خصم 40 ريال وشحن مجاني'
     ],
     addedAt: '2026-11-10T17:45:00Z',
+    exactSpecificationAr: 'مكيف ومبرد هواء صغير محمول 3 في 1 مع إضاءة ليلية LED وخزان ماء 500ml وفلتر نانو مائي',
+    sourcingLocationAr: 'مستودعات الإلكترونيات بالرياض ودبي بسعر 30 - 35 ريال',
+    adLongevityDays: 45,
+    topPlatformAr: 'Snapchat Ads + TikTok',
+    targetDemographicAr: 'الطلاب والموظفون وأصحاب المكاتب',
   },
 
   // --- 🇸🇳 SÉNÉGAL & AFRIQUE DE L'OUEST ---
@@ -999,6 +1068,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'توصيل سريع في داكار وجميع المدن مع الدفع عند الاستلام'
     ],
     addedAt: '2026-11-10T18:00:00Z',
+    exactSpecificationAr: 'مطحنة قهوة وتوابل كهربائية من الفولاذ المقاوم للصدأ 300W بشفرات رباعية حادة',
+    sourcingLocationAr: 'سوق الجملة في داكار (Dakar Plateau / Sandaga) بسعر 3500 - 4000 FCFA',
+    adLongevityDays: 50,
+    topPlatformAr: 'TikTok Ads + WhatsApp',
+    targetDemographicAr: 'ربات البيوت في داكار والسنغال',
   },
 
   // --- 🌍 GLOBAL / INTERNATIONAL TRENDS ---
@@ -1044,7 +1118,9 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'عرض خاص مع ريموت كنترول وتوصيل مجاني'
     ],
     addedAt: '2026-11-10T18:10:00Z',
-  }
+    exactSpecificationAr: 'مصباح إضاءة غروب الشمس الذكي 16 لون RGB مع ريموت كنترول وعدسة كريستال بصرية 360°',
+    sourcingLocationAr: 'AliExpress / CJ Dropshipping بسعر 3.5$',
+  },
 ];
 
 const DATA_FILE_PATH = path.join(process.cwd(), 'prisma', 'marketing-ai-data.json');

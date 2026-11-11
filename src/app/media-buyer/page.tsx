@@ -37,6 +37,8 @@ import {
   Package,
   Video,
   ShieldAlert,
+  MapPin,
+  Clock,
 } from 'lucide-react';
 import { WinningProduct, ProductAnalysisResult } from '@/lib/marketingAi';
 
@@ -421,7 +423,7 @@ export default function MediaBuyerPage() {
               }`}
             >
               <Flame className="w-4 h-4 text-orange-500" />
-              <span>صائد المنتجات الرابحة (Winning Radar 🏆)</span>
+              <span>اقتناص المنتجات الرابحة الدقيقة (Precise Winners Radar 🏆)</span>
             </button>
 
             <button
@@ -459,10 +461,63 @@ export default function MediaBuyerPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 1: صائد المنتجات الرابحة (WINNING PRODUCTS RADAR)                     */}
+      {/* TAB 1: صائد المنتجات الرابحة الدقيقة (PRECISE WINNING PRODUCTS RADAR)      */}
       {/* ========================================================================= */}
       {activeTab === 'WINNING_PRODUCTS' && (
         <div className="space-y-6">
+          {/* AI Precise Winning Product Scout Hero Bar */}
+          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 border border-indigo-900/50 shadow-lg space-y-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-80 h-full bg-gradient-to-l from-indigo-500/10 via-purple-500/10 to-transparent pointer-events-none" />
+            <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+              <div className="space-y-1.5">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-black border border-indigo-500/30">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>مقتنص المنتجات التجارية الدقيقة (Real Commercial Winners)</span>
+                </div>
+                <h2 className="text-base md:text-lg font-black text-white font-heading">
+                  منتجات تجارية محددة بمواصفات حقيقية، أماكن التوريد بالجملة، وإعلانات نشطة
+                </h2>
+                <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                  هذه ليست مجرد مجالات عامة (Niches)، بل منتجات دقيقة جاهزة للإطلاق الفوري بمواصفاتها التجارية الكاملة (مثل سيروم فيتامين C 10% أو كريم لبان الذكر العماني)، وأماكن توريدها بالجملة في درب عمر ومختبرات الدار البيضاء ودبي.
+                </p>
+              </div>
+
+              {/* Instant Hunter Quick Buttons */}
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedNiche('COSMETICS');
+                    setSelectedCountry('MA');
+                  }}
+                  className="px-3 py-2 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-200 border border-pink-500/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                >
+                  <span>💄 مستحضرات التجميل بالمغرب</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedNiche('SUPPLEMENTS');
+                    setSelectedCountry('ALL');
+                  }}
+                  className="px-3 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                >
+                  <span>🌿 مكملات غذائية عالية الشراء</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCountry('GCC');
+                    setSelectedNiche('ALL');
+                  }}
+                  className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                >
+                  <span>🇸🇦 أعلى المبيعات في الخليج</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Filters Bar */}
           <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-sm space-y-4">
             <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
@@ -487,11 +542,13 @@ export default function MediaBuyerPage() {
                   onChange={(e) => setSelectedNiche(e.target.value)}
                   className="text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-800 cursor-pointer focus:bg-white"
                 >
-                  <option value="ALL">جميع المجالات (All Niches)</option>
-                  <option value="BEAUTY">💄 الجمال والعناية (Beauty)</option>
-                  <option value="KITCHEN">🍳 المطبخ والمنزل (Kitchen)</option>
+                  <option value="ALL">جميع المجالات الدقيقة (All Categories)</option>
+                  <option value="COSMETICS">💄 مستحضرات التجميل والعناية (Cosmetics)</option>
+                  <option value="SUPPLEMENTS">🌿 مكملات غذائية وأعشاب (Supplements)</option>
+                  <option value="BEAUTY">✨ أدوات الجمال والعناية (Beauty Tools)</option>
+                  <option value="KITCHEN">🍳 المطبخ والمنزل الذكي (Kitchen)</option>
                   <option value="CAR">🚗 إكسسوارات السيارات (Car)</option>
-                  <option value="HEALTH">🏋️ الصحة والمفاصل (Health)</option>
+                  <option value="HEALTH">🏋️ الصحة والعلاج الطبيعي (Health)</option>
                   <option value="GADGETS">⚡ الأدوات الذكية (Gadgets)</option>
                   <option value="HOME">🏠 المنزل والديكور (Home)</option>
                   <option value="PETS">🐾 الحيوانات الأليفة (Pets)</option>
@@ -668,6 +725,45 @@ export default function MediaBuyerPage() {
                         </p>
                       </div>
 
+                      {/* Precise Technical & Commercial Specification */}
+                      {p.exactSpecificationAr && (
+                        <div className="p-2.5 rounded-2xl bg-indigo-50/90 border border-indigo-200/80 text-xs text-indigo-950 space-y-1">
+                          <div className="text-[10px] font-black text-indigo-700 flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-indigo-600" />
+                            <span>المواصفات التجارية الدقيقة للمنتج:</span>
+                          </div>
+                          <p className="text-[11px] leading-snug font-bold text-indigo-900">{p.exactSpecificationAr}</p>
+                        </div>
+                      )}
+
+                      {/* Wholesale Sourcing Location */}
+                      {p.sourcingLocationAr && (
+                        <div className="p-2.5 rounded-2xl bg-amber-50/90 border border-amber-200/80 text-xs text-amber-950 space-y-1">
+                          <div className="text-[10px] font-black text-amber-800 flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-amber-600" />
+                            <span>أين تجده وتورده بسعر الجملة:</span>
+                          </div>
+                          <p className="text-[11px] leading-snug font-bold text-amber-900">{p.sourcingLocationAr}</p>
+                        </div>
+                      )}
+
+                      {/* Live Ad Longevity & Top Platform */}
+                      {(p.adLongevityDays || p.topPlatformAr) && (
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 p-2 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-bold">
+                          {p.adLongevityDays && (
+                            <span className="flex items-center gap-1 text-emerald-700 font-extrabold">
+                              <Clock className="w-3 h-3 text-emerald-600" />
+                              <span>إعلانات نشطة منذ {p.adLongevityDays}+ يوماً</span>
+                            </span>
+                          )}
+                          {p.topPlatformAr && (
+                            <span className="text-slate-700 font-extrabold text-[10px]">
+                              🔥 {p.topPlatformAr}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
                       {/* Economics Bar - High Contrast */}
                       <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-slate-50 border border-slate-200/90 text-center">
                         <div>
@@ -686,9 +782,16 @@ export default function MediaBuyerPage() {
 
                       {/* Why winning highlights */}
                       <div className="space-y-1.5 pt-1">
-                        <div className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>لماذا هذا المنتج رابح؟</span>
+                        <div className="text-xs font-extrabold text-slate-800 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>لماذا هذا المنتج رابح؟</span>
+                          </span>
+                          {p.targetDemographicAr && (
+                            <span className="text-[10px] text-slate-500 font-bold max-w-[170px] truncate" title={p.targetDemographicAr}>
+                              🎯 {p.targetDemographicAr}
+                            </span>
+                          )}
                         </div>
                         <ul className="text-xs text-slate-600 space-y-1 list-disc list-inside font-medium">
                           {(p.whyWinningAr || p.whyWinning || []).slice(0, 2).map((item, i) => (
@@ -847,6 +950,53 @@ export default function MediaBuyerPage() {
                     {selectedProductDetails.description}
                   </p>
                 )}
+              </div>
+
+              {/* Exact Technical Specifications & Wholesale Sourcing Dossier */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Exact Specs */}
+                <div className="p-4 rounded-2xl bg-indigo-50/90 border border-indigo-200 space-y-2">
+                  <div className="flex items-center gap-2 text-indigo-900 font-black text-xs">
+                    <Sparkles className="w-4 h-4 text-indigo-600" />
+                    <span>المواصفات الفنية والتجارية الدقيقة:</span>
+                  </div>
+                  <p className="text-xs text-indigo-950 font-bold leading-relaxed">
+                    {selectedProductDetails.exactSpecificationAr || 'عبوة ومواصفات تجارية قياسية للتجارة الإلكترونية والـ COD.'}
+                  </p>
+                </div>
+
+                {/* Sourcing Location */}
+                <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 space-y-2">
+                  <div className="flex items-center gap-2 text-amber-900 font-black text-xs">
+                    <MapPin className="w-4 h-4 text-amber-600" />
+                    <span>أماكن التوريد والشراء بالجملة:</span>
+                  </div>
+                  <p className="text-xs text-amber-950 font-bold leading-relaxed">
+                    {selectedProductDetails.sourcingLocationAr || 'أسواق الجملة المحلية (درب عمر، كراج علال) وموردي علي إكسبريس.'}
+                  </p>
+                </div>
+
+                {/* Live Ad Longevity */}
+                <div className="p-4 rounded-2xl bg-emerald-50/90 border border-emerald-200 space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-900 font-black text-xs">
+                    <Clock className="w-4 h-4 text-emerald-600" />
+                    <span>عمر الإعلانات النشطة والمنصة:</span>
+                  </div>
+                  <p className="text-xs text-emerald-950 font-bold leading-relaxed">
+                    نشط منذ {selectedProductDetails.adLongevityDays || 30}+ يوماً | المنصة الأقوى: {selectedProductDetails.topPlatformAr || 'Meta + TikTok Ads'}
+                  </p>
+                </div>
+
+                {/* Demographics */}
+                <div className="p-4 rounded-2xl bg-purple-50/90 border border-purple-200 space-y-2">
+                  <div className="flex items-center gap-2 text-purple-900 font-black text-xs">
+                    <Target className="w-4 h-4 text-purple-600" />
+                    <span>الجمهور المستهدف بدقة:</span>
+                  </div>
+                  <p className="text-xs text-purple-950 font-bold leading-relaxed">
+                    {selectedProductDetails.targetDemographicAr || 'المتسوقون عبر الإنترنت المهتمون بحل المشاكل الفورية.'}
+                  </p>
+                </div>
               </div>
 
               {/* Why Winning Points */}
@@ -1904,7 +2054,9 @@ export default function MediaBuyerPage() {
                   onChange={(e) => setAiNiche(e.target.value)}
                   className="w-full text-xs border border-slate-300 rounded-xl p-3 font-bold bg-white text-slate-800"
                 >
-                  <option value="BEAUTY">💄 الجمال والعناية الشخصية (Beauty & Skincare)</option>
+                  <option value="COSMETICS">💄 مستحضرات التجميل والعناية (Cosmetics & Skincare)</option>
+                  <option value="SUPPLEMENTS">🌿 مكملات غذائية وأعشاب طبيعية (Supplements & Wellness)</option>
+                  <option value="BEAUTY">✨ أدوات الجمال والعناية الشخصية (Beauty Tools)</option>
                   <option value="KITCHEN">🍳 أدوات المطبخ والمنزل (Kitchen & Home Hacks)</option>
                   <option value="CAR">🚗 إكسسوارات السيارات الذكية (Car Accessories)</option>
                   <option value="HEALTH">🏋️ الصحة والعلاج الطبيعي (Health & Pain Relief)</option>
