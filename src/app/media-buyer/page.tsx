@@ -159,6 +159,104 @@ export default function MediaBuyerPage() {
     }));
   };
 
+  const handleTitleChange = (newTitle: string) => {
+    const lower = newTitle.toLowerCase();
+    let autoNiche = analysisInput.niche;
+    let autoWholesale = analysisInput.wholesalePrice;
+    let autoRetail = analysisInput.retailPrice;
+
+    if (
+      lower.includes('magne') ||
+      lower.includes('step') ||
+      lower.includes('semelle') ||
+      lower.includes('insole') ||
+      lower.includes('genou') ||
+      lower.includes('postur') ||
+      lower.includes('massage') ||
+      lower.includes('cervic') ||
+      lower.includes('arthrose') ||
+      lower.includes('lombair') ||
+      lower.includes('talon') ||
+      lower.includes('acupress') ||
+      lower.includes('سميل') ||
+      lower.includes('ركبة') ||
+      lower.includes('ظهر')
+    ) {
+      autoNiche = 'HEALTH';
+      if (lower.includes('magne') || lower.includes('step') || lower.includes('semelle') || lower.includes('insole')) {
+        autoWholesale = 30;
+        autoRetail = 199;
+      }
+    } else if (
+      lower.includes('matcha') ||
+      lower.includes('ashwa') ||
+      lower.includes('zinc') ||
+      lower.includes('magnesium') ||
+      lower.includes('omega') ||
+      lower.includes('spiruline') ||
+      lower.includes('gelule') ||
+      lower.includes('the') ||
+      lower.includes('minceur') ||
+      lower.includes('ماتشا') ||
+      lower.includes('مكمل')
+    ) {
+      autoNiche = 'SUPPLEMENTS';
+      autoWholesale = 40;
+      autoRetail = 249;
+    } else if (
+      lower.includes('serum') ||
+      lower.includes('creme') ||
+      lower.includes('visage') ||
+      lower.includes('peau') ||
+      lower.includes('tache') ||
+      lower.includes('eclairciss') ||
+      lower.includes('سيروم') ||
+      lower.includes('كريم') ||
+      lower.includes('بشرة')
+    ) {
+      autoNiche = 'COSMETICS';
+      autoWholesale = 35;
+      autoRetail = 229;
+    } else if (
+      lower.includes('brosse') ||
+      lower.includes('hair') ||
+      lower.includes('cheveux') ||
+      lower.includes('epilat') ||
+      lower.includes('شعر')
+    ) {
+      autoNiche = 'BEAUTY';
+      autoWholesale = 75;
+      autoRetail = 299;
+    } else if (
+      lower.includes('hachoir') ||
+      lower.includes('mixeur') ||
+      lower.includes('cuisin') ||
+      lower.includes('kitchen') ||
+      lower.includes('مطبخ')
+    ) {
+      autoNiche = 'KITCHEN';
+      autoWholesale = 70;
+      autoRetail = 249;
+    } else if (
+      lower.includes('car') ||
+      lower.includes('voitur') ||
+      lower.includes('auto') ||
+      lower.includes('سيارة')
+    ) {
+      autoNiche = 'CAR';
+      autoWholesale = 30;
+      autoRetail = 149;
+    }
+
+    setAnalysisInput((prev) => ({
+      ...prev,
+      title: newTitle,
+      niche: autoNiche,
+      wholesalePrice: autoWholesale,
+      retailPrice: autoRetail,
+    }));
+  };
+
   const getCurrencySymbol = (countryCode?: string) => {
     const c = countryCode || analysisInput.targetCountry;
     if (c === 'GCC') return 'SAR';
@@ -1524,7 +1622,7 @@ export default function MediaBuyerPage() {
                     type="text"
                     placeholder={t.valFieldTitlePlaceholder}
                     value={analysisInput.title}
-                    onChange={(e) => setAnalysisInput({ ...analysisInput, title: e.target.value })}
+                    onChange={(e) => handleTitleChange(e.target.value)}
                     className="w-full text-xs border border-slate-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900 bg-slate-50 focus:bg-white transition-all"
                   />
                 </div>

@@ -1523,7 +1523,160 @@ export function generateAiProductIdeas(
  */
 export function analyzeProductDetails(input: ProductAnalysisInput): ProductAnalysisResult {
   const targetCountry = (input.targetCountry || 'MA').toUpperCase();
-  const niche = (input.niche || 'BEAUTY').toUpperCase();
+  const rawTitle = (input.title || '').trim();
+  const rawDesc = (input.description || '') + ' ' + (input.ingredientsOrDetails || '');
+  const combinedText = `${rawTitle} ${rawDesc}`.toLowerCase();
+
+  // Smart subtype identification
+  let detectedNiche: 'COSMETICS' | 'SUPPLEMENTS' | 'BEAUTY' | 'KITCHEN' | 'CAR' | 'HEALTH' | 'GADGETS' | 'PETS' | 'HOME' = (input.niche as any) || 'COSMETICS';
+  let productSubtype: 
+    | 'MAGNETIC_INSOLES' 
+    | 'KNEE_SLEEVE' 
+    | 'POSTURE_CORRECTOR' 
+    | 'MASSAGER' 
+    | 'SKIN_CARE' 
+    | 'HAIR_CARE' 
+    | 'MATCHA_SLIM' 
+    | 'SUPPLEMENT' 
+    | 'KITCHEN' 
+    | 'CAR' 
+    | 'GADGET' 
+    | 'GENERIC_HEALTH'
+    | 'GENERIC' = 'GENERIC';
+
+  if (
+    combinedText.includes('magne') ||
+    combinedText.includes('step') ||
+    combinedText.includes('semelle') ||
+    combinedText.includes('insole') ||
+    combinedText.includes('acupress') ||
+    combinedText.includes('acupression') ||
+    combinedText.includes('reflexo') ||
+    combinedText.includes('plantar') ||
+    combinedText.includes('fasciite') ||
+    combinedText.includes('talon') ||
+    combinedText.includes('calcan') ||
+    combinedText.includes('pied') ||
+    combinedText.includes('foot') ||
+    combinedText.includes('سميل') ||
+    combinedText.includes('كعب')
+  ) {
+    productSubtype = 'MAGNETIC_INSOLES';
+    detectedNiche = 'HEALTH';
+  } else if (
+    combinedText.includes('genou') ||
+    combinedText.includes('knee') ||
+    combinedText.includes('menisque') ||
+    combinedText.includes('arthrose') ||
+    combinedText.includes('ركبة') ||
+    combinedText.includes('مفاصل')
+  ) {
+    productSubtype = 'KNEE_SLEEVE';
+    detectedNiche = 'HEALTH';
+  } else if (
+    combinedText.includes('postur') ||
+    combinedText.includes('colonne') ||
+    combinedText.includes('lombair') ||
+    combinedText.includes('dorsal') ||
+    combinedText.includes('مشد ظهر') ||
+    combinedText.includes('قامة')
+  ) {
+    productSubtype = 'POSTURE_CORRECTOR';
+    detectedNiche = 'HEALTH';
+  } else if (
+    combinedText.includes('cervic') ||
+    combinedText.includes('masseur') ||
+    combinedText.includes('massage') ||
+    combinedText.includes('تدليك') ||
+    combinedText.includes('رقبة')
+  ) {
+    productSubtype = 'MASSAGER';
+    detectedNiche = 'HEALTH';
+  } else if (
+    combinedText.includes('serum') ||
+    combinedText.includes('creme') ||
+    combinedText.includes('visage') ||
+    combinedText.includes('peau') ||
+    combinedText.includes('skin') ||
+    combinedText.includes('tache') ||
+    combinedText.includes('eclairciss') ||
+    combinedText.includes('niacinamide') ||
+    combinedText.includes('vitamine c') ||
+    combinedText.includes('سيروم') ||
+    combinedText.includes('بشرة') ||
+    combinedText.includes('تفتيح') ||
+    combinedText.includes('كلف')
+  ) {
+    productSubtype = 'SKIN_CARE';
+    detectedNiche = 'COSMETICS';
+  } else if (
+    combinedText.includes('hair') ||
+    combinedText.includes('cheveux') ||
+    combinedText.includes('brosse') ||
+    combinedText.includes('epilat') ||
+    combinedText.includes('lisseur') ||
+    combinedText.includes('شعر') ||
+    combinedText.includes('مصفف')
+  ) {
+    productSubtype = 'HAIR_CARE';
+    detectedNiche = 'BEAUTY';
+  } else if (
+    combinedText.includes('matcha') ||
+    combinedText.includes('minceur') ||
+    combinedText.includes('bruleur') ||
+    combinedText.includes('detox') ||
+    combinedText.includes('تنحيف') ||
+    combinedText.includes('ماتشا')
+  ) {
+    productSubtype = 'MATCHA_SLIM';
+    detectedNiche = 'SUPPLEMENTS';
+  } else if (
+    combinedText.includes('magnesium') ||
+    combinedText.includes('ashwa') ||
+    combinedText.includes('zinc') ||
+    combinedText.includes('omega') ||
+    combinedText.includes('gelule') ||
+    combinedText.includes('capsul') ||
+    combinedText.includes('sommeil') ||
+    combinedText.includes('مكمل') ||
+    combinedText.includes('فيتامين') ||
+    combinedText.includes('أرق')
+  ) {
+    productSubtype = 'SUPPLEMENT';
+    detectedNiche = 'SUPPLEMENTS';
+  } else if (
+    combinedText.includes('hachoir') ||
+    combinedText.includes('mixeur') ||
+    combinedText.includes('chopper') ||
+    combinedText.includes('cuisin') ||
+    combinedText.includes('kitchen') ||
+    combinedText.includes('مطبخ') ||
+    combinedText.includes('هراسة')
+  ) {
+    productSubtype = 'KITCHEN';
+    detectedNiche = 'KITCHEN';
+  } else if (
+    combinedText.includes('voitur') ||
+    combinedText.includes('car') ||
+    combinedText.includes('auto') ||
+    combinedText.includes('support tel') ||
+    combinedText.includes('سيارة')
+  ) {
+    productSubtype = 'CAR';
+    detectedNiche = 'CAR';
+  } else if (
+    combinedText.includes('montre') ||
+    combinedText.includes('smartwatch') ||
+    combinedText.includes('ecouteur') ||
+    combinedText.includes('ventilateur')
+  ) {
+    productSubtype = 'GADGET';
+    detectedNiche = 'GADGETS';
+  } else if (detectedNiche === 'HEALTH') {
+    productSubtype = 'GENERIC_HEALTH';
+  }
+
+  const niche = detectedNiche;
 
   const countryConfig: Record<string, { flag: string; nameAr: string; currency: string; defaultShip: number; cities: string[]; excluded: string[] }> = {
     MA: { flag: '🇲🇦', nameAr: 'المغرب', currency: 'DH', defaultShip: 35, cities: ['الدار البيضاء', 'الرباط', 'سلا', 'مراكش', 'طنجة', 'فاس', 'أكادير', 'القنيطرة', 'مكناس'], excluded: ['المناطق الجبلية الوعرة والقرى النائية'] },
@@ -1539,11 +1692,11 @@ export function analyzeProductDetails(input: ProductAnalysisInput): ProductAnaly
 
   const c = countryConfig[targetCountry] || countryConfig.MA;
 
-  const wholesale = Number(input.wholesalePrice) || (targetCountry === 'SN' ? 3500 : (targetCountry === 'GCC' ? 35 : (targetCountry === 'US' || targetCountry === 'FR' ? 5 : 45)));
-  const retail = Number(input.retailPrice) || (targetCountry === 'SN' ? 16500 : (targetCountry === 'GCC' ? 199 : (targetCountry === 'US' || targetCountry === 'FR' ? 29.99 : 249)));
+  const wholesale = Number(input.wholesalePrice) || (targetCountry === 'SN' ? 3500 : (targetCountry === 'GCC' ? 35 : (targetCountry === 'US' || targetCountry === 'FR' ? 5 : (productSubtype === 'MAGNETIC_INSOLES' ? 30 : 45))));
+  const retail = Number(input.retailPrice) || (targetCountry === 'SN' ? 16500 : (targetCountry === 'GCC' ? 199 : (targetCountry === 'US' || targetCountry === 'FR' ? 29.99 : (productSubtype === 'MAGNETIC_INSOLES' ? 199 : 249))));
   const shipping = Number(input.shippingFee) || c.defaultShip;
-  const cr = Number(input.estConfirmationRate) || (targetCountry === 'US' || targetCountry === 'FR' ? 95 : (targetCountry === 'GCC' ? 86 : 82));
-  const dr = Number(input.estDeliveryRate) || (targetCountry === 'US' || targetCountry === 'FR' ? 95 : (targetCountry === 'GCC' ? 82 : 78));
+  const cr = Number(input.estConfirmationRate) || (targetCountry === 'US' || targetCountry === 'FR' ? 95 : (targetCountry === 'GCC' ? 86 : (productSubtype === 'MAGNETIC_INSOLES' ? 88 : 82)));
+  const dr = Number(input.estDeliveryRate) || (targetCountry === 'US' || targetCountry === 'FR' ? 95 : (targetCountry === 'GCC' ? 82 : (productSubtype === 'MAGNETIC_INSOLES' ? 84 : 78)));
 
   const crDecimal = Math.max(0.2, Math.min(1, cr / 100));
   const drDecimal = Math.max(0.2, Math.min(1, dr / 100));
@@ -1567,10 +1720,10 @@ export function analyzeProductDetails(input: ProductAnalysisInput): ProductAnaly
   const roasTarget = Number(((retail * expectedDeliveredOrdersPer100) / (100 * targetCpaMax)).toFixed(2)) || 2.6;
 
   const marginHealth = Math.min(100, Math.max(20, Math.round((grossMargin / retail) * 125)));
-  const problemSolving = niche === 'HEALTH' || niche === 'SUPPLEMENTS' || niche === 'COSMETICS' || niche === 'KITCHEN' ? 95 : 86;
-  const wowFactor = niche === 'GADGETS' || niche === 'BEAUTY' || niche === 'COSMETICS' ? 94 : 84;
-  const shippingFeasibility = wholesale < (targetCountry === 'SN' ? 8000 : 70) ? 92 : 78;
-  const marketDemand = breakEvenCpa > (targetCountry === 'SN' ? 3000 : 35) ? 90 : 74;
+  const problemSolving = niche === 'HEALTH' || niche === 'SUPPLEMENTS' || niche === 'COSMETICS' || niche === 'KITCHEN' ? 96 : 86;
+  const wowFactor = niche === 'GADGETS' || niche === 'BEAUTY' || productSubtype === 'MAGNETIC_INSOLES' ? 92 : 84;
+  const shippingFeasibility = wholesale < (targetCountry === 'SN' ? 8000 : 70) ? 94 : 78;
+  const marketDemand = breakEvenCpa > (targetCountry === 'SN' ? 3000 : 35) ? 92 : 74;
 
   const overallScore = Math.round(
     (marginHealth * 0.3) +
@@ -1594,7 +1747,9 @@ export function analyzeProductDetails(input: ProductAnalysisInput): ProductAnaly
 
   // Market Viability Analysis
   let marketDemandAnalysisAr = '';
-  if (targetCountry === 'MA') {
+  if (productSubtype === 'MAGNETIC_INSOLES') {
+    marketDemandAnalysisAr = `السميلات المغناطيسية والـ Acupressure Insoles تحقق مبيعات استثنائية في المغرب ${c.flag} لأن نسبة كبيرة من المواطنين يعملون واقفين لساعات طويلة (تجار، معلمون، ممرضون، وعمال)، إضافة إلى كبار السن الذين يعانون من مسمار الكعب وآلام الظهر. بيع باقة زوجين (Pack 2 Paires بـ 299 درهم) يرفع الأرباح الصافية بأكثر من 40%.`;
+  } else if (targetCountry === 'MA') {
     marketDemandAnalysisAr = `السوق المغربي ${c.flag} يتميز بطلب قوي جداً على الدفع عند الاستلام (COD). المستهلك المغربي يبحث عن الجودة والمصداقية والحلول العملية. المنتجات ذات السعر بين 199 و 299 درهم مع توصيل مجاني وسريع تحقق أعلى معدلات تأكيد تفوق 82%.`;
   } else if (targetCountry === 'GCC') {
     marketDemandAnalysisAr = `السوق الخليجي والسعودي ${c.flag} يمتلك قوة شرائية جبارة وسرعة فائقة في اتخاذ قرار الشراء إذا كان الإعلان يعرض نتيجة مبهرة. سلة الشراء المرتفعة (199 إلى 299 ريال) تمنحك أريحية خيالية في تكلفة الإعلانات.`;
@@ -1604,9 +1759,14 @@ export function analyzeProductDetails(input: ProductAnalysisInput): ProductAnaly
     marketDemandAnalysisAr = `سوق ${c.nameAr} ${c.flag} يتميز بالدفع الإلكتروني المباشر (Stripe / Cartes) وانعدام مشاكل الإلغاء أو المرتجعات. التركيز يكون على سرعة الشحن (3-5 أيام) وصفحة هبوط احترافية مع فيديوهات UGC طبيعية.`;
   }
 
-  // Category & Regulatory Safety Tips (Special focus on Cosmetics & Supplements)
+  // Category & Regulatory Safety Tips
   const regulatoryAndSafetyTipsAr: string[] = [];
-  if (niche === 'COSMETICS') {
+  if (productSubtype === 'MAGNETIC_INSOLES' || niche === 'HEALTH') {
+    regulatoryAndSafetyTipsAr.push('⚠️ سياسة فيسبوك وتيك توك للأجهزة الصحية: تجنب الادعاء الطبي بعلاج الأمراض المزمنة (كالشفاء التام من الديسك أو هشاشة العظام). ركز في الإعلان على: "راحة فورية للقدمين عند الوقوف"، "مساج نقاط الأكيوبريسير"، "تخفيف الضغط على المفاصل والظهر".');
+    regulatoryAndSafetyTipsAr.push('👟 ضبط وتعديل المقاسات: وضح في الفيديو أن السميلات قابلة للقص والضبط (Découpables) لتناسب جميع مقاسات الأحذية من 36 إلى 45 دون قلق من المقاس.');
+    regulatoryAndSafetyTipsAr.push('🎁 استراتيجية باقة الزوجين (Pack 2 Paires): نسبة كبيرة من المشترين يطلبون زوجين (واحد للأحذية الرياضية وواحد للعمل، أو هدية للوالدة/الزوج) عند عرض سعر 299 درهم وشحن مجاني.');
+    regulatoryAndSafetyTipsAr.push('📦 الجودة وتثبيت المغناطيس: احرص على اختيار الموردين الذين يثبتون المغناطيسات الحيوية بإحكام داخل السيليكون حتى لا تتحرك أثناء المشي.');
+  } else if (niche === 'COSMETICS') {
     regulatoryAndSafetyTipsAr.push('⚠️ سياسة فيسبوك وتيك توك للجمال: يمنع منعاً باتاً وضع زووم مقرب مبالغ فيه (Zoom-in) على البثور أو الكلف. اعتمد على فيديوهات الروتين الطبيعي (GRWM) ولقطات تطبيق السيروم/الكريم بانسيابية.');
     regulatoryAndSafetyTipsAr.push('💄 المصداقية والمكونات: أظهر المكونات الطبيعية (مثل فيتامين C، زيت الأرغان، النياسيناميد) بوضوح لرفع معدل التحويل في صفحة الهبوط.');
     regulatoryAndSafetyTipsAr.push('📦 جودة التعبئة والتغليف: احرص على تغليف الزجاجات والعلب بـ Bubble Wrap محكم لتفادي أي كسر أو تسرب أثناء النقل والتوصيل.');
@@ -1625,14 +1785,14 @@ export function analyzeProductDetails(input: ProductAnalysisInput): ProductAnaly
   const recommendedPlatforms = [];
   if (targetCountry === 'GCC') {
     recommendedPlatforms.push(
-      { name: 'Snapchat Ads', suitability: 96, reasonAr: 'المنصة رقم 1 بلا منازع في السعودية والخليج للجمال والمكملات بنسب مشاهدة قياسية', badge: 'أعلى عائد 🥇' },
+      { name: 'Snapchat Ads', suitability: 96, reasonAr: 'المنصة رقم 1 بلا منازع في السعودية والخليج بنسب مشاهدة قياسية', badge: 'أعلى عائد 🥇' },
       { name: 'TikTok Ads', suitability: 94, reasonAr: 'أقوى منصة لتحقيق المبيعات الفيروسية السريعة عبر فيديوهات الـ UGC الطبيعية', badge: 'فيروسية عالية 🔥' },
       { name: 'Meta Ads (Instagram)', suitability: 82, reasonAr: 'ممتاز للبراندات ذات القيمة العالية وإعادة الاستهداف (Retargeting)', badge: 'براندينغ ✨' }
     );
   } else if (targetCountry === 'MA') {
     recommendedPlatforms.push(
-      { name: 'Meta Ads (Facebook & Instagram)', suitability: 96, reasonAr: 'المنصة الأساسية والأشمل في المغرب للوصول لكافة المدن وربات البيوت والموظفين', badge: 'الأكثر استقراراً 🏆' },
-      { name: 'TikTok Ads', suitability: 93, reasonAr: 'أرخص تكلفة ظهور (CPM) وتفاعل استثنائي مع الفيديوهات بالدارجة المغربية', badge: 'أقل تكلفة ⚡' },
+      { name: 'Meta Ads (Facebook & Instagram)', suitability: 96, reasonAr: productSubtype === 'MAGNETIC_INSOLES' ? 'فيسبوك هو المنصة الأقوى في المغرب لاستهداف الموظفين والعمال وكبار السن المهتمين بآلام الظهر والراحة' : 'المنصة الأساسية والأشمل في المغرب للوصول لكافة المدن وربات البيوت والموظفين', badge: 'الأكثر استقراراً 🏆' },
+      { name: 'TikTok Ads', suitability: 93, reasonAr: 'أرخص تكلفة ظهور (CPM) وتفاعل استثنائي مع الفيديوهات بالدارجة المغربية لشرح كيفية عمل المنتج', badge: 'أقل تكلفة ⚡' },
       { name: 'Google Ads / YouTube', suitability: 72, reasonAr: 'ممتاز لمن يبحث بالاسم عن المنتج أو الكورس العلاجي مباشرة', badge: 'استهداف نوايا 🎯' }
     );
   } else if (targetCountry === 'SN') {
@@ -1648,13 +1808,20 @@ export function analyzeProductDetails(input: ProductAnalysisInput): ProductAnaly
   }
 
   // Strengths and Challenges
-  const strengthsAr = [
+  const strengthsAr = productSubtype === 'MAGNETIC_INSOLES' ? [
+    `مشكلة ألم القدمين والظهر تدفع الزبون للشراء العاجل بدون تفكير (Impulse Emotional Buying).`,
+    `هامش ربح ممتاز يسمح بـ Break-even CPA يصل إلى ${breakEvenCpa} ${c.currency} وصافي ربح متوقع +${netProfitPerDelivered} ${c.currency} للطلب.`,
+    `إمكانية مضاعفة الأرباح بسهولة عبر باقة الزوجين (Pack 2 Paires) بسعر 299 درهم وشحن مجاني.`
+  ] : [
     `هامش أمان ممتاز يسمح بصرف حتى ${breakEvenCpa} ${c.currency} لكل مبيعة بدون خسارة.`,
     `طلب استهلاكي مرتفع في مجال ${niche} في سوق ${c.nameAr}.`,
     `سهولة بناء باقات وعروض مضاعفة (Bundle Packs) لرفع قيمة السلة الشرائية.`
   ];
 
-  const challengesAr = [
+  const challengesAr = productSubtype === 'MAGNETIC_INSOLES' ? [
+    'ضرورة إبراز أن السميلات قابلة للتعديل والقص لتناسب جميع المقاسات (36 إلى 45) لإزالة أي تردد لدى الزبون.',
+    'الاتصال السريع عبر الكول سنتر في أول 15 دقيقة لرفع نسبة التأكيد والتوصيل لأكثر من 85%.'
+  ] : [
     targetCountry === 'MA' || targetCountry === 'SN' || targetCountry === 'GCC'
       ? 'ضرورة المتابعة السريعة لطلبات الـ COD عبر الكول سنتر في أول 15 دقيقة لرفع نسبة التوصيل.'
       : 'الحاجة إلى تقديم تجربة مستخدم سريعة وشحن لا يتجاوز 3-5 أيام لمنافسة أمازون.',
@@ -1665,9 +1832,109 @@ export function analyzeProductDetails(input: ProductAnalysisInput): ProductAnaly
 
   const titleText = input.title || 'هذا المنتج المميز';
 
-  // Customized Marketing Angles
+  // Highly Targeted & Commercial Marketing Angles
   let marketingAngles = [];
-  if (niche === 'COSMETICS') {
+
+  if (productSubtype === 'MAGNETIC_INSOLES') {
+    marketingAngles = [
+      {
+        angleName: 'Angle 1: Standing Work & Daily Foot Relief',
+        angleNameAr: 'الزاوية الأولى: راحة القدمين والتخلص من ألم الوقوف والمشي (Standing Relief)',
+        hook3sAr: `كتعاني من حريق أسفل الرجلين والظهر بعد نهار طويل د الخدمة والوقوف؟ شوف هاد الاختراع لي غادي يريحك من أول خطوة!`,
+        mainPitchAr: `مع سميلات ${titleText} المغناطيسية بتقنية الأكيوبريسير، كل خطوة كدير مساج طبيعي للقدمين، كتنشط الدورة الدموية، وكتمتص الصدمات باش تخفف الضغط على الركابي وأسفل الظهر نهائياً. مناسبة لجميع أنواع الأحذية والصبابط.`,
+        callToActionAr: `الكمية محدودة في المخزون! اطلب ديالك دابا والتوصيل فابور حتى لباب دارك وما تخلص حتى تعاين وتتأكد.`,
+        fullScriptAr: `[0-3 ثوانٍ]: حريق الرجلين وأسفل الظهر بعد نهار كامل د الخدمة والوقوف؟ شوف الحل لي غيهنيك!
+[3-12 ثانية]: سميلات ${titleText} مصممة بـ 8 مغناطيسات علاجية ومئات نقاط الأكيوبريسير لي كتدلك باطن القدم مع كل خطوة كتمشاها.
+[12-25 ثانية]: كتنشط الدورة الدموية، كتمتص الصدمات، وكتخفف الضغط على المفاصل، العمود الفقري ومسمار الكعب (Épine calcanéenne).
+[25-35 ثانية]: كتقدر تقطعها وتعدلها بسهولة على قياس أي صباط عندك من 36 لـ 45. استفد اليوم من عرض التخفيض وتوصيل فابور حتى لباب دارك! الرابط أسفله للطلب.`,
+        adCopyTextAr: `🚶‍♂️ وداعاً لآلام القدمين والظهر بعد اليوم!
+مع سميلات ${titleText} المغناطيسية الأصلية، تمتع براحة تامة في كل خطوة:
+✅ تدليك طبيعي لنقاط الأكيوبريسير وتنشيط الدورة الدموية
+✅ امتصاص الصدمات وتخفيف الضغط على الركبتين والعمود الفقري
+✅ راحة مثالية لمن يقفون طويلاً أو يعانون من مسمار الكعب
+✅ تناسب جميع مقاسات الأحذية (قابلة للقص والضبط من 36 إلى 45)
+🚚 التوصيل مجاني لجميع المدن والدفع عند الاستلام بعد المعاينة
+🎁 اطلب الآن واستفد من خصم خاص على الباقة المزدوجة!`,
+        adCopyTextFr: `Dites adieu aux douleurs de pieds, talons et mal de dos ! Les semelles magnétiques d'acupression ${titleText} massent vos pieds à chaque pas et stimulent la circulation sanguine. Soulagement immédiat pour ceux qui marchent ou travaillent debout. Adaptables à toutes pointures. Livraison gratuite partout au Maroc et paiement à la livraison.`,
+      },
+      {
+        angleName: 'Angle 2: Calcaneal Spur & Plantar Fasciitis',
+        angleNameAr: 'الزاوية الثانية: مسمار الكعب والتهاب باطن القدم (Épine Calcanéenne & Talons)',
+        hook3sAr: `إذا كان كيحرقك كعب رجلك ومقادرش تحط رجلك على الأرض فالصباح، هذا هو الحل الطبيعي لي غيهنيك!`,
+        mainPitchAr: `التهاب باطن القدم ومسمار الكعب كيعذبو بزاف. هاد السميلات كتوزع وزن الجسم بالتساوي وكتمتص الصدمة فباطن الكعب باش تمشى بدون أي وخز أو ألم.`,
+        callToActionAr: `ارتاح اليوم واسترجع خفتك في المشي! اطلب علبتك دابا والتوصيل سريع ومجاني حتى لباب دارك.`,
+        fullScriptAr: `[0-3 ثوانٍ]: صعيب عليك تحط رجلك على الأرض فالصباح بسبب مسمار الكعب وألم باطن القدم؟
+[3-15 ثانية]: مع سميلات ${titleText} المغناطيسية، الحقل المغناطيسي ونقاط التدليك كيوزعو ثقل الجسم بالتساوي وكيمتصو صدمة الكعب باش تمشى بحرية وبلا وجع.
+[15-30 ثانية]: حل طبيعي 100% كينصحو بيه أخصائيو تقويم العظام. اطلب اليوم واستفد من الدفع عند الاستلام بعد المعاينة!`,
+        adCopyTextAr: `🦶 علاج فعال ومريح لآلام الكعب وباطن القدم!
+تخلص من وخز مسمار الكعب وإجهاد المفاصل مع سميلات ${titleText}.
+✅ امتصاص كامل للصدمات عند المشي
+✅ حقل مغناطيسي يساعد على تخفيف الالتهابات وتنشيط الدورة الدموية
+🚚 شحن مجاني ودفع كاش عند الاستلام بعد المعاينة`,
+        adCopyTextFr: `Soulagez l'épine calcanéenne et la fasciite plantaire grâce aux semelles ${titleText}. Amorti renforcé et magnétothérapie pour une marche sans douleur. Livraison gratuite.`,
+      },
+      {
+        angleName: 'Angle 3: Duo Family Bundle Offer',
+        angleNameAr: 'الزاوية الثالثة: باقة التوفير للزوجين أو الوالدين (Pack 2 Paires Promo)',
+        hook3sAr: `أحسن هدية للوالدين: خوذ زوج ليك وزوج للوالدة أو الشريك بخصم 40% وشحن مجاني!`,
+        mainPitchAr: `لأن راحة رجليكم وظهركم لا تقدر بثمن، وفرنا ليك باقة زوجين من ${titleText} باش ديرها فكل الصبابط لي عندك أو تهدي الزوج الثاني لأعز شخص عندك بأحسن ثمن.`,
+        callToActionAr: `العرض متاح لـ 50 شخص فقط اليوم! اضغط واطلب باقة التوفير.`,
+        fullScriptAr: `[0-5 ثوانٍ]: عرض التوفير للراحة الكاملة: اشتري زوج سميلات واحصل على الثاني بنصف السعر!
+[5-18 ثانية]: راحة تدوم طوال اليوم ليك ولأفراد عائلتك مع ${titleText} الأصلية. جودة سيليكون طبية عالية ومقاومة للتعرق والروائح.
+[18-30 ثانية]: التوصيل مجاني لجميع مدن المغرب، وما تخلص حتى تقلب السلعة وتتأكد منها. اطلب الآن!`,
+        adCopyTextAr: `🎁 باقة الراحة العائلية (Pack 2 Paires)!
+استفد من خصم استثنائي وشحن مجاني عند طلب زوجين من سميلات ${titleText}.
+🛡️ راحة مضمونة 100% لآلام القدمين والظهر
+🚚 التوصيل بالمجان والدفع عند الاستلام`,
+        adCopyTextFr: `Pack Duo Famille : Profitez de 40% de réduction sur la 2ème paire de semelles ${titleText} avec livraison offerte. Offrez la santé et le confort à vos proches.`,
+      },
+    ];
+  } else if (productSubtype === 'KNEE_SLEEVE') {
+    marketingAngles = [
+      {
+        angleName: 'Angle 1: Knee Pain & Arthrosis Relief',
+        angleNameAr: 'الزاوية الأولى: الصلاة وصعود الدرج براحة وبدون ألم الركبة',
+        hook3sAr: `كتعاني من طقطقة الركبة وألم المفاصل فاش كتصلي أو تطلع الدروج؟ شوف هاد الدعامة الطبية لي غيرات حياة الآلاف!`,
+        mainPitchAr: `دعامة ${titleText} الضاغطة بأحزمة التثبيت المزدوجة كتدعم صابونة الركبة وكتمتص الصدمات وتخفف الاحتكاك والالتهاب فوراً.`,
+        callToActionAr: `اطلب الآن والتوصيل مجاني لجميع المدن والدفع عند الاستلام بعد المعاينة.`,
+        fullScriptAr: `[0-3 ثوانٍ]: ألم الركبة مكيخليكش تصلي مرتاح ولا تمشى فخاطرك؟
+[3-15 ثانية]: مع دعامة ${titleText} الطبية، أحزمة الضغط المتقاطعة كتدعم الركبة 360 درجة وكتحميك من أي التواء أو احتكاك مؤلم.
+[15-30 ثانية]: خفيفة، كتنفس ومكتبانش تحت الحوايج. اطلبها اليوم واستفد من التوصيل المجاني!`,
+        adCopyTextAr: `🦵 استرجع حرية حركتك وصلي بدون ألم!
+دعامة الركبة الطبية ${titleText} لتخفيف آلام المفاصل والروماتيزم.
+✅ تثبيت محكم وضغط طبي متوازن
+✅ حماية كاملة للأربطة والصابونة
+🚚 توصيل سريع ومجاني لجميع المدن`,
+        adCopyTextFr: `Soulagez vos douleurs de genoux et retrouvez une mobilité totale avec ${titleText}. Maintien articulaire optimal et bandes de compression croisées. Livraison gratuite.`,
+      },
+      {
+        angleName: 'Angle 2: Duo Pack for Both Knees',
+        angleNameAr: 'الزاوية الثانية: باقة الركبتين معاً (Pack 2 Genouillères)',
+        hook3sAr: `عرض حصري: خوذ دعامة للركبة اليمنى واصل على الثانية للركبة اليسرى بخصم 50%!`,
+        mainPitchAr: `لأن توازن الحركة كيحتاج دعم الركبتين بجوج، وفرنا ليك باقة التوفير الاقتصادية بأحسن سعر.`,
+        callToActionAr: `اضغط هنا واطلب باقة الركبتين قبل نفاد الكمية!`,
+        fullScriptAr: `[0-5 ثوانٍ]: باقة التوفير لدعم الركبتين بجوج!
+[5-20 ثانية]: زوج دعامات طبية ${titleText} لحماية كاملة وتوازن تام أثناء المشي والصلاة.
+[20-30 ثانية]: التوصيل مجاني والدفع عند الاستلام. اطلب الآن!`,
+        adCopyTextAr: `🎁 باقة الركبتين الاقتصادية!
+احصل على زوج دعامات ${titleText} بخصم خاص وتوصيل مجاني.`,
+        adCopyTextFr: `Pack Duo Genouillères : Protégez vos deux genoux à prix réduit avec ${titleText}. Livraison gratuite.`,
+      },
+      {
+        angleName: 'Angle 3: Gift for Parents',
+        angleNameAr: 'الزاوية الثالثة: أفضل هدية صحية للوالدين',
+        hook3sAr: `فرح الوالدين بأحسن هدية صحية تخليهم يمشيو ويصليو بكل راحة وخفة!`,
+        mainPitchAr: `راحة الوالدين لا تقدر بثمن. هاد الدعامة الطبية الأصلية هي أحسن ما تهدي ليهم لتخفيف ألم الروماتيزم وصعوبة الحركة.`,
+        callToActionAr: `اطلبها اليوم واكتب عنوان الوالدين والتوصيل مجاني لدارهم!`,
+        fullScriptAr: `[0-5 ثوانٍ]: فرح والديك بأحسن هدية صحية!
+[5-20 ثانية]: دعامة الركبة الطبية ${titleText} كتخفف عليهم ألم الروماتيزم والمفاصل وكتخليهم يصليو ويتحركو بكل راحة.
+[20-30 ثانية]: اطلبها دابا بتوصيل مجاني لجميع مدن المغرب!`,
+        adCopyTextAr: `❤️ هدية البر والراحة للوالدين!
+دعامة الركبة الطبية ${titleText} لتخفيف آلام المفاصل والروماتيزم.`,
+        adCopyTextFr: `Le cadeau santé idéal pour vos parents : confort et soulagement immédiat des articulations avec ${titleText}.`,
+      },
+    ];
+  } else if (niche === 'COSMETICS' || productSubtype === 'SKIN_CARE') {
     marketingAngles = [
       {
         angleName: 'Angle 1: Glowing Skin & Spot Removal',
@@ -1719,7 +1986,7 @@ ${titleText} هو سر الجمال الطبيعي والإشراقة الدائ
         adCopyTextFr: `Offre Spéciale Cure Complète : Bénéficiez d\'une réduction immédiate sur le pack duo ${titleText} avec livraison gratuite.`,
       },
     ];
-  } else if (niche === 'SUPPLEMENTS') {
+  } else if (niche === 'SUPPLEMENTS' || productSubtype === 'SUPPLEMENT' || productSubtype === 'MATCHA_SLIM') {
     marketingAngles = [
       {
         angleName: 'Angle 1: Deep Sleep & Stress Relief',
@@ -1856,10 +2123,35 @@ ${titleText} هو سر الجمال الطبيعي والإشراقة الدائ
     },
     targeting: {
       recommendedGender: niche === 'CAR' ? 'MEN' : (niche === 'BEAUTY' || niche === 'COSMETICS' ? 'WOMEN' : 'ALL'),
-      ageRange: '23 - 55 سنة',
+      ageRange: productSubtype === 'MAGNETIC_INSOLES' ? '30 - 65+ سنة' : '23 - 55 سنة',
       priorityCities: c.cities,
       excludedZones: c.excluded,
-      adsetStrategies: [
+      adsetStrategies: productSubtype === 'MAGNETIC_INSOLES' ? [
+        {
+          name: 'AdSet 1: Broad / Open Targeting (Recommandé)',
+          nameAr: 'المجموعة 1: استهداف مفتوح (Broad بدون اهتمامات مع فيديو قوي)',
+          audienceType: 'Open (Tous centres d\'intérêts)',
+          budgetShare: '50% من الميزانية',
+          interests: ['استهداف مفتوح - دع خوارزميات فيسبوك تكتشف المعانين من آلام الوقوف والمشي بناءً على مشاهدة أول 3 ثوانٍ'],
+          descriptionAr: 'الخيار الأفضل للـ COD في المغرب؛ الكرياتيف القوي هو الذي يصفي الجمهور المهتم بأقل CPM.',
+        },
+        {
+          name: 'AdSet 2: Standing Professions & Healthcare (المهن الشاقة والوقوف الطويل)',
+          nameAr: 'المجموعة 2: الموظفون والمهن التي تتطلب الوقوف طويلاً',
+          audienceType: 'Profession & Lifestyle',
+          budgetShare: '30% من الميزانية',
+          interests: ['Enseignants (الأساتذة)', 'Infirmiers & Médecine (التمريض والصحة)', 'Commerce de détail (التجار)', 'Bâtiment et travaux publics'],
+          descriptionAr: 'يستهدف الفئات التي تقضي أكثر من 8 ساعات يومياً واقفة على أقدامها وتحتاج حلاً عاجلاً لألم الكعب والظهر.',
+        },
+        {
+          name: 'AdSet 3: Joint Pain & Orthopedics (آلام المفاصل والعمود الفقري)',
+          nameAr: 'المجموعة 3: المهتمون بالعظام والمفاصل وصحة العمود الفقري',
+          audienceType: 'Health & Pain Relief',
+          budgetShare: '20% من الميزانية',
+          interests: ['Douleur dorsale', 'Orthopédie', 'Sciatique', 'Réflexologie et massage'],
+          descriptionAr: 'يستهدف كبار السن ومن يبحثون عن حلول طبيعية بدون أدوية للتخلص من مسمار الكعب والتهاب اللفافة الأخمصية.',
+        },
+      ] : [
         {
           name: 'AdSet 1: Broad / Open Targeting (Recommandé)',
           nameAr: 'المجموعة 1: استهداف مفتوح (Broad بدون أي اهتمامات)',
@@ -2098,7 +2390,28 @@ export function scanProductImage(
   let detailsAr = 'عبوة زجاجية فاخرة 30ml مع قطارة | تركيز 10% فيتامين C نقي + 5% نياسيناميد وحمض الهيالورونيك لإزالة البقع والكلف.';
   let visualTags = ['Flacon Cosmétique 30ml', 'Pipette Verre', 'Texture Sérum Fluide', 'Éclaircissant & Anti-Taches'];
 
-  if (nameLower.includes('matcha') || nameLower.includes('ashwa') || nameLower.includes('supp') || nameLower.includes('pill') || nameLower.includes('capsul') || nameLower.includes('the') || nameLower.includes('bio') || nameLower.includes('gellule') || nameLower.includes('diet') || nameLower.includes('poudre')) {
+  if (
+    nameLower.includes('magne') ||
+    nameLower.includes('step') ||
+    nameLower.includes('semelle') ||
+    nameLower.includes('insole') ||
+    nameLower.includes('acupress') ||
+    nameLower.includes('reflexo') ||
+    nameLower.includes('plantar') ||
+    nameLower.includes('talon') ||
+    nameLower.includes('calcan') ||
+    nameLower.includes('pied') ||
+    nameLower.includes('foot')
+  ) {
+    detectedNiche = 'HEALTH';
+    title = 'Semelles Magnétiques d\'Acupression & Réflexologie (Magnesteps)';
+    titleAr = 'سميلات التدليك المغناطيسي للأقدام وتخفيف آلام الظهر ومسمار الكعب (Magnesteps)';
+    baseWholesale = 30;
+    baseRetail = 199;
+    detailsFr = 'Semelles thérapeutiques respirantes à 8 aimants néodyme et picots d\'acupression réflexologique stimulant la circulation sanguine et soulageant fasciite plantaire et mal de dos.';
+    detailsAr = 'سميلات طبية سيليكون مريحة قابلة للقص بـ 8 مغناطيسات طبيعية ونقاط تدليك ريفلكسولوجي لتخفيف آلام القدمين والظهر وثقل الساقين.';
+    visualTags = ['8 Aimants Thérapeutiques', 'Noeuds d\'Acupression', 'Amorti Chocs Plantaire', 'Adaptable Toutes Pointures'];
+  } else if (nameLower.includes('matcha') || nameLower.includes('ashwa') || nameLower.includes('supp') || nameLower.includes('pill') || nameLower.includes('capsul') || nameLower.includes('the') || nameLower.includes('bio') || nameLower.includes('gellule') || nameLower.includes('diet') || nameLower.includes('poudre')) {
     detectedNiche = 'SUPPLEMENTS';
     title = 'Thé Matcha Bio Japonais Détox & Brûleur de Graisses';
     titleAr = 'شاي الماتشا الأخضر الياباني العضوي لحرق الدهون وزيادة الطاقة والتركيز';
