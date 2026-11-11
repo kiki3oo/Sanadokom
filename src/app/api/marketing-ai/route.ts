@@ -11,6 +11,7 @@ import {
 import { researchMarkets } from '@/lib/marketResearch';
 import { isCampaignPeriod } from '@/lib/campaignSummary';
 import { prisma } from '@/lib/prisma';
+import { metaAccountId, metaSyncError, syncMetaCampaignSpend } from '@/lib/facebook/campaignSpend';
 import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/session';
 
 async function campaignResponse(req: NextRequest, storeId: unknown, period: unknown) {
@@ -34,7 +35,24 @@ async function campaignResponse(req: NextRequest, storeId: unknown, period: unkn
   const allowedStores = user.role === 'CALL_AGENT' && Array.isArray(permissions.assignedStoreIds) && permissions.assignedStoreIds.length
     ? permissions.assignedStoreIds
     : undefined;
-  return NextResponse.json(await getLiveCampaignAudits(storeId, period, allowedStores));
+  let metaSyncWarning: string | undefined;
+  const token = process.env.META_ADS_READ_TOKEN?.trim();
+  if (token && user.role === 'ADMIN' && storeId && !['ALL', 'NONE'].includes(storeId) && !storeId.includes(',')) {
+    const account = await prisma.facebookSetting.findUnique({
+      where: { storeId },
+      select: { adAccountId: true, lastSyncAt: true, autoSyncSpend: true, metaTimeZone: true },
+    });
+    const accountId = metaAccountId(account?.adAccountId);
+    const stale = !account?.metaTimeZone || !account.lastSyncAt || Date.now() - account.lastSyncAt.getTime() >= 6 * 60 * 60 * 1000;
+    if (accountId && account?.autoSyncSpend && stale) {
+      try {
+        await syncMetaCampaignSpend(storeId, accountId, token);
+      } catch (error) {
+        metaSyncWarning = metaSyncError(error);
+      }
+    }
+  }
+  return NextResponse.json({ ...await getLiveCampaignAudits(storeId, period, allowedStores), metaSyncWarning });
 }
 
 export const dynamic = 'force-dynamic';

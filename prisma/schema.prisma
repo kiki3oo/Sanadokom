@@ -38,6 +38,7 @@ model Store {
   orders        Order[]
   expenses      Expense[]
   fbSettings    FacebookSetting?
+  metaSpend     MetaCampaignSpend[]
   courierConfig CourierConfig[]
 }
 
@@ -131,6 +132,7 @@ model Order {
   
   // Marketing attribution (UTM)
   source          String?     @default("Landing Page")
+  metaCampaignId  String?
   utmCampaign     String?     // Campagne
   utmSource       String?     // Source
   adSet           String?     // Ad Set
@@ -187,10 +189,25 @@ model FacebookSetting {
   adAccountId     String?
   accessToken     String?
   pixelId         String?
+  metaTimeZone    String?
   autoSyncSpend   Boolean   @default(false)
   lastSyncAt      DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+model MetaCampaignSpend {
+  storeId      String
+  store        Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  accountId    String
+  campaignId   String
+  campaignName String
+  day          String
+  currency     String
+  spend        Float
+
+  @@id([accountId, campaignId, day])
+  @@index([storeId, accountId, day])
 }
 
 model CourierConfig {

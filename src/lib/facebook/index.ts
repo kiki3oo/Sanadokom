@@ -68,28 +68,3 @@ export async function sendFacebookConversionEvent(
     return { success: false, error: error.message };
   }
 }
-
-export async function fetchFacebookAdSpend(adAccountId: string, accessToken: string) {
-  try {
-    const formattedAccountId = adAccountId.startsWith('act_') ? adAccountId : `act_${adAccountId}`;
-    const url = `https://graph.facebook.com/v19.0/${formattedAccountId}/insights?fields=spend,impressions,clicks,cpc,cpm,actions&date_preset=today&access_token=${accessToken}`;
-
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (data.data && data.data.length > 0) {
-      const insight = data.data[0];
-      return {
-        success: true,
-        spend: parseFloat(insight.spend || '0'),
-        impressions: parseInt(insight.impressions || '0'),
-        clicks: parseInt(insight.clicks || '0'),
-      };
-    }
-
-    return { success: true, spend: 0, impressions: 0, clicks: 0 };
-  } catch (error: any) {
-    console.error('FB Spend Fetch Error:', error);
-    return { success: false, error: error.message, spend: 0 };
-  }
-}

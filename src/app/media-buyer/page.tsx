@@ -227,7 +227,7 @@ export default function MediaBuyerPage() {
   };
 
   // --- Tab 3: Media Buyer Copilot State ---
-  const [campaignData, setCampaignData] = useState<Awaited<ReturnType<typeof getLiveCampaignAudits>> | null>(null);
+  const [campaignData, setCampaignData] = useState<(Awaited<ReturnType<typeof getLiveCampaignAudits>> & { metaSyncWarning?: string }) | null>(null);
   const [campaignLoading, setCampaignLoading] = useState(false);
   const [campaignError, setCampaignError] = useState(false);
   const [campaignRefresh, setCampaignRefresh] = useState(0);
@@ -1049,11 +1049,56 @@ export default function MediaBuyerPage() {
             </>
           )}
 
-          <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-            {isAr
-              ? 'الإنفاق والعائد وإدارة الحملات غير متاحة. تتطلب هذه الميزات ربط منصة إعلانية مع بيانات الحملات.'
-              : 'Dépenses, ROAS et pilotage des campagnes indisponibles. Ces fonctions nécessitent une intégration publicitaire qui remonte les données de campagne.'}
-          </p>
+          <div className="space-y-3 border-t border-slate-200 pt-4">
+            <h3 className="font-bold">{isAr ? 'مصاريف حملات Meta' : 'Dépenses des campagnes Meta'}</h3>
+            {campaignData?.metaSyncWarning && (
+              <p role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950">
+                {isAr ? 'تعذّر تحديث Meta. الأرقام المعروضة من آخر مزامنة ناجحة.' : campaignData.metaSyncWarning}
+              </p>
+            )}
+            {campaignData && !campaignData.metaAccounts.length && (
+              <p className="text-sm text-slate-600">
+                {isAr ? 'ربط حساب Meta من صفحة التكاملات ودير أول مزامنة.' : 'Connectez un compte Meta dans Intégrations et lancez une première synchronisation.'}
+              </p>
+            )}
+            {campaignData?.metaAccounts.map(account => (
+              <div key={account.storeId} className="space-y-2 rounded-xl border border-slate-200 p-4">
+                <h4 className="font-semibold">{account.storeName} · <bdi>act_{account.accountId}</bdi></h4>
+                <p className="text-xs text-slate-600">
+                  {isAr ? 'آخر مزامنة' : 'Dernière synchronisation'}{' '}
+                  {new Date(account.lastSyncAt).toLocaleString(isAr ? 'ar-MA' : 'fr-MA', { timeZone: 'Africa/Casablanca' })}
+                  {' · '}{account.timeZone}
+                </p>
+                {!account.comparable && (
+                  <p className="text-xs text-slate-600">
+                    {isAr ? 'المصاريف بتوقيت حساب Meta. تكلفة الطلب كتظهر ملي الفترة متزامنة والتوقيت مطابق للمغرب.' :
+                      'Dépenses dans le fuseau Meta. Le coût par livraison nécessite une période synchronisée et le même fuseau que les commandes.'}
+                  </p>
+                )}
+                {!account.rows.length ? <p className="text-sm text-slate-600">{isAr ? 'ما كايناش مصاريف مسجّلة لهاد الفترة.' : 'Aucune dépense enregistrée sur cette période.'}</p> : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm tabular-nums">
+                      <thead className="bg-slate-100 text-slate-700">
+                        <tr>{(isAr ? ['الحملة', 'الصرف', 'طلبات مسلّمة مرتبطة', 'تكلفة الطلب المسلّم'] :
+                          ['Campagne', 'Dépenses', 'Livraisons attribuées', 'Coût / livraison']).map(label =>
+                          <th key={label} scope="col" className="px-3 py-2 text-start">{label}</th>)}</tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {account.rows.map(row => (
+                          <tr key={row.campaignId + row.currency}>
+                            <th scope="row" className="px-3 py-2 text-start"><bdi>{row.name || row.campaignId}</bdi></th>
+                            <td className="whitespace-nowrap px-3 py-2">{row.spend.toFixed(2)} {row.currency}</td>
+                            <td className="px-3 py-2">{row.delivered ?? '—'}</td>
+                            <td className="whitespace-nowrap px-3 py-2">{row.costPerDelivery === null ? '—' : row.costPerDelivery.toFixed(2) + ' ' + row.currency}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </section>
       )}
 

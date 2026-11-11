@@ -28,6 +28,9 @@ export async function POST(req: NextRequest) {
       utm_campaign,
       campaign,
       campaign_name,
+      campaign_id,
+      campaignId,
+      utm_campaign_id,
       adSet,
       adset,
       adset_name,
@@ -41,6 +44,10 @@ export async function POST(req: NextRequest) {
     // Resolve UTM & traffic parameters
     const resolvedUtmSource = utmSource || utm_source || null;
     const resolvedUtmCampaign = utmCampaign || utm_campaign || campaign || campaign_name || null;
+    const rawCampaignId = campaign_id ?? campaignId ?? utm_campaign_id;
+    const metaCampaignId = typeof rawCampaignId === 'string' && /^\d{1,32}$/.test(rawCampaignId.trim())
+      ? rawCampaignId.trim()
+      : null;
     const resolvedAdSet = adSet || adset || adset_name || utm_adset || ad_group || null;
 
     let resolvedSource = source || channel || traffic_source || null;
@@ -298,6 +305,7 @@ export async function POST(req: NextRequest) {
         costAmount,
         shippingCost: store.currency === 'XOF' ? 2000.0 : 35.0, // Default estimated delivery fee (XOF for Senegal, MAD for Morocco)
         source: resolvedSource,
+        metaCampaignId,
         utmCampaign: resolvedUtmCampaign,
         utmSource: resolvedUtmSource,
         adSet: resolvedAdSet,

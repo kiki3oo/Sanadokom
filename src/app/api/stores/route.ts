@@ -9,7 +9,7 @@ export async function GET() {
         _count: {
           select: { orders: true, products: true },
         },
-        fbSettings: true,
+        fbSettings: { select: { storeId: true, adAccountId: true, pixelId: true, autoSyncSpend: true, lastSyncAt: true } },
         courierConfig: true,
       },
       orderBy: { createdAt: 'desc' },

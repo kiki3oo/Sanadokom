@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { fetchFacebookAdSpend } from '@/lib/facebook';
+import { metaAccountId, metaSyncError, syncMetaCampaignSpend } from '@/lib/facebook/campaignSpend';
+import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/session';
 import {
   loadWebhookConfig,
   saveWebhookConfig,
@@ -9,6 +10,10 @@ import {
 } from '@/lib/outgoingWebhooks';
 
 export const dynamic = 'force-dynamic';
+
+const facebookFields = {
+  storeId: true, adAccountId: true, pixelId: true, autoSyncSpend: true, lastSyncAt: true,
+} as const;
 
 export async function GET(req: NextRequest) {
   try {
@@ -20,7 +25,7 @@ export async function GET(req: NextRequest) {
 
     const fbSettings = await prisma.facebookSetting.findMany({
       where: storeCondition ? { storeId: storeCondition } : undefined,
-      include: { store: true },
+      select: facebookFields,
     });
 
     const courierConfigs = await prisma.courierConfig.findMany({
@@ -34,6 +39,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       fbSettings,
+      metaReadConfigured: Boolean(process.env.META_ADS_READ_TOKEN?.trim()),
       courierConfigs,
       n8nWebhookConfig,
       n8nWebhookLogs,
@@ -52,47 +58,59 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'storeId is required' }, { status: 400 });
     }
 
-    // 1. Facebook Integration Save / Sync
     if (type === 'FACEBOOK') {
-      const { adAccountId, accessToken, pixelId, autoSyncSpend, triggerSync } = body;
-
-      const updated = await prisma.facebookSetting.upsert({
-        where: { storeId },
-        update: {
-          adAccountId,
-          accessToken,
-          pixelId,
-          autoSyncSpend: autoSyncSpend ?? false,
-          lastSyncAt: triggerSync ? new Date() : undefined,
-        },
-        create: {
-          storeId,
-          adAccountId,
-          accessToken,
-          pixelId,
-          autoSyncSpend: autoSyncSpend ?? false,
-          lastSyncAt: triggerSync ? new Date() : undefined,
-        },
+      const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+      const admin = session && await prisma.user.findFirst({
+        where: { id: session.userId, role: 'ADMIN', active: true }, select: { id: true },
       });
-
-      // If triggerSync is requested, fetch today's ad spend and create/update an Expense entry
-      let syncResult = null;
-      if (triggerSync && adAccountId && accessToken) {
-        syncResult = await fetchFacebookAdSpend(adAccountId, accessToken);
-        if (syncResult.success && syncResult.spend > 0) {
-          await prisma.expense.create({
-            data: {
-              storeId,
-              category: 'FACEBOOK_ADS',
-              amount: syncResult.spend,
-              description: `Facebook Ads Sync Automatique (${new Date().toLocaleDateString('fr-FR')})`,
-              date: new Date(),
-            },
-          });
+      if (!admin) return NextResponse.json({ error: 'Configuration Meta réservée aux administrateurs.' }, { status: 403 });
+      const { adAccountId, accessToken, pixelId, autoSyncSpend, triggerSync } = body;
+      if (typeof storeId !== 'string' || storeId === 'ALL' || storeId.includes(',') ||
+          typeof adAccountId !== 'string' || typeof pixelId !== 'string' ||
+          (accessToken !== undefined && typeof accessToken !== 'string')) {
+        return NextResponse.json({ error: 'Sélectionnez une boutique et vérifiez les paramètres Meta.' }, { status: 400 });
+      }
+      const account = metaAccountId(adAccountId);
+      if (adAccountId.trim() && !account) {
+        return NextResponse.json({ error: 'Identifiant de compte publicitaire invalide.' }, { status: 400 });
+      }
+      const token = process.env.META_ADS_READ_TOKEN?.trim();
+      if (triggerSync && (!account || !token)) {
+        return NextResponse.json({ error: 'Renseignez le compte et META_ADS_READ_TOKEN sur le serveur.' }, { status: 400 });
+      }
+      const normalized = account ? 'act_' + account : null;
+      const settings = await prisma.$transaction(async tx => {
+        if (account && await tx.facebookSetting.findFirst({
+          where: { storeId: { not: storeId }, adAccountId: { in: [account, 'act_' + account] } },
+          select: { storeId: true },
+        })) return null;
+        const previous = await tx.facebookSetting.findUnique({ where: { storeId }, select: { adAccountId: true } });
+        const data = {
+          adAccountId: normalized,
+          pixelId: pixelId.trim() || null,
+          accessToken: accessToken?.trim() || undefined,
+          autoSyncSpend: autoSyncSpend === true,
+        };
+        return tx.facebookSetting.upsert({
+          where: { storeId },
+          update: {
+            ...data,
+            ...(metaAccountId(previous?.adAccountId) !== account ? { lastSyncAt: null, metaTimeZone: null } : {}),
+          },
+          create: { storeId, ...data },
+          select: facebookFields,
+        });
+      });
+      if (!settings) return NextResponse.json({ error: 'Ce compte Meta est déjà associé à une autre boutique.' }, { status: 409 });
+      if (triggerSync && account && token) {
+        try {
+          const syncResult = await syncMetaCampaignSpend(storeId, account, token);
+          return NextResponse.json({ success: true, settings, syncResult });
+        } catch (error) {
+          return NextResponse.json({ error: metaSyncError(error) }, { status: 502 });
         }
       }
-
-      return NextResponse.json({ success: true, settings: updated, syncResult });
+      return NextResponse.json({ success: true, settings });
     }
 
     // 2. Courier Configuration Save
