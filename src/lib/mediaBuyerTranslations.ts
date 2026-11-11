@@ -90,6 +90,22 @@ export interface MediaBuyerI18n {
   dossierClose: string;
   dossierSendToAudit: string;
 
+  // Visual Image Scan
+  visualScanTitle: string;
+  visualScanBadge: string;
+  visualScanSubtitle: string;
+  visualScanDropTitle: string;
+  visualScanDropSub: string;
+  visualScanAnalyzing: string;
+  visualScanSuccess: string;
+  visualScanChange: string;
+  visualScanRemove: string;
+  visualScanGoogleLens: string;
+  visualScanFactorySearch: string;
+  visualScanAdsSearch: string;
+  visualScanDetectedBadge: string;
+  visualScanConfidence: string;
+
   // Tab 2: Product Validator
   valHeaderTitle: string;
   valBadgeDirect: string;
@@ -289,6 +305,22 @@ export const mediaBuyerTranslations: Record<'fr' | 'ar' | 'en', MediaBuyerI18n> 
     dossierClose: 'Fermer',
     dossierSendToAudit: 'Transférer à l\'Auditeur & Générer les Scripts 🚀',
 
+    // Visual Image Scan
+    visualScanTitle: 'Recherche & Scan Visuel par Image (Visual AI Audit)',
+    visualScanBadge: 'Scan par Image 📸',
+    visualScanSubtitle: 'Glissez une photo de produit, capture d\'écran TikTok ou photo d\'entrepôt pour que l\'IA reconnaisse le produit, remplisse le formulaire et trouve les usines d\'origine.',
+    visualScanDropTitle: 'Glissez une image ici ou cliquez pour importer',
+    visualScanDropSub: 'PNG, JPG, WEBP jusqu\'à 10 Mo • Supporte aussi le copier-coller (Ctrl+V)',
+    visualScanAnalyzing: 'Analyse de l\'image en cours par l\'IA visuelle...',
+    visualScanSuccess: 'Produit identifié avec succès ! Formulaire et estimations pré-remplis.',
+    visualScanChange: 'Changer l\'image 🔄',
+    visualScanRemove: 'Supprimer',
+    visualScanGoogleLens: 'Google Lens (Recherche Inversée 🌍)',
+    visualScanFactorySearch: 'Trouver l\'Usine (AliExpress / 1688 🏭)',
+    visualScanAdsSearch: 'Publicités Actives (Meta & TikTok 📱)',
+    visualScanDetectedBadge: 'Inspection Visuelle Réussie (Scan IA)',
+    visualScanConfidence: 'Confiance IA :',
+
     // Tab 2
     valHeaderTitle: 'Audit Produit & Analyse Marché avec l\'Expert IA (AI Product & Market Audit)',
     valBadgeDirect: 'Direct & Personnalisé',
@@ -485,6 +517,22 @@ export const mediaBuyerTranslations: Record<'fr' | 'ar' | 'en', MediaBuyerI18n> 
     dossierAliExpress: 'موردي علي إكسبريس (AliExpress 📦)',
     dossierClose: 'إغلاق',
     dossierSendToAudit: 'نقل لمحلل الحملات وتجهيز السكريبتات فوراً 🚀',
+
+    // Visual Image Scan
+    visualScanTitle: 'الفحص والبحث العكسي بالصورة (Visual AI Audit)',
+    visualScanBadge: 'فحص بالصورة 📸',
+    visualScanSubtitle: 'اسحب صورة المنتج أو لقطة شاشة من تيك توك أو صورة من درب عمر ليتعرف عليها الذكاء الاصطناعي ويملأ البيانات تلقائياً ويكتشف الموردين الأصليين.',
+    visualScanDropTitle: 'اسحب الصورة هنا أو اضغط للاختيار من جهازك',
+    visualScanDropSub: 'PNG, JPG, WEBP حتى 10MB • يمكنك أيضاً لصق الصورة مباشرة (Ctrl+V)',
+    visualScanAnalyzing: 'جاري فحص الصورة وتحليل المنتج بالذكاء الاصطناعي...',
+    visualScanSuccess: 'تم التعرف على المنتج بنجاح وتعبئة البيانات والأسعار التقديرية!',
+    visualScanChange: 'تغيير الصورة 🔄',
+    visualScanRemove: 'حذف',
+    visualScanGoogleLens: 'Google Lens (بحث عكسي عن الصورة 🌍)',
+    visualScanFactorySearch: 'البحث عن المصنع الأصلي (AliExpress / 1688 🏭)',
+    visualScanAdsSearch: 'الإعلانات النشطة للمنتج (Meta & TikTok 📱)',
+    visualScanDetectedBadge: 'Inspection Visuelle Réussie (Scan IA)',
+    visualScanConfidence: 'نسبة الدقة :',
 
     // Tab 2
     valHeaderTitle: 'فحص واستشارة منتجك مع الخبير الإعلاني (AI Product & Market Audit)',

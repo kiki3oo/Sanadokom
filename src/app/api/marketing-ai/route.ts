@@ -4,6 +4,7 @@ import {
   generateAiProductIdeas,
   analyzeProductDetails,
   getLiveCampaignAudits,
+  scanProductImage,
   ProductAnalysisInput,
 } from '@/lib/marketingAi';
 
@@ -89,6 +90,15 @@ export async function POST(req: NextRequest) {
         campaignId,
         newStatus,
         message: `La campagne/adset ${campaignId} a été mise à jour avec succès (${newStatus}).`,
+      });
+    }
+
+    if (action === 'SCAN_IMAGE') {
+      const { imageBase64, filename, targetCountry } = body;
+      const scanResult = scanProductImage(imageBase64, filename, targetCountry);
+      return NextResponse.json({
+        success: true,
+        data: scanResult,
       });
     }
 

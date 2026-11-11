@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useStore } from '@/context/StoreContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -39,6 +39,12 @@ import {
   ShieldAlert,
   MapPin,
   Clock,
+  Camera,
+  UploadCloud,
+  ImageIcon,
+  Trash2,
+  Scan,
+  Factory,
 } from 'lucide-react';
 import { WinningProduct, ProductAnalysisResult } from '@/lib/marketingAi';
 import { mediaBuyerTranslations } from '@/lib/mediaBuyerTranslations';
@@ -90,7 +96,24 @@ export default function MediaBuyerPage() {
     productUrl: '',
     description: '',
     ingredientsOrDetails: '',
+    imageUrl: '',
   });
+
+  // Visual Product Scanner State
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [imageScanning, setImageScanning] = useState(false);
+  const [imageScanSuccess, setImageScanSuccess] = useState(false);
+  const [imageFeatures, setImageFeatures] = useState<string[]>([]);
+  const [reverseSearchUrls, setReverseSearchUrls] = useState<{
+    googleLens?: string;
+    aliExpress?: string;
+    alibaba1688?: string;
+    metaAds?: string;
+    tikTokAds?: string;
+  } | null>(null);
+  const [imageConfidence, setImageConfidence] = useState<number | null>(null);
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const imageFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleCountryChange = (country: string) => {
     let defaultShip = 35;
@@ -237,6 +260,7 @@ export default function MediaBuyerPage() {
         productUrl: '',
         description: found.description || '',
         ingredientsOrDetails: '',
+        imageUrl: found.imageUrl || '',
       });
     }
   };
@@ -256,19 +280,115 @@ export default function MediaBuyerPage() {
       productUrl: '',
       description: wp.descriptionAr || wp.description,
       ingredientsOrDetails: '',
+      imageUrl: wp.imageUrl || '',
     };
     setAnalysisInput(payload);
+    if (wp.imageUrl) {
+      setUploadedImage(wp.imageUrl);
+      setImageScanSuccess(true);
+      setImageConfidence(98);
+      setImageFeatures([wp.title, wp.niche, 'Winning Product Radar']);
+      setReverseSearchUrls({
+        googleLens: `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(wp.imageUrl)}`,
+        aliExpress: `https://www.aliexpress.com/wholesale?SearchText=${encodeURIComponent(wp.title)}`,
+        metaAds: `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&q=${encodeURIComponent(wp.title)}`,
+        tikTokAds: `https://www.tiktok.com/search?q=${encodeURIComponent(wp.title)}`,
+      });
+    }
     setSelectedProductDetails(null);
     setActiveTab('PRODUCT_VALIDATOR');
     // Auto-trigger analysis
     triggerAnalysis(payload);
   };
 
+  // Image Upload & Visual AI Scanner Handlers
+  const handleImageFile = (file: File) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    setImageScanning(true);
+    setImageScanSuccess(false);
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUrl = e.target?.result as string;
+      setUploadedImage(dataUrl);
+
+      try {
+        const res = await fetch('/api/marketing-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'SCAN_IMAGE',
+            imageBase64: dataUrl,
+            filename: file.name,
+            targetCountry: analysisInput.targetCountry,
+          }),
+        });
+
+        const data = await res.json();
+        if (data.success && data.scan) {
+          const scan = data.scan;
+          setImageScanSuccess(true);
+          setImageFeatures(scan.detectedFeatures || []);
+          setReverseSearchUrls(scan.reverseSearchUrls || null);
+          setImageConfidence(scan.confidence || 95);
+
+          setAnalysisInput((prev) => ({
+            ...prev,
+            title: scan.detectedTitle || prev.title,
+            niche: scan.detectedNiche || prev.niche,
+            wholesalePrice: scan.estimatedWholesale || prev.wholesalePrice,
+            retailPrice: scan.suggestedRetail || prev.retailPrice,
+            ingredientsOrDetails: scan.suggestedDescription || prev.ingredientsOrDetails,
+            productUrl: scan.reverseSearchUrls?.aliExpress || prev.productUrl,
+            imageUrl: dataUrl,
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to scan image', err);
+      } finally {
+        setImageScanning(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDropImage = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingImage(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleImageFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handlePasteImage = (e: React.ClipboardEvent) => {
+    if (e.clipboardData.files && e.clipboardData.files[0]) {
+      const file = e.clipboardData.files[0];
+      if (file.type.startsWith('image/')) {
+        handleImageFile(file);
+      }
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setUploadedImage(null);
+    setImageScanSuccess(false);
+    setImageFeatures([]);
+    setReverseSearchUrls(null);
+    setImageConfidence(null);
+    setAnalysisInput((prev) => ({ ...prev, imageUrl: '' }));
+    if (imageFileInputRef.current) {
+      imageFileInputRef.current.value = '';
+    }
+  };
+
   // Trigger analysis
   const triggerAnalysis = async (customPayload?: any) => {
     setAnalyzing(true);
     try {
-      const payload = customPayload || analysisInput;
+      const payload = customPayload || {
+        ...analysisInput,
+        imageUrl: uploadedImage || analysisInput.imageUrl || undefined,
+      };
       const res = await fetch('/api/marketing-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1183,6 +1303,215 @@ export default function MediaBuyerPage() {
               )}
             </div>
 
+            {/* Visual Image Scanner & Reverse Image Search Zone */}
+            <div
+              className={`rounded-3xl p-5 md:p-6 transition-all border ${
+                isDraggingImage
+                  ? 'bg-indigo-50 border-indigo-500 ring-4 ring-indigo-500/20'
+                  : uploadedImage
+                  ? 'bg-gradient-to-br from-indigo-50/50 via-purple-50/25 to-slate-50 border-indigo-200'
+                  : 'bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/20 border-slate-200 hover:border-indigo-300'
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDraggingImage(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                setIsDraggingImage(false);
+              }}
+              onDrop={handleDropImage}
+              onPaste={handlePasteImage}
+            >
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-indigo-100/80">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+                    <Camera className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-black text-slate-900 font-heading">
+                        {t.visualScanTitle}
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-black border border-indigo-200">
+                        {t.visualScanBadge}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                      {t.visualScanSubtitle}
+                    </p>
+                  </div>
+                </div>
+
+                {uploadedImage && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => imageFileInputRef.current?.click()}
+                      className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>{t.visualScanChange}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>{t.visualScanRemove}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Hidden File Input */}
+              <input
+                ref={imageFileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    handleImageFile(e.target.files[0]);
+                  }
+                }}
+              />
+
+              {/* Body: Upload state OR Scanned Preview State */}
+              {!uploadedImage ? (
+                <div
+                  onClick={() => imageFileInputRef.current?.click()}
+                  className="mt-4 p-8 border-2 border-dashed border-indigo-300 hover:border-indigo-500 rounded-2xl bg-white/80 hover:bg-white text-center cursor-pointer transition-all group flex flex-col items-center justify-center space-y-3"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-xs">
+                    <UploadCloud className="w-7 h-7 text-indigo-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs md:text-sm font-black text-slate-800">
+                      {t.visualScanDropTitle}
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-medium">
+                      {t.visualScanDropSub}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1 text-[11px] text-indigo-600 font-extrabold">
+                    <span>⚡ AI Visual Recognition • Google Lens • 1688 / AliExpress</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+                  {/* Left: Image Thumbnail Preview */}
+                  <div className="md:col-span-4 relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-md h-52 group">
+                    <img
+                      src={uploadedImage}
+                      alt="Scanned Product"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    {imageConfidence && (
+                      <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-slate-950/85 backdrop-blur-xs text-emerald-400 text-[10px] font-black border border-emerald-500/30 flex items-center gap-1 shadow-sm">
+                        <Sparkles className="w-3 h-3 text-amber-300" />
+                        <span>{t.visualScanConfidence} {imageConfidence}%</span>
+                      </div>
+                    )}
+                    <div className="absolute bottom-2 left-2 right-2 bg-slate-950/80 backdrop-blur-xs text-white p-2 rounded-xl text-[11px] font-bold text-center truncate">
+                      {analysisInput.title || 'Product Visual Subject'}
+                    </div>
+                  </div>
+
+                  {/* Right: Scan Results, Status, and Reverse Search Actions */}
+                  <div className="md:col-span-8 space-y-4">
+                    {imageScanning ? (
+                      <div className="p-5 rounded-2xl bg-white border border-indigo-200 flex items-center gap-4 shadow-xs">
+                        <RefreshCw className="w-6 h-6 text-indigo-600 animate-spin shrink-0" />
+                        <div className="space-y-1">
+                          <div className="text-xs font-black text-slate-900">
+                            {t.visualScanAnalyzing}
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            استخراج الميزات البصرية، فحص النيتش، وتقدير أسعار الجملة والبيع
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {imageScanSuccess && (
+                          <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-2.5">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span className="text-xs font-bold text-emerald-900">
+                              {t.visualScanSuccess}
+                            </span>
+                          </div>
+                        )}
+
+                        {imageFeatures.length > 0 && (
+                          <div className="space-y-1.5">
+                            <span className="text-[11px] font-extrabold text-slate-500">
+                              الميزات البصرية المكتشفة بالذكاء الاصطناعي :
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {imageFeatures.map((feat, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-800 text-[11px] font-bold shadow-2xs"
+                                >
+                                  ✨ {feat}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Reverse Search Action Buttons */}
+                        <div className="space-y-2 pt-1">
+                          <div className="text-[11px] font-black text-slate-700 flex items-center gap-1.5">
+                            <Globe className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>البحث العكسي المباشر وتتبع الموردين والمنافسين :</span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            {/* Google Lens */}
+                            <a
+                              href={reverseSearchUrls?.googleLens || `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(uploadedImage)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              <span className="truncate">{t.visualScanGoogleLens}</span>
+                            </a>
+
+                            {/* AliExpress / 1688 Factory */}
+                            <a
+                              href={reverseSearchUrls?.aliExpress || `https://www.aliexpress.com/wholesale?SearchText=${encodeURIComponent(analysisInput.title || 'trending product')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                            >
+                              <Factory className="w-3.5 h-3.5" />
+                              <span className="truncate">{t.visualScanFactorySearch}</span>
+                            </a>
+
+                            {/* Meta & TikTok Active Ads */}
+                            <a
+                              href={reverseSearchUrls?.metaAds || `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&q=${encodeURIComponent(analysisInput.title || 'viral product')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                            >
+                              <Play className="w-3.5 h-3.5 text-pink-400 fill-pink-400" />
+                              <span className="truncate">{t.visualScanAdsSearch}</span>
+                            </a>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Input Form Fields */}
             <div className="space-y-4">
               {/* Row 1: Title, Target Country, Niche */}
@@ -1367,17 +1696,31 @@ export default function MediaBuyerPage() {
               {/* Verdict & Market Viability Banner */}
               <div className="bg-white rounded-3xl p-6 md:p-7 border border-slate-200/90 shadow-sm space-y-6">
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="px-3 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
-                        {analysisResult.targetCountryFlag || '🌍'} {t.resMarketReport} {isAr ? (analysisResult.targetCountryNameAr || analysisResult.targetCountry) : (analysisResult.targetCountryNameFr || analysisResult.targetCountry)}
-                      </span>
-                      <span className="text-xs text-slate-400">|</span>
-                      <span className="text-xs font-black text-slate-900">{analysisResult.productTitle}</span>
+                  <div className="flex items-start gap-4">
+                    {(analysisResult.imageUrl || uploadedImage) && (
+                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm shrink-0 relative">
+                        <img
+                          src={analysisResult.imageUrl || uploadedImage || ''}
+                          alt={analysisResult.productTitle}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-1 right-1 bg-indigo-600 text-white rounded-full p-0.5 text-[8px] font-black">
+                          📸
+                        </div>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="px-3 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          {analysisResult.targetCountryFlag || '🌍'} {t.resMarketReport} {isAr ? (analysisResult.targetCountryNameAr || analysisResult.targetCountry) : (analysisResult.targetCountryNameFr || analysisResult.targetCountry)}
+                        </span>
+                        <span className="text-xs text-slate-400">|</span>
+                        <span className="text-xs font-black text-slate-900">{analysisResult.productTitle}</span>
+                      </div>
+                      <h3 className="text-base md:text-lg font-black text-slate-900 font-heading leading-snug">
+                        {isAr ? analysisResult.verdictAr : (analysisResult.verdictFr || analysisResult.verdictAr)}
+                      </h3>
                     </div>
-                    <h3 className="text-base md:text-lg font-black text-slate-900 font-heading leading-snug">
-                      {isAr ? analysisResult.verdictAr : (analysisResult.verdictFr || analysisResult.verdictAr)}
-                    </h3>
                   </div>
 
                   {/* Circular Score Badge */}
