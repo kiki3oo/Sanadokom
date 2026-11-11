@@ -46,7 +46,9 @@ import {
   Scan,
   Factory,
 } from 'lucide-react';
-import { WinningProduct, ProductAnalysisResult } from '@/lib/marketingAi';
+import type { WinningProduct } from '@/lib/marketingAi';
+import { calculateCod, codFees, validCodInputs } from '@/lib/codEconomics';
+import { MarketResearch } from './MarketResearch';
 import { mediaBuyerTranslations } from '@/lib/mediaBuyerTranslations';
 
 export default function MediaBuyerPage() {
@@ -148,6 +150,7 @@ export default function MediaBuyerPage() {
       defaultDr = 95;
     }
 
+    setAdditionalCosts({});
     setAnalysisInput((prev) => ({
       ...prev,
       targetCountry: country,
@@ -162,8 +165,6 @@ export default function MediaBuyerPage() {
   const handleTitleChange = (newTitle: string) => {
     const lower = newTitle.toLowerCase();
     let autoNiche = analysisInput.niche;
-    let autoWholesale = analysisInput.wholesalePrice;
-    let autoRetail = analysisInput.retailPrice;
 
     if (
       lower.includes('magne') ||
@@ -184,8 +185,6 @@ export default function MediaBuyerPage() {
     ) {
       autoNiche = 'HEALTH';
       if (lower.includes('magne') || lower.includes('step') || lower.includes('semelle') || lower.includes('insole')) {
-        autoWholesale = 30;
-        autoRetail = 199;
       }
     } else if (
       lower.includes('matcha') ||
@@ -201,8 +200,6 @@ export default function MediaBuyerPage() {
       lower.includes('مكمل')
     ) {
       autoNiche = 'SUPPLEMENTS';
-      autoWholesale = 40;
-      autoRetail = 249;
     } else if (
       lower.includes('serum') ||
       lower.includes('creme') ||
@@ -215,8 +212,6 @@ export default function MediaBuyerPage() {
       lower.includes('بشرة')
     ) {
       autoNiche = 'COSMETICS';
-      autoWholesale = 35;
-      autoRetail = 229;
     } else if (
       lower.includes('brosse') ||
       lower.includes('hair') ||
@@ -225,8 +220,6 @@ export default function MediaBuyerPage() {
       lower.includes('شعر')
     ) {
       autoNiche = 'BEAUTY';
-      autoWholesale = 75;
-      autoRetail = 299;
     } else if (
       lower.includes('hachoir') ||
       lower.includes('mixeur') ||
@@ -235,8 +228,6 @@ export default function MediaBuyerPage() {
       lower.includes('مطبخ')
     ) {
       autoNiche = 'KITCHEN';
-      autoWholesale = 70;
-      autoRetail = 249;
     } else if (
       lower.includes('car') ||
       lower.includes('voitur') ||
@@ -244,16 +235,12 @@ export default function MediaBuyerPage() {
       lower.includes('سيارة')
     ) {
       autoNiche = 'CAR';
-      autoWholesale = 30;
-      autoRetail = 149;
     }
 
     setAnalysisInput((prev) => ({
       ...prev,
       title: newTitle,
       niche: autoNiche,
-      wholesalePrice: autoWholesale,
-      retailPrice: autoRetail,
     }));
   };
 
@@ -264,12 +251,21 @@ export default function MediaBuyerPage() {
     if (c === 'US' || c === 'GLOBAL') return '$';
     if (c === 'FR' || c === 'EU') return '€';
     if (c === 'UK') return '£';
+    if (c === 'CA') return 'CAD';
     return 'DH';
   };
-  const [analyzing, setAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<ProductAnalysisResult | null>(null);
-  const [activeScriptAngle, setActiveScriptAngle] = useState(0);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [additionalCosts, setAdditionalCosts] = useState<Partial<Record<(typeof codFees)[number], number>>>({});
+  const codInput = { ...analysisInput, ...additionalCosts };
+  const economics = validCodInputs(codInput) ? calculateCod(codInput) : null;
+  const deliveryStress = economics && calculateCod({
+    ...codInput,
+    estDeliveryRate: Math.max(0, codInput.estDeliveryRate - 10),
+    adCostPerLead: economics.assumedCpa,
+  });
+  const countryNames: Record<string, string> = {
+    MA: 'Maroc', GCC: 'Arabie saoudite', SN: 'Sénégal', US: 'États-Unis',
+    FR: 'France', UK: 'Royaume-Uni', CA: 'Canada',
+  };
 
   // --- Tab 3: Media Buyer Copilot State ---
   const [campaignData, setCampaignData] = useState<any | null>(null);
@@ -367,14 +363,14 @@ export default function MediaBuyerPage() {
   const handleSendToValidator = (wp: WinningProduct) => {
     const targetCountry = wp.country === 'GLOBAL' ? 'US' : wp.country;
     const payload = {
-      title: wp.titleAr || wp.title,
+      title: wp.title,
       niche: wp.niche,
       targetCountry,
       wholesalePrice: wp.wholesalePrice,
       retailPrice: wp.retailPrice,
-      shippingFee: wp.estShippingFee || 35,
-      estConfirmationRate: wp.estConfirmationRate || 80,
-      estDeliveryRate: wp.estDeliveryRate || 75,
+      shippingFee: wp.estShippingFee,
+      estConfirmationRate: wp.estConfirmationRate,
+      estDeliveryRate: wp.estDeliveryRate,
       productUrl: '',
       description: wp.descriptionAr || wp.description,
       ingredientsOrDetails: '',
@@ -395,8 +391,7 @@ export default function MediaBuyerPage() {
     }
     setSelectedProductDetails(null);
     setActiveTab('PRODUCT_VALIDATOR');
-    // Auto-trigger analysis
-    triggerAnalysis(payload);
+    setAdditionalCosts({});
   };
 
   // Image Upload & Visual AI Scanner Handlers
@@ -479,33 +474,6 @@ export default function MediaBuyerPage() {
     }
   };
 
-  // Trigger analysis
-  const triggerAnalysis = async (customPayload?: any) => {
-    setAnalyzing(true);
-    try {
-      const payload = customPayload || {
-        ...analysisInput,
-        imageUrl: uploadedImage || analysisInput.imageUrl || undefined,
-      };
-      const res = await fetch('/api/marketing-ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'ANALYZE_PRODUCT',
-          input: payload,
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.analysis) {
-        setAnalysisResult(data.analysis);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setAnalyzing(false);
-    }
-  };
-
   // Generate new AI winning product ideas
   const handleGenerateIdeas = async () => {
     setAiGenerating(true);
@@ -530,13 +498,6 @@ export default function MediaBuyerPage() {
     } finally {
       setAiGenerating(false);
     }
-  };
-
-  // Copy to clipboard helper
-  const copyText = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2500);
   };
 
   // Quick Action execution (Pause or Scale)
@@ -685,6 +646,10 @@ export default function MediaBuyerPage() {
       {/* ========================================================================= */}
       {activeTab === 'WINNING_PRODUCTS' && (
         <div className="space-y-6">
+          <MarketResearch mode="scout" isAr={isAr} />
+          <p className="text-sm text-slate-600">
+            {isAr ? 'الكتالوج أدناه يعرض أفكاراً وتقديرات مرجعية.' : 'Le catalogue ci-dessous présente des idées et des estimations indicatives.'}
+          </p>
           {/* AI Precise Winning Product Scout Hero Bar */}
           <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 border border-indigo-900/50 shadow-lg space-y-4 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-80 h-full bg-gradient-to-l from-indigo-500/10 via-purple-500/10 to-transparent pointer-events-none" />
@@ -1761,509 +1726,78 @@ export default function MediaBuyerPage() {
               </div>
             </div>
 
-            {/* Launch Analysis Button */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
-              <div className="text-xs text-slate-500 font-medium flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>{t.valFooterNote}</span>
-              </div>
-
-              <button
-                onClick={() => triggerAnalysis()}
-                disabled={analyzing || !analysisInput.title.trim()}
-                className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 hover:from-indigo-700 hover:to-purple-800 disabled:opacity-50 text-white font-black text-xs md:text-sm shadow-md shadow-indigo-600/25 flex items-center justify-center gap-2 cursor-pointer transition-transform active:scale-95 shrink-0"
-              >
-                {analyzing ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>{t.valLoadingBtn}</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
-                    <span>{t.valSubmitBtn}</span>
-                  </>
-                )}
-              </button>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+              {([
+                ['Emballage / expédition', 'التغليف لكل شحنة'],
+                ['Supplément par échec de livraison', 'تكلفة إضافية لكل فشل توصيل'],
+                ['Frais COD et taxes / livré', 'رسوم الدفع والضرائب لكل طلب مستلم'],
+                ['Traitement / lead', 'معالجة كل طلب وارد'],
+                ['Coût pub / lead (facultatif)', 'تكلفة الإعلان لكل طلب وارد (اختياري)'],
+              ] as const).map(([fr, ar], index) => {
+                const key = codFees[index];
+                return (
+                  <label key={key} className="space-y-1 text-xs font-bold text-slate-700">
+                    {isAr ? ar : fr} ({getCurrencySymbol()})
+                    <input type="number" min="0" step="any" placeholder={key === 'adCostPerLead' ? '—' : '0'}
+                      className="w-full rounded-xl border border-slate-300 p-3"
+                      value={additionalCosts[key] ?? ''}
+                      onChange={(event) => setAdditionalCosts((prev) => ({
+                        ...prev, [key]: event.target.value === '' ? undefined : Number(event.target.value),
+                      }))} />
+                  </label>
+                );
+              })}
             </div>
           </div>
 
-          {/* Analysis Results Display */}
-          {analysisResult && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-              {/* Verdict & Market Viability Banner */}
-              <div className="bg-white rounded-3xl p-6 md:p-7 border border-slate-200/90 shadow-sm space-y-6">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
-                  <div className="flex items-start gap-4">
-                    {(analysisResult.imageUrl || uploadedImage) && (
-                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm shrink-0 relative">
-                        <img
-                          src={analysisResult.imageUrl || uploadedImage || ''}
-                          alt={analysisResult.productTitle}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute top-1 right-1 bg-indigo-600 text-white rounded-full p-0.5 text-[8px] font-black">
-                          📸
-                        </div>
-                      </div>
-                    )}
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="px-3 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
-                          {analysisResult.targetCountryFlag || '🌍'} {t.resMarketReport} {isAr ? (analysisResult.targetCountryNameAr || analysisResult.targetCountry) : (analysisResult.targetCountryNameFr || analysisResult.targetCountry)}
-                        </span>
-                        <span className="text-xs text-slate-400">|</span>
-                        <span className="text-xs font-black text-slate-900">{analysisResult.productTitle}</span>
-                      </div>
-                      <h3 className="text-base md:text-lg font-black text-slate-900 font-heading leading-snug">
-                        {isAr ? analysisResult.verdictAr : (analysisResult.verdictFr || analysisResult.verdictAr)}
-                      </h3>
+          <section className="rounded-3xl bg-slate-900 p-6 text-white space-y-4">
+            <h2 className="text-lg font-black">{isAr ? 'ربحية الدفع عند الاستلام' : 'Rentabilité COD'} ({getCurrencySymbol()})</h2>
+            <p className="text-sm text-slate-300">
+              {isAr
+                ? 'كل الأرقام فرضيات قابلة للتعديل. معدل التسليم من الطلبات المؤكدة. يفترض الحساب شحن كل طلب مؤكد واسترجاع البضاعة القابلة للبيع عند فشل التسليم.'
+                : 'Les valeurs saisies sont des hypothèses. Le taux de livraison s’applique aux commandes confirmées, supposées expédiées. Le modèle suppose que les articles non livrés restent revendables. Ajoutez toute perte de stock au coût d’échec.'}
+            </p>
+            {economics ? (
+              <>
+                <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {([
+                    [isAr ? 'أقصى تكلفة إعلان لكل طلب وارد' : 'CPA max par lead', economics.breakEvenCpa],
+                    [isAr ? 'تكلفة الإعلان المعتمدة لكل طلب وارد' : 'Coût pub retenu par lead', economics.assumedCpa],
+                    [isAr ? 'صافي الربح لكل طلب مستلم' : 'Bénéfice par commande livrée', economics.netProfitPerDelivered],
+                    [isAr ? 'صافي الربح لكل 100 طلب وارد' : 'Bénéfice pour 100 leads', economics.expectedNetProfitPer100Leads],
+                  ] as const).map(([label, value]) => (
+                    <div key={label} className="rounded-xl bg-white/10 p-4">
+                      <dt className="text-xs font-medium text-slate-300">{label}</dt>
+                      <dd className="mt-1 text-xl font-black">{value === null ? '—' : value + ' ' + getCurrencySymbol()}</dd>
                     </div>
-                  </div>
-
-                  {/* Circular Score Badge */}
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white flex flex-col items-center justify-center shadow-lg shadow-indigo-500/30">
-                      <span className="text-2xl font-black">{analysisResult.overallScore}</span>
-                      <span className="text-[10px] font-bold opacity-80">{t.resOutOf100}</span>
-                    </div>
-                    <div>
-                      <div className="text-xs font-black text-slate-900">{analysisResult.scoreLabel}</div>
-                      <div className="text-[11px] text-slate-500 font-medium">{t.resSuccessIndex}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Market Demand In-Depth Analysis */}
-                {analysisResult.marketDemandAnalysisAr && (
-                  <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-1.5">
-                    <div className="text-xs font-black text-indigo-900 flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-indigo-600" />
-                      <span>{isAr ? `هل سينجح هذا المنتج في سوق ${analysisResult.targetCountryNameAr || analysisResult.targetCountry}؟` : `Ce produit va-t-il fonctionner sur le marché ${analysisResult.targetCountryNameFr || analysisResult.targetCountry} ?`}</span>
-                    </div>
-                    <p className="text-xs text-indigo-950 font-medium leading-relaxed">
-                      {isAr ? analysisResult.marketDemandAnalysisAr : (analysisResult.marketDemandAnalysisFr || analysisResult.marketDemandAnalysisAr)}
-                    </p>
-                  </div>
-                )}
-
-                {/* Strengths & Challenges */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Strengths */}
-                  <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2">
-                    <div className="text-xs font-black text-emerald-900 flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>{t.resStrengthsTitle}</span>
-                    </div>
-                    <ul className="text-xs text-emerald-950 space-y-1.5 font-medium list-disc list-inside">
-                      {(analysisResult.strengthsAr || [
-                        'هامش ربح يسمح باختبار إعلاني مريح دون مخاطرة.',
-                        'منتج يحل مشكلة يومية أو يثير الإبهار البصري عند المشاهد.'
-                      ]).map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Challenges */}
-                  <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2">
-                    <div className="text-xs font-black text-amber-900 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-600" />
-                      <span>{t.resChallengesTitle}</span>
-                    </div>
-                    <ul className="text-xs text-amber-950 space-y-1.5 font-medium list-disc list-inside">
-                      {(analysisResult.challengesAr || [
-                        'ضرورة تأكيد الطلبيات بسرعة عبر الهاتف خلال أول 15 دقيقة.',
-                        'الاعتماد على فيديوهات طبيعية بدون وعود مبالغ فيها لتفادي رفض الإعلانات.'
-                      ]).map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Score Breakdown Bars */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 pt-1">
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-                    <div className="text-[11px] font-bold text-slate-600">{t.resMetricProblem}</div>
-                    <div className="text-sm font-black text-indigo-600">{analysisResult.breakdown.problemSolving}%</div>
-                    <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-indigo-600 h-full rounded-full" style={{ width: `${analysisResult.breakdown.problemSolving}%` }} />
-                    </div>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-                    <div className="text-[11px] font-bold text-slate-600">{t.resMetricWow}</div>
-                    <div className="text-sm font-black text-purple-600">{analysisResult.breakdown.wowFactor}%</div>
-                    <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-purple-600 h-full rounded-full" style={{ width: `${analysisResult.breakdown.wowFactor}%` }} />
-                    </div>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-                    <div className="text-[11px] font-bold text-slate-600">{t.resMetricMargin}</div>
-                    <div className="text-sm font-black text-emerald-600">{analysisResult.breakdown.marginHealth}%</div>
-                    <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-emerald-600 h-full rounded-full" style={{ width: `${analysisResult.breakdown.marginHealth}%` }} />
-                    </div>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-                    <div className="text-[11px] font-bold text-slate-600">{t.resMetricShipping}</div>
-                    <div className="text-sm font-black text-blue-600">{analysisResult.breakdown.shippingFeasibility}%</div>
-                    <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-blue-600 h-full rounded-full" style={{ width: `${analysisResult.breakdown.shippingFeasibility}%` }} />
-                    </div>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 col-span-2 md:col-span-1">
-                    <div className="text-[11px] font-bold text-slate-600">{t.resMetricDemand}</div>
-                    <div className="text-sm font-black text-amber-600">{analysisResult.breakdown.marketDemand}%</div>
-                    <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-amber-600 h-full rounded-full" style={{ width: `${analysisResult.breakdown.marketDemand}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Recommended Ad Platforms & Regulatory Guidelines */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Recommended Ad Platforms */}
-                <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
-                  <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                    <TrendingUp className="w-5 h-5 text-indigo-600" />
-                    <span>{t.resPlatformsTitle} ({isAr ? (analysisResult.targetCountryNameAr || analysisResult.targetCountry) : (analysisResult.targetCountryNameFr || analysisResult.targetCountry)})</span>
-                  </div>
-
-                  <div className="space-y-3">
-                    {(analysisResult.recommendedPlatforms || [
-                      { name: 'Meta Ads (Facebook / Instagram)', suitability: 95, reasonAr: 'المنصة الأكثر استقراراً ووصولاً للمشترين', badge: 'الأكثر استقراراً 🏆' },
-                      { name: 'TikTok Ads', suitability: 92, reasonAr: 'أرخص تكلفة ظهور وتفاعل فايرل مع فيديوهات الدارجة', badge: 'فيروسية عالية 🔥' },
-                    ]).map((plat, idx) => (
-                      <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-black text-slate-900">{plat.name}</span>
-                          <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] font-extrabold">
-                            {plat.badge}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 bg-slate-200 h-2 rounded-full overflow-hidden">
-                            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 h-full rounded-full" style={{ width: `${plat.suitability}%` }} />
-                          </div>
-                          <span className="text-xs font-black text-indigo-600">{plat.suitability}%</span>
-                        </div>
-                        <p className="text-[11px] text-slate-600 font-medium">{plat.reasonAr}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Regulatory, Policy & Safety Guidelines */}
-                <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
-                  <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                    <ShieldAlert className="w-5 h-5 text-amber-500" />
-                    <span>{t.resPoliciesTitle}</span>
-                  </div>
-
-                  <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2.5">
-                    <div className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>{t.resPoliciesWarning}</span>
-                    </div>
-                    <ul className="text-xs text-amber-950 space-y-2 font-medium">
-                      {(analysisResult.regulatoryAndSafetyTipsAr || [
-                        'تجنب الادعاءات الطبية المبالغ فيها أو الوعود بالعلاج الفوري لتفادي رفض الإعلانات.',
-                        'احرص على تغليف آمن ومحكم لتفادي تلف الشحنات في شركة التوصيل.'
-                      ]).map((tip, idx) => (
-                        <li key={idx} className="flex items-start gap-1.5">
-                          <span className="text-amber-600 font-bold">•</span>
-                          <span>{tip}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1 font-medium">
-                    <div className="font-extrabold text-slate-800">{t.resExpertTipTitle}</div>
-                    <p>{t.resExpertTipContent}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* COD Economics Matrix - Crisp Dark Slate Card */}
-              <div className="bg-slate-900 rounded-3xl p-6 md:p-7 text-white shadow-xl border border-slate-800 space-y-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-lg">
-                    💰
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black">
-                      {t.resCodEconomicsTitle} ({analysisResult.currency || 'DH'})
-                    </h3>
-                    <p className="text-xs text-slate-300 font-medium">
-                      {t.resCodEconomicsSubtitle}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {/* Break-even CPA */}
-                  <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-400/40 space-y-1">
-                    <div className="text-[11px] font-bold text-rose-300">{t.resBreakEvenCpa}</div>
-                    <div className="text-2xl font-black text-rose-400">
-                      {analysisResult.economics.breakEvenCpa} {analysisResult.currency || 'DH'}
-                    </div>
-                    <div className="text-[10px] text-rose-200/80 font-medium">{t.resBreakEvenSub}</div>
-                  </div>
-
-                  {/* Target CPA Range */}
-                  <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-400/40 space-y-1">
-                    <div className="text-[11px] font-bold text-emerald-300">{t.resTargetCpa}</div>
-                    <div className="text-2xl font-black text-emerald-400">
-                      {analysisResult.economics.targetCpaMin} - {analysisResult.economics.targetCpaMax} {analysisResult.currency || 'DH'}
-                    </div>
-                    <div className="text-[10px] text-emerald-200/80 font-medium">{t.resTargetCpaSub}</div>
-                  </div>
-
-                  {/* Net Profit per delivered */}
-                  <div className="p-4 rounded-2xl bg-white/10 border border-white/20 space-y-1">
-                    <div className="text-[11px] font-bold text-indigo-200">{t.resNetProfitPerDelivered}</div>
-                    <div className="text-2xl font-black text-white">
-                      +{analysisResult.economics.netProfitPerDelivered} {analysisResult.currency || 'DH'}
-                    </div>
-                    <div className="text-[10px] text-slate-300 font-medium">{t.resNetProfitSub}</div>
-                  </div>
-
-                  {/* Profit per 100 leads */}
-                  <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-400/40 space-y-1">
-                    <div className="text-[11px] font-bold text-amber-300">{t.resProfitPer100Leads}</div>
-                    <div className="text-2xl font-black text-amber-400">
-                      +{analysisResult.economics.expectedNetProfitPer100Leads} {analysisResult.currency || 'DH'}
-                    </div>
-                    <div className="text-[10px] text-amber-200/80 font-medium">{t.resRoasTarget} {analysisResult.economics.roasTarget}x</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Marketing Angles & Scripts (The Golden Sauce) */}
-              <div className="bg-white rounded-3xl p-6 md:p-7 border border-slate-200/90 shadow-sm space-y-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center font-black text-lg">
-                    🎬
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-slate-900 font-heading">{t.resAnglesTitle}</h3>
-                    <p className="text-xs text-slate-500 font-medium">{t.resAnglesSubtitle}</p>
-                  </div>
-                </div>
-
-                {/* Angle Selector Tabs */}
-                <div className="flex flex-wrap gap-2 border-b border-slate-100 pb-3">
-                  {analysisResult.marketingAngles.map((angle, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setActiveScriptAngle(idx)}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        activeScriptAngle === idx
-                          ? 'bg-purple-600 text-white shadow-xs'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                      }`}
-                    >
-                      {angle.angleNameAr}
-                    </button>
                   ))}
-                </div>
-
-                {/* Active Angle Details */}
-                {analysisResult.marketingAngles[activeScriptAngle] && (
-                  <div className="space-y-4">
-                    {/* Hook 3s Alert */}
-                    <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="text-xs font-black text-amber-900 flex items-center gap-1.5">
-                          <Flame className="w-4 h-4 text-orange-500" />
-                          <span>{t.resHookTitle}</span>
-                        </div>
-                        <p className="text-xs text-amber-950 font-bold leading-relaxed">
-                          "{analysisResult.marketingAngles[activeScriptAngle].hook3sAr}"
-                        </p>
-                      </div>
-                      <button
-                        onClick={() =>
-                          copyText(analysisResult.marketingAngles[activeScriptAngle].hook3sAr, 'hook')
-                        }
-                        className="px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-bold text-amber-900 hover:bg-amber-100 transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs"
-                      >
-                        {copiedKey === 'hook' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{copiedKey === 'hook' ? 'تم النسخ' : 'نسخ'}</span>
-                      </button>
-                    </div>
-
-                    {/* UGC Full Script */}
-                    <div className="p-5 rounded-2xl bg-slate-900 text-slate-100 space-y-3 font-mono text-xs shadow-md">
-                      <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                        <span className="font-sans font-bold text-slate-300">{t.resUgcScriptTitle}</span>
-                        <button
-                          onClick={() =>
-                            copyText(analysisResult.marketingAngles[activeScriptAngle].fullScriptAr, 'script')
-                          }
-                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-[11px] font-sans font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-700"
-                        >
-                          {copiedKey === 'script' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                          <span>{copiedKey === 'script' ? 'تم النسخ' : 'نسخ السكريبت'}</span>
-                        </button>
-                      </div>
-                      <div className="whitespace-pre-line leading-relaxed text-slate-200 font-sans text-xs">
-                        {analysisResult.marketingAngles[activeScriptAngle].fullScriptAr}
-                      </div>
-                    </div>
-
-                    {/* Ready-to-use Ad Copy */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Arabic Ad Copy */}
-                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-extrabold text-slate-800">نص الإعلان بالدارجة (Ad Copy)</span>
-                          <button
-                            onClick={() =>
-                              copyText(analysisResult.marketingAngles[activeScriptAngle].adCopyTextAr, 'copyAr')
-                            }
-                            className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-600 cursor-pointer"
-                            title="نسخ"
-                          >
-                            {copiedKey === 'copyAr' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
-                        <p className="text-xs text-slate-700 whitespace-pre-line leading-relaxed font-medium">
-                          {analysisResult.marketingAngles[activeScriptAngle].adCopyTextAr}
-                        </p>
-                      </div>
-
-                      {/* French Ad Copy */}
-                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-extrabold text-slate-800">نص الإعلان بالفرنسية (Version FR)</span>
-                          <button
-                            onClick={() =>
-                              copyText(analysisResult.marketingAngles[activeScriptAngle].adCopyTextFr, 'copyFr')
-                            }
-                            className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-600 cursor-pointer"
-                            title="نسخ"
-                          >
-                            {copiedKey === 'copyFr' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
-                        <p className="text-xs text-slate-700 whitespace-pre-line leading-relaxed font-sans font-medium">
-                          {analysisResult.marketingAngles[activeScriptAngle].adCopyTextFr}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                </dl>
+                <p className="text-sm text-slate-300">
+                  {isAr
+                    ? `لكل 100 طلب وارد: ${economics.deliveredPer100} مستلمة و${economics.failedPer100} تعذر تسليمها. المداخيل ${economics.revenuePer100}، التكاليف دون الإعلان ${economics.nonAdCostPer100}، الإعلان ${economics.adSpendPer100} ${getCurrencySymbol()}.`
+                    : `Sur 100 leads, ${economics.deliveredPer100} livrés et ${economics.failedPer100} échecs. CA encaissé ${economics.revenuePer100}, coûts hors pub ${economics.nonAdCostPer100}, dépenses pub ${economics.adSpendPer100} ${getCurrencySymbol()}.`}
+                </p>
+                <p className="text-sm text-slate-300">
+                  {isAr ? 'فرضية تكلفة اختبار لكل طلب وارد' : 'Fourchette de test indicative par lead'} {economics.targetCpaMin}–{economics.targetCpaMax} {getCurrencySymbol()} · ROAS {economics.roasTarget === null ? '—' : economics.roasTarget + '×'}
+                </p>
+                {deliveryStress && (
+                  <p className="text-sm text-slate-300">
+                    {isAr ? 'مع انخفاض التسليم حتى 10 نقاط، الربح لكل 100 طلب وارد' : 'Avec jusqu’à 10 points de livraison en moins, bénéfice pour 100 leads'} {deliveryStress.expectedNetProfitPer100Leads} {getCurrencySymbol()}
+                  </p>
                 )}
-              </div>
+              </>
+            ) : (
+              <p role="alert" className="text-sm text-amber-200">
+                {isAr ? 'راجع الأسعار والتكاليف ومعدلات التأكيد والتسليم.' : 'Vérifiez le prix de vente, les coûts positifs et les taux compris entre 0 et 100 %.'}
+              </p>
+            )}
+          </section>
 
-              {/* Targeting & Campaign Launch Blueprint */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Targeting & AdSets */}
-                <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
-                  <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                    <Target className="w-5 h-5 text-indigo-600" />
-                    <span>خطة الاستهداف والجمهور في {analysisResult.targetCountryNameAr || analysisResult.targetCountry}</span>
-                  </div>
-
-                  <div className="space-y-3 text-xs">
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/70">
-                      <span className="font-bold text-slate-600">الجنس والفئة العمرية:</span>
-                      <span className="font-extrabold text-slate-900">
-                        {analysisResult.targeting.recommendedGender === 'WOMEN'
-                          ? 'نساء فقط'
-                          : analysisResult.targeting.recommendedGender === 'MEN'
-                          ? 'رجال فقط'
-                          : 'الجميع (رجال ونساء)'}{' '}
-                        | {analysisResult.targeting.ageRange}
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1.5">
-                      <span className="font-bold text-slate-600 block">أفضل المدن ذات نسبة تسليم مرتفعة:</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {(analysisResult.targeting.priorityCities || []).map((city, i) => (
-                          <span key={i} className="px-2 py-0.5 rounded-md bg-white border border-slate-200 font-extrabold text-slate-800 text-[11px]">
-                            {city}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 pt-2">
-                      <div className="font-extrabold text-slate-800">{t.resAdsetsTitle}</div>
-                      {analysisResult.targeting.adsetStrategies.map((adset, i) => (
-                        <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1">
-                          <div className="flex items-center justify-between font-bold text-slate-900">
-                            <span>{adset.nameAr}</span>
-                            <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-black border border-indigo-200">
-                              {adset.budgetShare}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-slate-600 font-medium">{adset.descriptionAr}</p>
-                          <div className="text-[11px] text-slate-700 font-semibold">
-                            <span className="text-slate-500">{t.resInterestsLabel} </span>
-                            {adset.interests.join(', ')}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Launch, Kill & Scale Strategy */}
-                <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
-                  <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                    <Zap className="w-5 h-5 text-amber-500" />
-                    <span>{t.resRulesTitle}</span>
-                  </div>
-
-                  <div className="space-y-3 text-xs">
-                    {/* Structure */}
-                    <div className="p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-200 space-y-1">
-                      <div className="font-black text-indigo-900">{t.resStructureTitle}</div>
-                      <div className="font-bold text-indigo-950">{analysisResult.launchStrategy.suggestedStructure}</div>
-                      <div className="text-[11px] text-indigo-800/80 font-medium">{t.resStructureDuration}</div>
-                    </div>
-
-                    {/* Kill Rule */}
-                    <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 space-y-1">
-                      <div className="font-black text-rose-900 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-rose-600" />
-                        <span>{t.resKillRuleTitle}</span>
-                      </div>
-                      <p className="text-rose-950 font-bold leading-relaxed">
-                        {analysisResult.launchStrategy.killRuleDescriptionAr}
-                      </p>
-                    </div>
-
-                    {/* Scale Rule */}
-                    <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
-                      <div className="font-black text-emerald-900 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-600" />
-                        <span>{t.resScaleRuleTitle}</span>
-                      </div>
-                      <p className="text-emerald-950 font-bold leading-relaxed">
-                        {analysisResult.launchStrategy.scaleRuleDescriptionAr}
-                      </p>
-                    </div>
-
-                    {/* Tips */}
-                    <div className="space-y-1.5 pt-1">
-                      <div className="font-black text-slate-800">{t.resKeyTipsTitle}</div>
-                      <ul className="space-y-1 text-slate-600 list-disc list-inside font-medium">
-                        {analysisResult.launchStrategy.keyTipsAr.map((tip, i) => (
-                          <li key={i}>{tip}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          <MarketResearch mode="audit" isAr={isAr} key={analysisInput.targetCountry}
+            defaultTarget={countryNames[analysisInput.targetCountry]}
+            product={analysisInput.title.trim()
+              ? [analysisInput.title, analysisInput.ingredientsOrDetails || analysisInput.description, analysisInput.productUrl].filter(Boolean).join('\n').slice(0, 1600)
+              : ''} />
         </div>
       )}
 
