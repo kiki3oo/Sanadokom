@@ -1,3 +1,4 @@
+import { queueDeliveryEvent, trySendDeliveryEvent } from '@/lib/facebook/deliveryEvents';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendFacebookConversionEvent } from '@/lib/facebook';
@@ -172,7 +173,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Send Facebook CAPI Purchase event if configured
-      if (order.store.fbSettings?.pixelId && order.store.fbSettings?.accessToken) {
+      if (!order.store.fbSettings?.deliveryCapiAt && order.store.fbSettings?.pixelId && order.store.fbSettings?.accessToken) {
         sendFacebookConversionEvent(
           order.store.fbSettings.pixelId,
           order.store.fbSettings.accessToken,
@@ -220,16 +221,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
-      data: orderUpdates,
-      include: {
-        store: true,
-        assignedAgent: true,
-        items: { include: { product: true } },
-        callLogs: { orderBy: { createdAt: 'desc' } },
-      },
+    const { updatedOrder, queued } = await prisma.$transaction(async tx => {
+      const updatedOrder = await tx.order.update({
+        where: { id: orderId },
+        data: orderUpdates,
+        include: {
+          store: true,
+          assignedAgent: true,
+          items: { include: { product: true } },
+          callLogs: { orderBy: { createdAt: 'desc' } },
+        },
+      });
+      const queued = isNowConfirmed && !wasConfirmed && await queueDeliveryEvent(tx, updatedOrder, 'OrderConfirmed');
+      return { updatedOrder, queued };
     });
+    if (queued) await trySendDeliveryEvent(updatedOrder.id, 'OrderConfirmed');
 
     // Automatically release lock
     unlockLead(orderId);

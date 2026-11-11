@@ -1,5 +1,6 @@
 'use client';
 
+import DeliveryCapiPanel from './DeliveryCapiPanel';
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/context/StoreContext';
 import { useAuth } from '@/context/AuthContext';
@@ -1701,6 +1702,10 @@ async function submitOrderToSaaS(formData) {
             </button>
           </div>
         </div>
+      )}
+
+      {activeTab === 'FACEBOOK' && selectedStoreId && !['ALL', 'NONE'].includes(selectedStoreId) && !selectedStoreId.includes(',') && (
+        <DeliveryCapiPanel key={selectedStoreId} storeId={selectedStoreId} />
       )}
 
       {/* MANIFEST MODAL (PRINTABLE BORDEREAU DE RAMASSAGE) */}

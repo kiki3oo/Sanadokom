@@ -143,6 +143,8 @@ model Order {
 
   items           OrderItem[]
   callLogs        CallLog[]
+  metaEvents      MetaConversionEvent[]
+  metaAttribution MetaOrderAttribution?
 }
 
 model OrderItem {
@@ -191,10 +193,34 @@ model FacebookSetting {
   accessToken     String?
   pixelId         String?
   metaTimeZone    String?
+  deliveryCapiAt  DateTime?
   autoSyncSpend   Boolean   @default(false)
   lastSyncAt      DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+model MetaOrderAttribution {
+  orderId String @id
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fbc     String?
+  fbp     String?
+}
+
+model MetaConversionEvent {
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  name        String
+  datasetId   String
+  currency    String
+  value       Float
+  occurredAt  DateTime
+  acceptedAt  DateTime?
+  leaseUntil  DateTime?
+  attempts    Int       @default(0)
+  lastError   String?
+
+  @@id([orderId, name])
 }
 
 model MetaCampaignSpend {

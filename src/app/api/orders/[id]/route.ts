@@ -1,3 +1,4 @@
+import { queueDeliveryEvent, trySendDeliveryEvent } from '@/lib/facebook/deliveryEvents';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
@@ -254,15 +255,21 @@ export async function PATCH(
       updateData.courierStatus = updateData.courierStatus || 'IN_TRANSIT';
     }
 
-    const updatedOrder = await prisma.order.update({
-      where: { id: params.id },
-      data: updateData,
-      include: {
-        store: true,
-        assignedAgent: true,
-        items: { include: { product: true } },
-      },
+    const event = status === 'DELIVERED' ? 'Purchase' : status === 'CONFIRMED' ? 'OrderConfirmed' : null;
+    const { updatedOrder, queued } = await prisma.$transaction(async tx => {
+      const updatedOrder = await tx.order.update({
+        where: { id: params.id },
+        data: updateData,
+        include: {
+          store: true,
+          assignedAgent: true,
+          items: { include: { product: true } },
+        },
+      });
+      const queued = event && status !== currentOrder.status && await queueDeliveryEvent(tx, updatedOrder, event);
+      return { updatedOrder, queued };
     });
+    if (event && queued) await trySendDeliveryEvent(updatedOrder.id, event);
 
     // Trigger Real-Time Delivery Rescue Alert if courier/substatus indicates an issue
     const alertSubStatuses = [

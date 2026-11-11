@@ -1,3 +1,4 @@
+import { metaMatchCookie, queueDeliveryEvent, trySendDeliveryEvent } from '@/lib/facebook/deliveryEvents';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendFacebookConversionEvent } from '@/lib/facebook';
@@ -295,40 +296,48 @@ export async function POST(req: NextRequest) {
     const orderNumber = `ORD-${1000 + count + 1}`;
 
     // 6. Create Order in Database
-    const order = await prisma.order.create({
-      data: {
-        orderNumber,
-        storeId: store.id,
-        customerName: customerName.trim(),
-        customerPhone: cleanPhone,
-        customerCity: customerCity || 'Casablanca',
-        customerAddress: customerAddress || '',
-        customerNote: customerNote || null,
-        status: isDuplicate ? 'DUPLICATE' : 'PENDING',
-        assignedAgentId: isDuplicate ? null : assignedAgentId,
-        totalAmount,
-        costAmount,
-        shippingCost: store.currency === 'XOF' ? 2000.0 : 35.0, // Default estimated delivery fee (XOF for Senegal, MAD for Morocco)
-        source: resolvedSource,
-        metaCampaignId,
-        utmCampaign: resolvedUtmCampaign,
-        utmSource: resolvedUtmSource,
-        adSet: resolvedAdSet,
-        agentNotes: isDuplicate ? `Doublon détecté: commande précédente #${existingRecentOrder?.orderNumber}` : null,
-        items: {
-          create: orderItemsToCreate,
+    const fbc = metaMatchCookie(body.fbc ?? body._fbc, 'fbc');
+    const fbp = metaMatchCookie(body.fbp ?? body._fbp, 'fbp');
+    const { order, queued } = await prisma.$transaction(async tx => {
+      const order = await tx.order.create({
+        data: {
+          orderNumber,
+          storeId: store.id,
+          customerName: customerName.trim(),
+          customerPhone: cleanPhone,
+          customerCity: customerCity || 'Casablanca',
+          customerAddress: customerAddress || '',
+          customerNote: customerNote || null,
+          status: isDuplicate ? 'DUPLICATE' : 'PENDING',
+          assignedAgentId: isDuplicate ? null : assignedAgentId,
+          totalAmount,
+          costAmount,
+          shippingCost: store.currency === 'XOF' ? 2000.0 : 35.0, // Default estimated delivery fee (XOF for Senegal, MAD for Morocco)
+          source: resolvedSource,
+          metaCampaignId,
+          metaAttribution: store.fbSettings?.deliveryCapiAt && !isDuplicate && (fbc || fbp) ? { create: { fbc, fbp } } : undefined,
+          utmCampaign: resolvedUtmCampaign,
+          utmSource: resolvedUtmSource,
+          adSet: resolvedAdSet,
+          agentNotes: isDuplicate ? `Doublon détecté: commande précédente #${existingRecentOrder?.orderNumber}` : null,
+          items: {
+            create: orderItemsToCreate,
+          },
         },
-      },
-      include: {
-        items: {
-          include: { product: true },
+        include: {
+          items: {
+            include: { product: true },
+          },
+          assignedAgent: true,
         },
-        assignedAgent: true,
-      },
+      });
+      const queued = await queueDeliveryEvent(tx, order, 'Lead');
+      return { order, queued };
     });
+    if (queued) await trySendDeliveryEvent(order.id, 'Lead');
 
     // 7. Dispatch Facebook CAPI Lead Event if Facebook Pixel & Token configured
-    if (store.fbSettings?.pixelId && store.fbSettings?.accessToken) {
+    if (!store.fbSettings?.deliveryCapiAt && store.fbSettings?.pixelId && store.fbSettings?.accessToken) {
       sendFacebookConversionEvent(store.fbSettings.pixelId, store.fbSettings.accessToken, {
         eventName: 'Lead',
         eventId: order.id,

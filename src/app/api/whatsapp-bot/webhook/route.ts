@@ -1,3 +1,4 @@
+import { queueDeliveryEvent, trySendDeliveryEvent } from '@/lib/facebook/deliveryEvents';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import {
@@ -75,14 +76,19 @@ export async function POST(req: NextRequest) {
       }
 
       // 2. Confirm the order
-      const updatedOrder = await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          status: 'CONFIRMED',
-          subStatus: 'CONFIRME_WHATSAPP_BOT',
-          agentNotes: `[🤖 WhatsApp Bot] الطلبية تم تأكيدها تلقائياً عبر واتساب بنجاح (${new Date().toLocaleTimeString('fr-FR')})`,
-        },
+      const { updatedOrder, queued } = await prisma.$transaction(async tx => {
+        const updatedOrder = await tx.order.update({
+          where: { id: order.id },
+          data: {
+            status: 'CONFIRMED',
+            subStatus: 'CONFIRME_WHATSAPP_BOT',
+            agentNotes: `[🤖 WhatsApp Bot] الطلبية تم تأكيدها تلقائياً عبر واتساب بنجاح (${new Date().toLocaleTimeString('fr-FR')})`,
+          },
+        });
+        const queued = order.status !== 'CONFIRMED' && await queueDeliveryEvent(tx, updatedOrder, 'OrderConfirmed');
+        return { updatedOrder, queued };
       });
+      if (queued) await trySendDeliveryEvent(order.id, 'OrderConfirmed');
 
       replyMessage = formatWhatsAppMessage(template.confirmedReply, {
         customerName: order.customerName,
