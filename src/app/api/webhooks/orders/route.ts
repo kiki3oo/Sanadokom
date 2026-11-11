@@ -44,7 +44,12 @@ export async function POST(req: NextRequest) {
     // Resolve UTM & traffic parameters
     const resolvedUtmSource = utmSource || utm_source || null;
     const resolvedUtmCampaign = utmCampaign || utm_campaign || campaign || campaign_name || null;
-    const rawCampaignId = campaign_id ?? campaignId ?? utm_campaign_id;
+    // Existing landing pages already forward UTM fields. Accept Meta's
+    // numeric campaign ID there when the traffic is explicitly tagged as Meta.
+    const isMetaUtm = typeof resolvedUtmSource === 'string' &&
+      /^(facebook|fb|instagram|ig|meta)$/i.test(resolvedUtmSource.trim());
+    const rawCampaignId = campaign_id ?? campaignId ?? utm_campaign_id ??
+      (isMetaUtm ? utmCampaign ?? utm_campaign : null);
     const metaCampaignId = typeof rawCampaignId === 'string' && /^\d{1,32}$/.test(rawCampaignId.trim())
       ? rawCampaignId.trim()
       : null;
