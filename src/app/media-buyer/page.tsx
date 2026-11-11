@@ -41,13 +41,15 @@ import {
   Clock,
 } from 'lucide-react';
 import { WinningProduct, ProductAnalysisResult } from '@/lib/marketingAi';
+import { mediaBuyerTranslations } from '@/lib/mediaBuyerTranslations';
 
 export default function MediaBuyerPage() {
   const { currentUser, isAdmin, isManager } = useAuth();
   const { selectedStoreId } = useStore();
   const { language } = useLanguage();
-
-  const isRtl = language === 'ar';
+  const isAr = language === 'ar';
+  const isRtl = isAr;
+  const t = mediaBuyerTranslations[language === 'ar' ? 'ar' : 'fr'] || mediaBuyerTranslations.fr;
 
   // Navigation Tabs: 'WINNING_PRODUCTS' | 'PRODUCT_VALIDATOR' | 'MEDIA_BUYER_COPILOT'
   const [activeTab, setActiveTab] = useState<'WINNING_PRODUCTS' | 'PRODUCT_VALIDATOR' | 'MEDIA_BUYER_COPILOT'>(
@@ -390,14 +392,14 @@ export default function MediaBuyerPage() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-black tracking-wide">
               <Brain className="w-4 h-4 text-indigo-600 animate-pulse" />
-              <span>MARKETING & MEDIA BUYER IA 2.0</span>
+              <span>{t.topBadge}</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 flex items-center gap-3 font-heading">
-              <span>خبير الإعلانات واقتناص المنتجات الرابحة</span>
+              <span>{t.pageTitle}</span>
               <Sparkles className="w-6 h-6 text-amber-500" />
             </h1>
             <p className="text-xs md:text-sm text-slate-600 max-w-2xl leading-relaxed font-medium">
-              محرك ذكي متكامل: يكتشف المنتجات الأكثر مبيعاً وتريند في المغرب وكافة أسواق العالم، يحلل أرباح الـ COD وهامش الـ Break-even CPA، ويراقب حملاتك الإعلانية يومياً لإيقاف الخاسر وتكبير الرابح.
+              {t.pageSubtitle}
             </p>
           </div>
 
@@ -407,7 +409,7 @@ export default function MediaBuyerPage() {
             className="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs md:text-sm shadow-md shadow-amber-500/25 flex items-center gap-2 transition-all transform active:scale-95 cursor-pointer whitespace-nowrap shrink-0 border border-amber-300/40"
           >
             <Lightbulb className="w-4 h-4 text-slate-950 fill-slate-950" />
-            <span>توليد أفكار رابحة بالذكاء الاصطناعي ⚡</span>
+            <span>{t.aiGenBtn}</span>
           </button>
         </div>
 
@@ -423,7 +425,7 @@ export default function MediaBuyerPage() {
               }`}
             >
               <Flame className="w-4 h-4 text-orange-500" />
-              <span>اقتناص المنتجات الرابحة الدقيقة (Precise Winners Radar 🏆)</span>
+              <span>{t.tabWinning}</span>
             </button>
 
             <button
@@ -435,7 +437,7 @@ export default function MediaBuyerPage() {
               }`}
             >
               <Target className="w-4 h-4 text-indigo-600" />
-              <span>فحص واستشارة منتجك مع الخبير (Product Audit & Scripts 🎯)</span>
+              <span>{t.tabValidator}</span>
             </button>
 
             <button
@@ -447,7 +449,7 @@ export default function MediaBuyerPage() {
               }`}
             >
               <BarChart3 className="w-4 h-4 text-emerald-600" />
-              <span>خبير الميديا باير اليومي (Daily Copilot 📊)</span>
+              <span>{t.tabCopilot}</span>
             </button>
           </div>
         </div>
@@ -472,13 +474,13 @@ export default function MediaBuyerPage() {
               <div className="space-y-1.5">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-black border border-indigo-500/30">
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>مقتنص المنتجات التجارية الدقيقة (Real Commercial Winners)</span>
+                  <span>{t.scoutBadge}</span>
                 </div>
                 <h2 className="text-base md:text-lg font-black text-white font-heading">
-                  منتجات تجارية محددة بمواصفات حقيقية، أماكن التوريد بالجملة، وإعلانات نشطة
+                  {t.scoutTitle}
                 </h2>
                 <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-                  هذه ليست مجرد مجالات عامة (Niches)، بل منتجات دقيقة جاهزة للإطلاق الفوري بمواصفاتها التجارية الكاملة (مثل سيروم فيتامين C 10% أو كريم لبان الذكر العماني)، وأماكن توريدها بالجملة في درب عمر ومختبرات الدار البيضاء ودبي.
+                  {t.scoutSubtitle}
                 </p>
               </div>
 
@@ -492,7 +494,7 @@ export default function MediaBuyerPage() {
                   }}
                   className="px-3 py-2 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-200 border border-pink-500/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
                 >
-                  <span>💄 مستحضرات التجميل بالمغرب</span>
+                  <span>{t.pillCosmetics}</span>
                 </button>
                 <button
                   type="button"
@@ -502,7 +504,7 @@ export default function MediaBuyerPage() {
                   }}
                   className="px-3 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
                 >
-                  <span>🌿 مكملات غذائية عالية الشراء</span>
+                  <span>{t.pillSupplements}</span>
                 </button>
                 <button
                   type="button"
@@ -512,7 +514,7 @@ export default function MediaBuyerPage() {
                   }}
                   className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
                 >
-                  <span>🇸🇦 أعلى المبيعات في الخليج</span>
+                  <span>{t.pillGcc}</span>
                 </button>
               </div>
             </div>
@@ -526,7 +528,7 @@ export default function MediaBuyerPage() {
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="ابحث بالاسم، الكلمة الدلالية، أو المشكلة..."
+                  placeholder={t.searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && fetchProducts()}
@@ -542,16 +544,16 @@ export default function MediaBuyerPage() {
                   onChange={(e) => setSelectedNiche(e.target.value)}
                   className="text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-800 cursor-pointer focus:bg-white"
                 >
-                  <option value="ALL">جميع المجالات الدقيقة (All Categories)</option>
-                  <option value="COSMETICS">💄 مستحضرات التجميل والعناية (Cosmetics)</option>
-                  <option value="SUPPLEMENTS">🌿 مكملات غذائية وأعشاب (Supplements)</option>
-                  <option value="BEAUTY">✨ أدوات الجمال والعناية (Beauty Tools)</option>
-                  <option value="KITCHEN">🍳 المطبخ والمنزل الذكي (Kitchen)</option>
-                  <option value="CAR">🚗 إكسسوارات السيارات (Car)</option>
-                  <option value="HEALTH">🏋️ الصحة والعلاج الطبيعي (Health)</option>
-                  <option value="GADGETS">⚡ الأدوات الذكية (Gadgets)</option>
-                  <option value="HOME">🏠 المنزل والديكور (Home)</option>
-                  <option value="PETS">🐾 الحيوانات الأليفة (Pets)</option>
+                  <option value="ALL">{t.allNiches}</option>
+                  <option value="COSMETICS">{t.nicheCosmetics}</option>
+                  <option value="SUPPLEMENTS">{t.nicheSupplements}</option>
+                  <option value="BEAUTY">{t.nicheBeauty}</option>
+                  <option value="KITCHEN">{t.nicheKitchen}</option>
+                  <option value="CAR">{t.nicheCar}</option>
+                  <option value="HEALTH">{t.nicheHealth}</option>
+                  <option value="GADGETS">{t.nicheGadgets}</option>
+                  <option value="HOME">{t.nicheHome}</option>
+                  <option value="PETS">{t.nichePets}</option>
                 </select>
 
                 {/* Country / Market - All Worldwide Markets */}
@@ -560,13 +562,13 @@ export default function MediaBuyerPage() {
                   onChange={(e) => setSelectedCountry(e.target.value)}
                   className="text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-800 cursor-pointer focus:bg-white"
                 >
-                  <option value="ALL">🌍 جميع أسواق العالم (Worldwide)</option>
-                  <option value="MA">🇲🇦 المغرب (Morocco)</option>
-                  <option value="US">🇺🇸 الولايات المتحدة (USA)</option>
-                  <option value="FR">🇫🇷 فرنسا وأوروبا (France & EU)</option>
-                  <option value="GCC">🇸🇦 دول الخليج والسعودية (GCC)</option>
-                  <option value="SN">🇸🇳 السنغال وغرب إفريقيا (Senegal)</option>
-                  <option value="GLOBAL">🌐 التريندات العالمية (Global Trends)</option>
+                  <option value="ALL">{t.allCountries}</option>
+                  <option value="MA">{t.countryMA}</option>
+                  <option value="US">{t.countryUS}</option>
+                  <option value="FR">{t.countryFR}</option>
+                  <option value="GCC">{t.countryGCC}</option>
+                  <option value="SN">{t.countrySN}</option>
+                  <option value="GLOBAL">{t.countryGLOBAL}</option>
                 </select>
 
                 {/* Status */}
@@ -575,10 +577,10 @@ export default function MediaBuyerPage() {
                   onChange={(e) => setSelectedStatus(e.target.value)}
                   className="text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-800 cursor-pointer focus:bg-white"
                 >
-                  <option value="ALL">جميع الحالات</option>
-                  <option value="HOT">🔥 مبيعات مشتعلة (Hot Seller)</option>
-                  <option value="EMERGING">🟢 تريند صاعد (Emerging)</option>
-                  <option value="EVERGREEN">🌲 منتج دائم (Evergreen)</option>
+                  <option value="ALL">{t.allStatuses}</option>
+                  <option value="HOT">{t.statusHot}</option>
+                  <option value="EMERGING">{t.statusEmerging}</option>
+                  <option value="EVERGREEN">{t.statusEvergreen}</option>
                 </select>
 
                 <button
@@ -595,7 +597,7 @@ export default function MediaBuyerPage() {
             <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 text-xs text-slate-600">
               <span className="font-extrabold flex items-center gap-1 text-slate-700">
                 <Filter className="w-3.5 h-3.5" />
-                <span>تصنيف سريع:</span>
+                <span>{t.quickFilterLabel}</span>
               </span>
               <button
                 onClick={() => setSelectedType(selectedType === 'PROBLEM_SOLVER' ? 'ALL' : 'PROBLEM_SOLVER')}
@@ -605,7 +607,7 @@ export default function MediaBuyerPage() {
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                 }`}
               >
-                🛠️ يحل مشكلة يومية (Problem Solver)
+                {t.filterProblemSolver}
               </button>
               <button
                 onClick={() => setSelectedType(selectedType === 'WOW_FACTOR' ? 'ALL' : 'WOW_FACTOR')}
@@ -615,7 +617,7 @@ export default function MediaBuyerPage() {
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                 }`}
               >
-                ✨ إبهار بصري فايرل (Wow Factor)
+                {t.filterWowFactor}
               </button>
               <button
                 onClick={() => setSelectedStatus(selectedStatus === 'EMERGING' ? 'ALL' : 'EMERGING')}
@@ -625,7 +627,7 @@ export default function MediaBuyerPage() {
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                 }`}
               >
-                🟢 منافسة قليلة وفرصة صعود (High Opportunity)
+                {t.filterHighOpportunity}
               </button>
             </div>
           </div>
@@ -634,15 +636,15 @@ export default function MediaBuyerPage() {
           {productsLoading ? (
             <div className="p-16 flex flex-col items-center justify-center gap-3 text-slate-500">
               <RefreshCw className="w-8 h-8 animate-spin text-indigo-600" />
-              <p className="text-sm font-bold">جاري مسح الأسواق وتحديث المنتجات الرابحة...</p>
+              <p className="text-sm font-bold">{t.loadingProducts}</p>
             </div>
           ) : products.length === 0 ? (
             <div className="p-16 bg-white rounded-3xl border border-dashed border-slate-300 text-center space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                 <Search className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-black text-slate-800">لا توجد منتجات مطابقة لهذا الفلتر</h3>
-              <p className="text-xs text-slate-500 font-medium">جرب تغيير معايير البحث أو اضغط على زر توليد أفكار ذكية بالذكاء الاصطناعي.</p>
+              <h3 className="text-base font-black text-slate-800">{t.noProductsTitle}</h3>
+              <p className="text-xs text-slate-500 font-medium">{t.noProductsDesc}</p>
               <button
                 onClick={() => {
                   setSelectedNiche('ALL');
@@ -653,7 +655,7 @@ export default function MediaBuyerPage() {
                 }}
                 className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-100 cursor-pointer"
               >
-                إعادة ضبط الفلاتر
+                {t.resetFiltersBtn}
               </button>
             </div>
           ) : (
@@ -661,10 +663,10 @@ export default function MediaBuyerPage() {
               {products.map((p) => {
                 const statusBadge =
                   p.status === 'HOT'
-                    ? { text: '🔥 مشتعل ومطلوب', bg: 'bg-rose-500 text-white' }
+                    ? { text: t.statusHot, bg: 'bg-rose-500 text-white' }
                     : p.status === 'EMERGING'
-                    ? { text: '🟢 صاعد بقوة', bg: 'bg-emerald-600 text-white' }
-                    : { text: '🌲 مبيعات مستقرة', bg: 'bg-blue-600 text-white' };
+                    ? { text: t.statusEmerging, bg: 'bg-emerald-600 text-white' }
+                    : { text: t.statusEvergreen, bg: 'bg-blue-600 text-white' };
 
                 const globalMetaUrl = getMetaAdLibraryUrl(p, 'ALL');
                 const localMetaUrl = getMetaAdLibraryUrl(p, p.country === 'GLOBAL' ? 'ALL' : p.country);
@@ -706,10 +708,10 @@ export default function MediaBuyerPage() {
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent p-3 pt-8 text-white flex items-center justify-between text-xs z-10">
                         <span className="font-extrabold text-emerald-400 text-xs flex items-center gap-1">
                           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                          <span>ربح متوقع: +{p.netProfitPerUnit} {p.currency || 'DH'} / طلب</span>
+                          <span>{t.estProfitPerOrder}{p.netProfitPerUnit} {p.currency || 'DH'} / {isAr ? 'طلب' : 'cmd'}</span>
                         </span>
                         <span className="text-[11px] font-bold text-slate-200 bg-white/20 px-2 py-0.5 rounded-md">
-                          تأكيد: {p.estConfirmationRate}%
+                          {t.confirmationBadge}: {p.estConfirmationRate}%
                         </span>
                       </div>
                     </div>
@@ -717,11 +719,11 @@ export default function MediaBuyerPage() {
                     {/* Card Body */}
                     <div className="p-5 flex-1 flex flex-col justify-between space-y-4" onClick={(e) => e.stopPropagation()}>
                       <div className="space-y-2 cursor-pointer" onClick={() => setSelectedProductDetails(p)}>
-                        <h3 className="text-sm font-black text-slate-900 line-clamp-2 leading-snug group-hover:text-indigo-600 transition-colors" title={p.titleAr || p.title}>
-                          {p.titleAr || p.title}
+                        <h3 className="text-sm font-black text-slate-900 line-clamp-2 leading-snug group-hover:text-indigo-600 transition-colors" title={isAr ? (p.titleAr || p.title) : (p.title || p.titleAr)}>
+                          {isAr ? (p.titleAr || p.title) : (p.title || p.titleAr)}
                         </h3>
                         <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed font-medium">
-                          {p.descriptionAr || p.description}
+                          {isAr ? (p.descriptionAr || p.description) : (p.description || p.descriptionAr)}
                         </p>
                       </div>
 
@@ -730,9 +732,9 @@ export default function MediaBuyerPage() {
                         <div className="p-2.5 rounded-2xl bg-indigo-50/90 border border-indigo-200/80 text-xs text-indigo-950 space-y-1">
                           <div className="text-[10px] font-black text-indigo-700 flex items-center gap-1">
                             <Sparkles className="w-3 h-3 text-indigo-600" />
-                            <span>المواصفات التجارية الدقيقة للمنتج:</span>
+                            <span>{t.exactSpecsLabel}</span>
                           </div>
-                          <p className="text-[11px] leading-snug font-bold text-indigo-900">{p.exactSpecificationAr}</p>
+                          <p className="text-[11px] leading-snug font-bold text-indigo-900">{isAr ? (p.exactSpecificationAr || p.exactSpecificationFr) : (p.exactSpecificationFr || p.exactSpecificationAr)}</p>
                         </div>
                       )}
 
@@ -741,9 +743,9 @@ export default function MediaBuyerPage() {
                         <div className="p-2.5 rounded-2xl bg-amber-50/90 border border-amber-200/80 text-xs text-amber-950 space-y-1">
                           <div className="text-[10px] font-black text-amber-800 flex items-center gap-1">
                             <MapPin className="w-3 h-3 text-amber-600" />
-                            <span>أين تجده وتورده بسعر الجملة:</span>
+                            <span>{t.sourcingLocationLabel}</span>
                           </div>
-                          <p className="text-[11px] leading-snug font-bold text-amber-900">{p.sourcingLocationAr}</p>
+                          <p className="text-[11px] leading-snug font-bold text-amber-900">{isAr ? (p.sourcingLocationAr || p.sourcingLocationFr) : (p.sourcingLocationFr || p.sourcingLocationAr)}</p>
                         </div>
                       )}
 
@@ -753,12 +755,12 @@ export default function MediaBuyerPage() {
                           {p.adLongevityDays && (
                             <span className="flex items-center gap-1 text-emerald-700 font-extrabold">
                               <Clock className="w-3 h-3 text-emerald-600" />
-                              <span>إعلانات نشطة منذ {p.adLongevityDays}+ يوماً</span>
+                              <span>{t.activeAdsForDays} {p.adLongevityDays}+ {isAr ? 'يوماً' : 'jours'}</span>
                             </span>
                           )}
                           {p.topPlatformAr && (
                             <span className="text-slate-700 font-extrabold text-[10px]">
-                              🔥 {p.topPlatformAr}
+                              🔥 {t.topChannelLabel} {isAr ? (p.topPlatformAr || 'Meta + TikTok') : (p.topPlatformFr || p.topPlatformAr || 'Meta + TikTok')}
                             </span>
                           )}
                         </div>
@@ -767,16 +769,16 @@ export default function MediaBuyerPage() {
                       {/* Economics Bar - High Contrast */}
                       <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-slate-50 border border-slate-200/90 text-center">
                         <div>
-                          <div className="text-[10px] font-bold text-slate-500">سعر الجملة</div>
+                          <div className="text-[10px] font-bold text-slate-500">{t.wholesalePriceLabel}</div>
                           <div className="text-xs font-black text-slate-900">{p.wholesalePrice} {p.currency || 'DH'}</div>
                         </div>
                         <div>
-                          <div className="text-[10px] font-bold text-slate-500">سعر البيع المقترح</div>
+                          <div className="text-[10px] font-bold text-slate-500">{t.retailPriceLabel}</div>
                           <div className="text-sm font-black text-indigo-600">{p.retailPrice} {p.currency || 'DH'}</div>
                         </div>
                         <div>
-                          <div className="text-[10px] font-bold text-slate-500">المنافسون</div>
-                          <div className="text-xs font-black text-slate-900">{p.activeCompetitors || 5}+ نشط</div>
+                          <div className="text-[10px] font-bold text-slate-500">{t.competitorsLabel}</div>
+                          <div className="text-xs font-black text-slate-900">{p.activeCompetitors || 5}+ {t.competitorsActive}</div>
                         </div>
                       </div>
 
@@ -785,7 +787,7 @@ export default function MediaBuyerPage() {
                         <div className="text-xs font-extrabold text-slate-800 flex items-center justify-between">
                           <span className="flex items-center gap-1.5">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>لماذا هذا المنتج رابح؟</span>
+                            <span>{t.whyWinningLabel}</span>
                           </span>
                           {p.targetDemographicAr && (
                             <span className="text-[10px] text-slate-500 font-bold max-w-[170px] truncate" title={p.targetDemographicAr}>
@@ -810,7 +812,7 @@ export default function MediaBuyerPage() {
                           title="شاهد جميع إعلانات فيسبوك الشغالة حالياً حول العالم"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
-                          <span>إعلانات فيسبوك (عالمي)</span>
+                          <span>{t.facebookAdsGlobal}</span>
                         </a>
                         <a
                           href={tikTokUrl}
@@ -820,7 +822,7 @@ export default function MediaBuyerPage() {
                           title="شاهد فيديوهات وتريندات تيك توك"
                         >
                           <Play className="w-3.5 h-3.5 text-pink-400 fill-pink-400" />
-                          <span>فيديوهات تيك توك</span>
+                          <span>{t.tikTokVideos}</span>
                         </a>
                       </div>
 
@@ -833,7 +835,7 @@ export default function MediaBuyerPage() {
                           title="عرض ملف المنتج بالكامل والموردين"
                         >
                           <Eye className="w-3.5 h-3.5 text-indigo-600" />
-                          <span>التفاصيل 👁️</span>
+                          <span>{t.detailsBtn}</span>
                         </button>
 
                         <button
@@ -842,7 +844,7 @@ export default function MediaBuyerPage() {
                           className="col-span-2 py-3 px-3 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white text-xs font-black shadow-md shadow-indigo-600/25 flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98"
                         >
                           <Zap className="w-4 h-4 text-amber-300 fill-amber-300 shrink-0" />
-                          <span className="truncate">تجهيز الإعلانات والسكريبت 🚀</span>
+                          <span className="truncate">{t.prepCampaignBtn}</span>
                         </button>
                       </div>
                     </div>
@@ -906,42 +908,42 @@ export default function MediaBuyerPage() {
                 {/* Economics Specs */}
                 <div className="md:col-span-2 grid grid-cols-2 gap-3">
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-                    <span className="text-[11px] font-bold text-slate-500">سعر الشراء بالجملة</span>
+                    <span className="text-[11px] font-bold text-slate-500">{t.dossierWholesaleTitle}</span>
                     <div className="text-xl font-black text-slate-900">
                       {selectedProductDetails.wholesalePrice} {selectedProductDetails.currency || 'DH'}
                     </div>
-                    <span className="text-[10px] text-slate-400">سعر التوريد التقديري</span>
+                    <span className="text-[10px] text-slate-400">{t.dossierWholesaleSub}</span>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-200 space-y-1">
-                    <span className="text-[11px] font-bold text-indigo-700">سعر البيع المقترح</span>
+                    <span className="text-[11px] font-bold text-indigo-700">{t.dossierRetailTitle}</span>
                     <div className="text-xl font-black text-indigo-600">
                       {selectedProductDetails.retailPrice} {selectedProductDetails.currency || 'DH'}
                     </div>
-                    <span className="text-[10px] text-indigo-500 font-semibold">سعر المستهلك في السوق</span>
+                    <span className="text-[10px] text-indigo-500 font-semibold">{t.dossierRetailSub}</span>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
-                    <span className="text-[11px] font-bold text-emerald-700">نسبة التأكيد والتوصيل</span>
+                    <span className="text-[11px] font-bold text-emerald-700">{t.dossierDeliveryConfirmationTitle}</span>
                     <div className="text-lg font-black text-emerald-800">
-                      {selectedProductDetails.estConfirmationRate}% تأكيد | {selectedProductDetails.estDeliveryRate}% توصيل
+                      {selectedProductDetails.estConfirmationRate}% {isAr ? 'تأكيد' : 'Conf'} | {selectedProductDetails.estDeliveryRate}% {isAr ? 'توصيل' : 'Livr'}
                     </div>
-                    <span className="text-[10px] text-emerald-600">تقدير واقعي للـ COD</span>
+                    <span className="text-[10px] text-emerald-600">{t.dossierDeliveryConfirmationSub}</span>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1">
-                    <span className="text-[11px] font-bold text-amber-700">مؤشر المنافسة والتشبع</span>
+                    <span className="text-[11px] font-bold text-amber-700">{t.dossierCompetitionTitle}</span>
                     <div className="text-lg font-black text-amber-900">
-                      {selectedProductDetails.saturationScore < 35 ? '🟢 فرصة صعود ممتازة' : '🟡 منافسة متوسطة'}
+                      {selectedProductDetails.saturationScore < 35 ? (isAr ? '🟢 فرصة صعود ممتازة' : '🟢 Forte opportunité') : (isAr ? '🟡 منافسة متوسطة' : '🟡 Concurrence modérée')}
                     </div>
-                    <span className="text-[10px] text-amber-700">{selectedProductDetails.activeCompetitors || 10}+ معلنين نشطين</span>
+                    <span className="text-[10px] text-amber-700">{selectedProductDetails.activeCompetitors || 10}+ {t.dossierCompetitionSub}</span>
                   </div>
                 </div>
               </div>
 
               {/* Description */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <h4 className="text-xs font-black text-slate-800">وصف وفكرة المنتج:</h4>
+                <h4 className="text-xs font-black text-slate-800">{t.dossierDescTitle}</h4>
                 <p className="text-xs text-slate-700 leading-relaxed font-medium">
                   {selectedProductDetails.descriptionAr || selectedProductDetails.description}
                 </p>
@@ -958,7 +960,7 @@ export default function MediaBuyerPage() {
                 <div className="p-4 rounded-2xl bg-indigo-50/90 border border-indigo-200 space-y-2">
                   <div className="flex items-center gap-2 text-indigo-900 font-black text-xs">
                     <Sparkles className="w-4 h-4 text-indigo-600" />
-                    <span>المواصفات الفنية والتجارية الدقيقة:</span>
+                    <span>{t.dossierExactSpecsTitle}</span>
                   </div>
                   <p className="text-xs text-indigo-950 font-bold leading-relaxed">
                     {selectedProductDetails.exactSpecificationAr || 'عبوة ومواصفات تجارية قياسية للتجارة الإلكترونية والـ COD.'}
@@ -969,7 +971,7 @@ export default function MediaBuyerPage() {
                 <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 space-y-2">
                   <div className="flex items-center gap-2 text-amber-900 font-black text-xs">
                     <MapPin className="w-4 h-4 text-amber-600" />
-                    <span>أماكن التوريد والشراء بالجملة:</span>
+                    <span>{t.dossierSourcingTitle}</span>
                   </div>
                   <p className="text-xs text-amber-950 font-bold leading-relaxed">
                     {selectedProductDetails.sourcingLocationAr || 'أسواق الجملة المحلية (درب عمر، كراج علال) وموردي علي إكسبريس.'}
@@ -980,10 +982,10 @@ export default function MediaBuyerPage() {
                 <div className="p-4 rounded-2xl bg-emerald-50/90 border border-emerald-200 space-y-2">
                   <div className="flex items-center gap-2 text-emerald-900 font-black text-xs">
                     <Clock className="w-4 h-4 text-emerald-600" />
-                    <span>عمر الإعلانات النشطة والمنصة:</span>
+                    <span>{t.dossierAdLongevityTitle}</span>
                   </div>
                   <p className="text-xs text-emerald-950 font-bold leading-relaxed">
-                    نشط منذ {selectedProductDetails.adLongevityDays || 30}+ يوماً | المنصة الأقوى: {selectedProductDetails.topPlatformAr || 'Meta + TikTok Ads'}
+                    {isAr ? `نشط منذ ${selectedProductDetails.adLongevityDays || 30}+ يوماً | المنصة الأقوى: ${selectedProductDetails.topPlatformAr || 'Meta + TikTok Ads'}` : `Actif depuis ${selectedProductDetails.adLongevityDays || 30}+ jours | Top canal : ${selectedProductDetails.topPlatformFr || selectedProductDetails.topPlatformAr || 'Meta + TikTok Ads'}`}
                   </p>
                 </div>
 
@@ -991,7 +993,7 @@ export default function MediaBuyerPage() {
                 <div className="p-4 rounded-2xl bg-purple-50/90 border border-purple-200 space-y-2">
                   <div className="flex items-center gap-2 text-purple-900 font-black text-xs">
                     <Target className="w-4 h-4 text-purple-600" />
-                    <span>الجمهور المستهدف بدقة:</span>
+                    <span>{t.dossierDemographicTitle}</span>
                   </div>
                   <p className="text-xs text-purple-950 font-bold leading-relaxed">
                     {selectedProductDetails.targetDemographicAr || 'المتسوقون عبر الإنترنت المهتمون بحل المشاكل الفورية.'}
@@ -1003,7 +1005,7 @@ export default function MediaBuyerPage() {
               <div className="space-y-2">
                 <h4 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>لماذا هذا المنتج رابح ويحقق مبيعات قوية؟</span>
+                  <span>{t.dossierWhyWinningTitle}</span>
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                   {(selectedProductDetails.whyWinningAr || selectedProductDetails.whyWinning || []).map((point, idx) => (
@@ -1021,7 +1023,7 @@ export default function MediaBuyerPage() {
               <div className="space-y-2">
                 <h4 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
                   <Flame className="w-4 h-4 text-orange-500" />
-                  <span>الزوايا التسويقية المقترحة لتصوير الفيديوهات:</span>
+                  <span>{t.dossierAnglesTitle}</span>
                 </h4>
                 <div className="space-y-2">
                   {(selectedProductDetails.suggestedAnglesAr || []).map((angle, idx) => (
@@ -1040,7 +1042,7 @@ export default function MediaBuyerPage() {
                     <Globe className="w-4 h-4 text-indigo-400" />
                     <span className="text-xs font-black">أدوات التجسس والبحث المباشر عن هذا المنتج</span>
                   </div>
-                  <span className="text-[10px] text-slate-400">تفتح في نافذة جديدة</span>
+                  <span className="text-[10px] text-slate-400">{t.dossierSpySub}</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -1052,7 +1054,7 @@ export default function MediaBuyerPage() {
                     className="p-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-xs"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    <span>إعلانات فيسبوك (عالمي 🌍)</span>
+                    <span>{t.dossierFbGlobal}</span>
                   </a>
 
                   {/* Local Meta Ad Library */}
@@ -1063,7 +1065,7 @@ export default function MediaBuyerPage() {
                     className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
                   >
                     <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
-                    <span>إعلانات فيسبوك ({selectedProductDetails.countryFlag || 'المحلي'})</span>
+                    <span>{t.dossierFbLocal} ({selectedProductDetails.countryFlag || (isAr ? 'المحلي' : 'Local')})</span>
                   </a>
 
                   {/* TikTok Hashtag Videos (Direct & 100% Reliable) */}
@@ -1075,7 +1077,7 @@ export default function MediaBuyerPage() {
                     title="مشاهدة فيديوهات وتريندات تيك توك بدون أي خطأ في السيرفر"
                   >
                     <Play className="w-3.5 h-3.5 text-pink-400 fill-pink-400" />
-                    <span>فيديوهات تيك توك (هاشتاغ 🎵)</span>
+                    <span>{t.dossierTikTokHashtag}</span>
                   </a>
 
                   {/* TikTok Google Videos (Fallback 100% Garanti) */}
@@ -1087,7 +1089,7 @@ export default function MediaBuyerPage() {
                     title="تصفح جميع فيديوهات تيك توك لهذا المنتج عبر Google"
                   >
                     <Video className="w-3.5 h-3.5 text-pink-400" />
-                    <span>فيديوهات تيك توك (Google 🎬)</span>
+                    <span>{t.dossierTikTokGoogle}</span>
                   </a>
 
                   {/* TikTok Creative Center Top Ads */}
@@ -1098,7 +1100,7 @@ export default function MediaBuyerPage() {
                     className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
                   >
                     <Zap className="w-3.5 h-3.5 text-amber-300" />
-                    <span>TikTok Top Ads Center 🔥</span>
+                    <span>{t.dossierTikTokCenter}</span>
                   </a>
 
                   {/* AliExpress Supplier Search */}
@@ -1130,7 +1132,7 @@ export default function MediaBuyerPage() {
                 className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-black shadow-md shadow-indigo-600/25 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
               >
                 <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
-                <span>نقل لمحلل الحملات وتجهيز السكريبتات فوراً 🚀</span>
+                <span>{t.dossierSendToAudit}</span>
               </button>
             </div>
           </div>
@@ -1151,13 +1153,13 @@ export default function MediaBuyerPage() {
                 </div>
                 <div>
                   <h2 className="text-base md:text-lg font-black text-slate-900 font-heading flex items-center gap-2">
-                    <span>فحص واستشارة منتجك مع الخبير الإعلاني (AI Product & Market Audit)</span>
+                    <span>{t.valHeaderTitle}</span>
                     <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold border border-emerald-200">
-                      مباشر ومخصص
+                      {t.valBadgeDirect}
                     </span>
                   </h2>
                   <p className="text-xs text-slate-500 font-medium">
-                    أدخل معلومات أي منتج لديك وحدد السوق المستهدف (المغرب، الخليج، السنغال، أوروبا...) ليقوم الخبير بدراسة فرص نجاحه، حساب الـ Break-even CPA، تقديم إرشادات السياسات، واقتراح سكريبتات الدارجة والاستهداف.
+                    {t.valHeaderDesc}
                   </p>
                 </div>
               </div>
@@ -1170,7 +1172,7 @@ export default function MediaBuyerPage() {
                     onChange={(e) => handleStockSelect(e.target.value)}
                     className="w-full sm:w-64 text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-800 cursor-pointer focus:bg-white shadow-2xs"
                   >
-                    <option value="">⚡ اختر منتجاً من مخزونك (Stock)...</option>
+                    <option value="">{t.valChooseStock}</option>
                     {stockItems.map((item) => (
                       <option key={item.id} value={item.id}>
                         📦 {item.name} ({item.sellingPrice || 199} DH)
@@ -1187,11 +1189,11 @@ export default function MediaBuyerPage() {
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                 <div className="md:col-span-6">
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    اسم المنتج أو الفكرة <span className="text-rose-500">*</span>
+                    {t.valFieldTitle} <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="مثال: سيروم فيتامين سي للتفتيح، مكمل المغنيسيوم للنوم، أو جهاز مساج الرقبة"
+                    placeholder={t.valFieldTitlePlaceholder}
                     value={analysisInput.title}
                     onChange={(e) => setAnalysisInput({ ...analysisInput, title: e.target.value })}
                     className="w-full text-xs border border-slate-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900 bg-slate-50 focus:bg-white transition-all"
@@ -1200,7 +1202,7 @@ export default function MediaBuyerPage() {
 
                 <div className="md:col-span-3">
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    السوق / الدولة المستهدفة <span className="text-indigo-600 font-extrabold">({getCurrencySymbol()})</span>
+                    {t.valFieldCountry} <span className="text-indigo-600 font-extrabold">({getCurrencySymbol()})</span>
                   </label>
                   <select
                     value={analysisInput.targetCountry}
@@ -1219,21 +1221,21 @@ export default function MediaBuyerPage() {
                 </div>
 
                 <div className="md:col-span-3">
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">المجال / النيتش</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">{t.valFieldNiche}</label>
                   <select
                     value={analysisInput.niche}
                     onChange={(e) => setAnalysisInput({ ...analysisInput, niche: e.target.value })}
                     className="w-full text-xs border border-slate-300 rounded-xl p-3 bg-white font-bold text-slate-800 cursor-pointer focus:ring-2 focus:ring-indigo-500"
                   >
-                    <option value="COSMETICS">💄 مستحضرات التجميل والعناية (Cosmetics & Skincare)</option>
-                    <option value="SUPPLEMENTS">🌿 مكملات غذائية وصحة طبيعية (Supplements & Wellness)</option>
-                    <option value="BEAUTY">✨ الجمال وأجهزة العناية (Beauty Tech)</option>
-                    <option value="KITCHEN">🍳 أدوات المطبخ والمنزل (Kitchen & Home)</option>
-                    <option value="CAR">🚗 إكسسوارات السيارات (Car Accessories)</option>
-                    <option value="HEALTH">🏋️ الصحة والعلاج الطبيعي (Health & Pain Relief)</option>
-                    <option value="GADGETS">⚡ إلكترونيات وأدوات ذكية (Gadgets)</option>
-                    <option value="HOME">🏠 ديكور وأثاث منزلي (Home Decor)</option>
-                    <option value="PETS">🐾 مستلزمات الحيوانات الأليفة (Pets)</option>
+                    <option value="COSMETICS">{t.nicheCosmetics}</option>
+                    <option value="SUPPLEMENTS">{t.nicheSupplements}</option>
+                    <option value="BEAUTY">{t.nicheBeauty}</option>
+                    <option value="KITCHEN">{t.nicheKitchen}</option>
+                    <option value="CAR">{t.nicheCar}</option>
+                    <option value="HEALTH">{t.nicheHealth}</option>
+                    <option value="GADGETS">{t.nicheGadgets}</option>
+                    <option value="HOME">{t.nicheHome}</option>
+                    <option value="PETS">{t.nichePets}</option>
                   </select>
                 </div>
               </div>
@@ -1242,7 +1244,7 @@ export default function MediaBuyerPage() {
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 pt-1">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    سعر الشراء بالجملة ({getCurrencySymbol()})
+                    {t.valFieldWholesale} ({getCurrencySymbol()})
                   </label>
                   <input
                     type="number"
@@ -1255,7 +1257,7 @@ export default function MediaBuyerPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    سعر البيع المقترح ({getCurrencySymbol()})
+                    {t.valFieldRetail} ({getCurrencySymbol()})
                   </label>
                   <input
                     type="number"
@@ -1268,7 +1270,7 @@ export default function MediaBuyerPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    تكلفة الشحن ({getCurrencySymbol()})
+                    {t.valFieldShipping} ({getCurrencySymbol()})
                   </label>
                   <input
                     type="number"
@@ -1280,7 +1282,7 @@ export default function MediaBuyerPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">نسبة التأكيد التقديرية %</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">{t.valFieldConfRate}</label>
                   <input
                     type="number"
                     placeholder="85"
@@ -1291,7 +1293,7 @@ export default function MediaBuyerPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">نسبة التسليم التقديرية %</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">{t.valFieldDelivRate}</label>
                   <input
                     type="number"
                     placeholder="80"
@@ -1306,11 +1308,11 @@ export default function MediaBuyerPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    المكونات، المميزات، أو المشكلة التي يحلها المنتج (Description & Ingredients)
+                    {t.valFieldIngredients}
                   </label>
                   <input
                     type="text"
-                    placeholder="مثال: يحتوي على زيت الأرغان وفيتامين E، يعالج تساقط الشعر ويملأ الفراغات في 30 يوماً"
+                    placeholder={t.valFieldIngredientsPlaceholder}
                     value={analysisInput.ingredientsOrDetails || analysisInput.description}
                     onChange={(e) => setAnalysisInput({ ...analysisInput, ingredientsOrDetails: e.target.value, description: e.target.value })}
                     className="w-full text-xs border border-slate-300 rounded-xl p-3 font-medium text-slate-800 bg-slate-50 focus:bg-white"
@@ -1319,11 +1321,11 @@ export default function MediaBuyerPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    رابط المنتج أو رابط صفحة المنافس (Product URL / Competitor)
+                    {t.valFieldUrl}
                   </label>
                   <input
                     type="text"
-                    placeholder="مثال: رابط علي إكسبريس، موقع المنافس، أو رابط الإعلان"
+                    placeholder={t.valFieldUrlPlaceholder}
                     value={analysisInput.productUrl}
                     onChange={(e) => setAnalysisInput({ ...analysisInput, productUrl: e.target.value })}
                     className="w-full text-xs border border-slate-300 rounded-xl p-3 font-medium text-slate-800 bg-slate-50 focus:bg-white"
@@ -1336,7 +1338,7 @@ export default function MediaBuyerPage() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
               <div className="text-xs text-slate-500 font-medium flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>التحليل يتضمن: فحص قبول الإعلانات في تيك توك وفيسبوك، حساب أقصى CPA مسموح، و3 سكريبتات إعلانية بالدارجة.</span>
+                <span>{t.valFooterNote}</span>
               </div>
 
               <button
@@ -1347,12 +1349,12 @@ export default function MediaBuyerPage() {
                 {analyzing ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>الخبير يقوم بفحص السوق وتحليل الجدوى الآن...</span>
+                    <span>{t.valLoadingBtn}</span>
                   </>
                 ) : (
                   <>
                     <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
-                    <span>فحص المنتج واستشارة الخبير الإعلاني فوراً 🚀</span>
+                    <span>{t.valSubmitBtn}</span>
                   </>
                 )}
               </button>
@@ -1368,13 +1370,13 @@ export default function MediaBuyerPage() {
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="px-3 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
-                        {analysisResult.targetCountryFlag || '🌍'} تقرير السوق: {analysisResult.targetCountryNameAr || analysisResult.targetCountry}
+                        {analysisResult.targetCountryFlag || '🌍'} {t.resMarketReport} {isAr ? (analysisResult.targetCountryNameAr || analysisResult.targetCountry) : (analysisResult.targetCountryNameFr || analysisResult.targetCountry)}
                       </span>
                       <span className="text-xs text-slate-400">|</span>
                       <span className="text-xs font-black text-slate-900">{analysisResult.productTitle}</span>
                     </div>
                     <h3 className="text-base md:text-lg font-black text-slate-900 font-heading leading-snug">
-                      {analysisResult.verdictAr}
+                      {isAr ? analysisResult.verdictAr : (analysisResult.verdictFr || analysisResult.verdictAr)}
                     </h3>
                   </div>
 
@@ -1382,11 +1384,11 @@ export default function MediaBuyerPage() {
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white flex flex-col items-center justify-center shadow-lg shadow-indigo-500/30">
                       <span className="text-2xl font-black">{analysisResult.overallScore}</span>
-                      <span className="text-[10px] font-bold opacity-80">من 100</span>
+                      <span className="text-[10px] font-bold opacity-80">{t.resOutOf100}</span>
                     </div>
                     <div>
                       <div className="text-xs font-black text-slate-900">{analysisResult.scoreLabel}</div>
-                      <div className="text-[11px] text-slate-500 font-medium">مؤشر النجاح والربحية</div>
+                      <div className="text-[11px] text-slate-500 font-medium">{t.resSuccessIndex}</div>
                     </div>
                   </div>
                 </div>
@@ -1396,10 +1398,10 @@ export default function MediaBuyerPage() {
                   <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-1.5">
                     <div className="text-xs font-black text-indigo-900 flex items-center gap-2">
                       <Globe className="w-4 h-4 text-indigo-600" />
-                      <span>هل سينجح هذا المنتج في سوق {analysisResult.targetCountryNameAr || analysisResult.targetCountry}؟</span>
+                      <span>{isAr ? `هل سينجح هذا المنتج في سوق ${analysisResult.targetCountryNameAr || analysisResult.targetCountry}؟` : `Ce produit va-t-il fonctionner sur le marché ${analysisResult.targetCountryNameFr || analysisResult.targetCountry} ?`}</span>
                     </div>
                     <p className="text-xs text-indigo-950 font-medium leading-relaxed">
-                      {analysisResult.marketDemandAnalysisAr}
+                      {isAr ? analysisResult.marketDemandAnalysisAr : (analysisResult.marketDemandAnalysisFr || analysisResult.marketDemandAnalysisAr)}
                     </p>
                   </div>
                 )}
@@ -1410,7 +1412,7 @@ export default function MediaBuyerPage() {
                   <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2">
                     <div className="text-xs font-black text-emerald-900 flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>نقاط القوة والفرص الرابحة:</span>
+                      <span>{t.resStrengthsTitle}</span>
                     </div>
                     <ul className="text-xs text-emerald-950 space-y-1.5 font-medium list-disc list-inside">
                       {(analysisResult.strengthsAr || [
@@ -1426,7 +1428,7 @@ export default function MediaBuyerPage() {
                   <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2">
                     <div className="text-xs font-black text-amber-900 flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-600" />
-                      <span>التحديات والتوصيات لتفادي الخسارة:</span>
+                      <span>{t.resChallengesTitle}</span>
                     </div>
                     <ul className="text-xs text-amber-950 space-y-1.5 font-medium list-disc list-inside">
                       {(analysisResult.challengesAr || [
@@ -1442,35 +1444,35 @@ export default function MediaBuyerPage() {
                 {/* Score Breakdown Bars */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 pt-1">
                   <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-                    <div className="text-[11px] font-bold text-slate-600">حل المشكلة</div>
+                    <div className="text-[11px] font-bold text-slate-600">{t.resMetricProblem}</div>
                     <div className="text-sm font-black text-indigo-600">{analysisResult.breakdown.problemSolving}%</div>
                     <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                       <div className="bg-indigo-600 h-full rounded-full" style={{ width: `${analysisResult.breakdown.problemSolving}%` }} />
                     </div>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-                    <div className="text-[11px] font-bold text-slate-600">الإبهار البصري</div>
+                    <div className="text-[11px] font-bold text-slate-600">{t.resMetricWow}</div>
                     <div className="text-sm font-black text-purple-600">{analysisResult.breakdown.wowFactor}%</div>
                     <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                       <div className="bg-purple-600 h-full rounded-full" style={{ width: `${analysisResult.breakdown.wowFactor}%` }} />
                     </div>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-                    <div className="text-[11px] font-bold text-slate-600">صحة هامش الربح</div>
+                    <div className="text-[11px] font-bold text-slate-600">{t.resMetricMargin}</div>
                     <div className="text-sm font-black text-emerald-600">{analysisResult.breakdown.marginHealth}%</div>
                     <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                       <div className="bg-emerald-600 h-full rounded-full" style={{ width: `${analysisResult.breakdown.marginHealth}%` }} />
                     </div>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-                    <div className="text-[11px] font-bold text-slate-600">سلامة الشحن والتوصيل</div>
+                    <div className="text-[11px] font-bold text-slate-600">{t.resMetricShipping}</div>
                     <div className="text-sm font-black text-blue-600">{analysisResult.breakdown.shippingFeasibility}%</div>
                     <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                       <div className="bg-blue-600 h-full rounded-full" style={{ width: `${analysisResult.breakdown.shippingFeasibility}%` }} />
                     </div>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 col-span-2 md:col-span-1">
-                    <div className="text-[11px] font-bold text-slate-600">حجم الطلب المتوقع</div>
+                    <div className="text-[11px] font-bold text-slate-600">{t.resMetricDemand}</div>
                     <div className="text-sm font-black text-amber-600">{analysisResult.breakdown.marketDemand}%</div>
                     <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                       <div className="bg-amber-600 h-full rounded-full" style={{ width: `${analysisResult.breakdown.marketDemand}%` }} />
@@ -1485,7 +1487,7 @@ export default function MediaBuyerPage() {
                 <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
                   <div className="flex items-center gap-2 text-sm font-black text-slate-900">
                     <TrendingUp className="w-5 h-5 text-indigo-600" />
-                    <span>المنصات الإعلانية الأنسب لهذا المنتج في {analysisResult.targetCountryNameAr || analysisResult.targetCountry}</span>
+                    <span>{t.resPlatformsTitle} ({isAr ? (analysisResult.targetCountryNameAr || analysisResult.targetCountry) : (analysisResult.targetCountryNameFr || analysisResult.targetCountry)})</span>
                   </div>
 
                   <div className="space-y-3">
@@ -1516,13 +1518,13 @@ export default function MediaBuyerPage() {
                 <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
                   <div className="flex items-center gap-2 text-sm font-black text-slate-900">
                     <ShieldAlert className="w-5 h-5 text-amber-500" />
-                    <span>إرشادات السياسات الإعلانية والسلامة (Ad Policy & Compliance)</span>
+                    <span>{t.resPoliciesTitle}</span>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2.5">
                     <div className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
                       <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>تنبيهات هامة لتفادي حظر الحسابات الإعلانية في تيك توك وفيسبوك:</span>
+                      <span>{t.resPoliciesWarning}</span>
                     </div>
                     <ul className="text-xs text-amber-950 space-y-2 font-medium">
                       {(analysisResult.regulatoryAndSafetyTipsAr || [
@@ -1538,8 +1540,8 @@ export default function MediaBuyerPage() {
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1 font-medium">
-                    <div className="font-extrabold text-slate-800">💡 نصيحة الخبير:</div>
-                    <p>في مستحضرات التجميل والمكملات، الفيديوهات الطبيعية العفوية (UGC) التي تتحدث عن الروتين اليومي تحقق أعلى نسبة مبيعات دون أن يعترض عليها روبوت مراجعة الإعلانات.</p>
+                    <div className="font-extrabold text-slate-800">{t.resExpertTipTitle}</div>
+                    <p>{t.resExpertTipContent}</p>
                   </div>
                 </div>
               </div>
@@ -1552,10 +1554,10 @@ export default function MediaBuyerPage() {
                   </div>
                   <div>
                     <h3 className="text-base font-black">
-                      حاسبة الأرباح الدقيقة وهامش الأمان الإعلاني (COD Economics - {analysisResult.currency || 'DH'})
+                      {t.resCodEconomicsTitle} ({analysisResult.currency || 'DH'})
                     </h3>
                     <p className="text-xs text-slate-300 font-medium">
-                      معادلة واقعية تأخذ بعين الاعتبار نسبة التأكيد والتسليم وتكلفة الشحن الحقيقية في سوق {analysisResult.targetCountryNameAr || analysisResult.targetCountry}.
+                      {t.resCodEconomicsSubtitle}
                     </p>
                   </div>
                 </div>
@@ -1563,38 +1565,38 @@ export default function MediaBuyerPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {/* Break-even CPA */}
                   <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-400/40 space-y-1">
-                    <div className="text-[11px] font-bold text-rose-300">أقصى CPA مسموح (Break-even)</div>
+                    <div className="text-[11px] font-bold text-rose-300">{t.resBreakEvenCpa}</div>
                     <div className="text-2xl font-black text-rose-400">
                       {analysisResult.economics.breakEvenCpa} {analysisResult.currency || 'DH'}
                     </div>
-                    <div className="text-[10px] text-rose-200/80 font-medium">إذا تجاوزته تصبح في خسارة</div>
+                    <div className="text-[10px] text-rose-200/80 font-medium">{t.resBreakEvenSub}</div>
                   </div>
 
                   {/* Target CPA Range */}
                   <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-400/40 space-y-1">
-                    <div className="text-[11px] font-bold text-emerald-300">سعر الطلب المستهدف (Target CPA)</div>
+                    <div className="text-[11px] font-bold text-emerald-300">{t.resTargetCpa}</div>
                     <div className="text-2xl font-black text-emerald-400">
                       {analysisResult.economics.targetCpaMin} - {analysisResult.economics.targetCpaMax} {analysisResult.currency || 'DH'}
                     </div>
-                    <div className="text-[10px] text-emerald-200/80 font-medium">المنطقة الذهبية لتحقيق ربح مرتفع</div>
+                    <div className="text-[10px] text-emerald-200/80 font-medium">{t.resTargetCpaSub}</div>
                   </div>
 
                   {/* Net Profit per delivered */}
                   <div className="p-4 rounded-2xl bg-white/10 border border-white/20 space-y-1">
-                    <div className="text-[11px] font-bold text-indigo-200">الربح الصافي لكل طلب مستلم</div>
+                    <div className="text-[11px] font-bold text-indigo-200">{t.resNetProfitPerDelivered}</div>
                     <div className="text-2xl font-black text-white">
                       +{analysisResult.economics.netProfitPerDelivered} {analysisResult.currency || 'DH'}
                     </div>
-                    <div className="text-[10px] text-slate-300 font-medium">بعد خصم الإعلانات والشحن وتكلفة المنتج</div>
+                    <div className="text-[10px] text-slate-300 font-medium">{t.resNetProfitSub}</div>
                   </div>
 
                   {/* Profit per 100 leads */}
                   <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-400/40 space-y-1">
-                    <div className="text-[11px] font-bold text-amber-300">الربح المتوقع لكل 100 ليد</div>
+                    <div className="text-[11px] font-bold text-amber-300">{t.resProfitPer100Leads}</div>
                     <div className="text-2xl font-black text-amber-400">
                       +{analysisResult.economics.expectedNetProfitPer100Leads} {analysisResult.currency || 'DH'}
                     </div>
-                    <div className="text-[10px] text-amber-200/80 font-medium">عائد مستهدف (ROAS): {analysisResult.economics.roasTarget}x</div>
+                    <div className="text-[10px] text-amber-200/80 font-medium">{t.resRoasTarget} {analysisResult.economics.roasTarget}x</div>
                   </div>
                 </div>
               </div>
@@ -1606,8 +1608,8 @@ export default function MediaBuyerPage() {
                     🎬
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-slate-900 font-heading">زوايا التسويق وسيناريوهات الفيديو بالدارجة المغربية / الترويجية</h3>
-                    <p className="text-xs text-slate-500 font-medium">سكريبتات جاهزة لتصوير الـ UGC ونصوص الإعلانات (Ad Copies) لنسخها في فيسبوك وتيك توك بنقرة واحدة.</p>
+                    <h3 className="text-base font-black text-slate-900 font-heading">{t.resAnglesTitle}</h3>
+                    <p className="text-xs text-slate-500 font-medium">{t.resAnglesSubtitle}</p>
                   </div>
                 </div>
 
@@ -1636,7 +1638,7 @@ export default function MediaBuyerPage() {
                       <div className="space-y-1">
                         <div className="text-xs font-black text-amber-900 flex items-center gap-1.5">
                           <Flame className="w-4 h-4 text-orange-500" />
-                          <span>خطف الانتباه في أول 3 ثوانٍ (The 3-Second Hook):</span>
+                          <span>{t.resHookTitle}</span>
                         </div>
                         <p className="text-xs text-amber-950 font-bold leading-relaxed">
                           "{analysisResult.marketingAngles[activeScriptAngle].hook3sAr}"
@@ -1656,7 +1658,7 @@ export default function MediaBuyerPage() {
                     {/* UGC Full Script */}
                     <div className="p-5 rounded-2xl bg-slate-900 text-slate-100 space-y-3 font-mono text-xs shadow-md">
                       <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                        <span className="font-sans font-bold text-slate-300">سكريبت تصوير الفيديو (UGC Script بالدارجة)</span>
+                        <span className="font-sans font-bold text-slate-300">{t.resUgcScriptTitle}</span>
                         <button
                           onClick={() =>
                             copyText(analysisResult.marketingAngles[activeScriptAngle].fullScriptAr, 'script')
@@ -1750,7 +1752,7 @@ export default function MediaBuyerPage() {
                     </div>
 
                     <div className="space-y-2 pt-2">
-                      <div className="font-extrabold text-slate-800">مجموعات الإعلانات المقترحة (AdSets):</div>
+                      <div className="font-extrabold text-slate-800">{t.resAdsetsTitle}</div>
                       {analysisResult.targeting.adsetStrategies.map((adset, i) => (
                         <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1">
                           <div className="flex items-center justify-between font-bold text-slate-900">
@@ -1761,7 +1763,7 @@ export default function MediaBuyerPage() {
                           </div>
                           <p className="text-[11px] text-slate-600 font-medium">{adset.descriptionAr}</p>
                           <div className="text-[11px] text-slate-700 font-semibold">
-                            <span className="text-slate-500">الاهتمامات: </span>
+                            <span className="text-slate-500">{t.resInterestsLabel} </span>
                             {adset.interests.join(', ')}
                           </div>
                         </div>
@@ -1774,22 +1776,22 @@ export default function MediaBuyerPage() {
                 <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
                   <div className="flex items-center gap-2 text-sm font-black text-slate-900">
                     <Zap className="w-5 h-5 text-amber-500" />
-                    <span>قواعد إيقاف وتكبير الإعلانات (Kill & Scale Rules)</span>
+                    <span>{t.resRulesTitle}</span>
                   </div>
 
                   <div className="space-y-3 text-xs">
                     {/* Structure */}
                     <div className="p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-200 space-y-1">
-                      <div className="font-black text-indigo-900">هيكل الحملة للاختبار (Testing Structure):</div>
+                      <div className="font-black text-indigo-900">{t.resStructureTitle}</div>
                       <div className="font-bold text-indigo-950">{analysisResult.launchStrategy.suggestedStructure}</div>
-                      <div className="text-[11px] text-indigo-800/80 font-medium">مدة الاختبار: 3 أيام متتالية دون تعديل الإعلانات</div>
+                      <div className="text-[11px] text-indigo-800/80 font-medium">{t.resStructureDuration}</div>
                     </div>
 
                     {/* Kill Rule */}
                     <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 space-y-1">
                       <div className="font-black text-rose-900 flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-rose-600" />
-                        <span>قاعدة الإيقاف الفوري (Kill Rule):</span>
+                        <span>{t.resKillRuleTitle}</span>
                       </div>
                       <p className="text-rose-950 font-bold leading-relaxed">
                         {analysisResult.launchStrategy.killRuleDescriptionAr}
@@ -1800,7 +1802,7 @@ export default function MediaBuyerPage() {
                     <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
                       <div className="font-black text-emerald-900 flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-600" />
-                        <span>قاعدة التكبير والتوسع (Scale Rule):</span>
+                        <span>{t.resScaleRuleTitle}</span>
                       </div>
                       <p className="text-emerald-950 font-bold leading-relaxed">
                         {analysisResult.launchStrategy.scaleRuleDescriptionAr}
@@ -1809,7 +1811,7 @@ export default function MediaBuyerPage() {
 
                     {/* Tips */}
                     <div className="space-y-1.5 pt-1">
-                      <div className="font-black text-slate-800">نصائح حاسمة لمضاعفة النتائج:</div>
+                      <div className="font-black text-slate-800">{t.resKeyTipsTitle}</div>
                       <ul className="space-y-1 text-slate-600 list-disc list-inside font-medium">
                         {analysisResult.launchStrategy.keyTipsAr.map((tip, i) => (
                           <li key={i}>{tip}</li>
@@ -1832,31 +1834,31 @@ export default function MediaBuyerPage() {
           {/* Top Real COD KPI Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-1">
-              <div className="text-xs font-bold text-slate-500">إجمالي الصرف الإعلاني اليوم</div>
+              <div className="text-xs font-bold text-slate-500">{t.copilotSpendToday}</div>
               <div className="text-2xl font-black text-slate-900">
                 {campaignData?.kpis?.totalAdSpendToday || 690} DH
               </div>
-              <div className="text-[11px] text-slate-500 font-medium">متزامن مع حساب فيسبوك</div>
+              <div className="text-[11px] text-slate-500 font-medium">{t.copilotSpendSub}</div>
             </div>
 
             <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-1">
-              <div className="text-xs font-bold text-slate-500">الطلبيات المؤكدة الحقيقية</div>
+              <div className="text-xs font-bold text-slate-500">{t.copilotConfirmedOrders}</div>
               <div className="text-2xl font-black text-emerald-600">
                 {campaignData?.kpis?.totalConfirmedOrders || 21} طلب
               </div>
-              <div className="text-[11px] text-emerald-700 font-bold">تأكيد: {campaignData?.kpis?.realConfirmationRate || 84}%</div>
+              <div className="text-[11px] text-emerald-700 font-bold">{t.copilotConfRate} {campaignData?.kpis?.realConfirmationRate || 84}%</div>
             </div>
 
             <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-1">
-              <div className="text-xs font-bold text-slate-500">تكلفة الطلب المؤكد (Real CPR)</div>
+              <div className="text-xs font-bold text-slate-500">{t.copilotRealCpr}</div>
               <div className="text-2xl font-black text-indigo-600">
                 {campaignData?.kpis?.realCprAvg || 32.8} DH
               </div>
-              <div className="text-[11px] text-indigo-700 font-bold">تحت الحد الأقصى (Break-even)</div>
+              <div className="text-[11px] text-indigo-700 font-bold">{t.copilotCprSub}</div>
             </div>
 
             <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-1">
-              <div className="text-xs font-bold text-slate-500">العائد الحقيقي الصافي (Real ROAS)</div>
+              <div className="text-xs font-bold text-slate-500">{t.copilotRealRoas}</div>
               <div className="text-2xl font-black text-purple-600">
                 {campaignData?.kpis?.realCodRoasAvg || 2.85}x
               </div>
@@ -1961,20 +1963,20 @@ export default function MediaBuyerPage() {
 
           {/* All Monitored Campaigns Table */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
-            <h3 className="text-base font-black text-slate-900 font-heading">جدول الحملات الإعلانية ومؤشرات الـ COD الحقيقية</h3>
+            <h3 className="text-base font-black text-slate-900 font-heading">{t.copilotTableTitle}</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-right">
                 <thead className="bg-slate-50 text-slate-600 font-extrabold border-y border-slate-200">
                   <tr>
-                    <th className="py-3 px-4">اسم الحملة / AdSet</th>
-                    <th className="py-3 px-4">الحالة</th>
-                    <th className="py-3 px-4">الميزانية اليومية</th>
-                    <th className="py-3 px-4">الصرف اليوم</th>
-                    <th className="py-3 px-4">النقرات & CTR</th>
-                    <th className="py-3 px-4">الطلبات المؤكدة</th>
-                    <th className="py-3 px-4">سعر الطلب (CPR)</th>
-                    <th className="py-3 px-4">العائد (Real ROAS)</th>
-                    <th className="py-3 px-4">الإجراء</th>
+                    <th className="py-3 px-4">{t.copilotColName}</th>
+                    <th className="py-3 px-4">{t.copilotColStatus}</th>
+                    <th className="py-3 px-4">{t.copilotColBudget}</th>
+                    <th className="py-3 px-4">{t.copilotColSpend}</th>
+                    <th className="py-3 px-4">{t.copilotColClicks}</th>
+                    <th className="py-3 px-4">{t.copilotColConfirmed}</th>
+                    <th className="py-3 px-4">{t.copilotColCpr}</th>
+                    <th className="py-3 px-4">{t.copilotColRoas}</th>
+                    <th className="py-3 px-4">{t.copilotColAction}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -2034,8 +2036,8 @@ export default function MediaBuyerPage() {
                   ⚡
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900 font-heading">توليد أفكار منتجات رابحة بالذكاء الاصطناعي</h3>
-                  <p className="text-xs text-slate-500 font-medium">اختر المجال والسوق المستهدف وسيقوم الذكاء الاصطناعي بابتكار أفكار جديدة فوراً.</p>
+                  <h3 className="text-base font-black text-slate-900 font-heading">{t.aiModalTitle}</h3>
+                  <p className="text-xs text-slate-500 font-medium">{t.aiModalSubtitle}</p>
                 </div>
               </div>
               <button
@@ -2048,7 +2050,7 @@ export default function MediaBuyerPage() {
 
             <div className="space-y-3 pt-2">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">المجال / النيتش المستهدف</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t.aiModalNiche}</label>
                 <select
                   value={aiNiche}
                   onChange={(e) => setAiNiche(e.target.value)}
@@ -2065,7 +2067,7 @@ export default function MediaBuyerPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">السوق المستهدف (الدولة)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t.aiModalCountry}</label>
                 <select
                   value={aiCountry}
                   onChange={(e) => setAiCountry(e.target.value)}
@@ -2081,10 +2083,10 @@ export default function MediaBuyerPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">ملاحظة أو ميزانية خاصة (اختياري)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t.aiModalPrompt}</label>
                 <input
                   type="text"
-                  placeholder="مثال: منتجات سهلة التوصيل بهامش ربح عالي لا تنكسر أثناء الشحن"
+                  placeholder={t.aiModalPromptPlaceholder}
                   value={aiCustomPrompt}
                   onChange={(e) => setAiCustomPrompt(e.target.value)}
                   className="w-full text-xs border border-slate-300 rounded-xl p-3 font-semibold text-slate-800"
@@ -2102,7 +2104,7 @@ export default function MediaBuyerPage() {
                 onClick={() => setShowAiModal(false)}
                 className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
               >
-                إلغاء
+                {t.aiModalCancel}
               </button>
               <button
                 type="button"

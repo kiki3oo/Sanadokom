@@ -35,10 +35,14 @@ export interface WinningProduct {
   aliExpressSearchKeyword?: string;
   suggestedAnglesAr: string[];
   exactSpecificationAr?: string; // المواصفات الدقيقة التجارية للمنتج
+  exactSpecificationFr?: string; // Spécifications commerciales précises
   sourcingLocationAr?: string;   // مكان التوريد الدقيق في المغرب أو عالمياً
+  sourcingLocationFr?: string;   // Lieu de sourcing grossiste réel
   adLongevityDays?: number;      // مدة استمرار الإعلانات النشطة بالأيام (مؤشر ربحية حاسم)
   topPlatformAr?: string;        // المنصة الأكثر مبيعاً للإعلان
+  topPlatformFr?: string;        // Meilleure plateforme publicitaire
   targetDemographicAr?: string;  // الشريحة الأكثر شراءً
+  targetDemographicFr?: string;  // Démographie cible idéale
   addedAt: string;
 }
 
@@ -60,6 +64,7 @@ export interface ProductAnalysisResult {
   productTitle: string;
   targetCountry: string;
   targetCountryNameAr: string;
+  targetCountryNameFr?: string;
   targetCountryFlag: string;
   currency: string;
   overallScore: number; // 0-100
@@ -68,14 +73,20 @@ export interface ProductAnalysisResult {
   verdictAr: string;
   verdictFr: string;
   marketDemandAnalysisAr: string;
+  marketDemandAnalysisFr?: string;
   strengthsAr: string[];
+  strengthsFr?: string[];
   challengesAr: string[];
+  challengesFr?: string[];
   regulatoryAndSafetyTipsAr: string[];
+  regulatoryAndSafetyTipsFr?: string[];
   recommendedPlatforms: {
     name: string;
     suitability: number; // 0-100
     reasonAr: string;
+    reasonFr?: string;
     badge: string;
+    badgeFr?: string;
   }[];
   breakdown: {
     problemSolving: number; // 0-100
@@ -106,29 +117,40 @@ export interface ProductAnalysisResult {
     adsetStrategies: {
       name: string;
       nameAr: string;
+      nameFr?: string;
       audienceType: string;
       budgetShare: string;
       interests: string[];
       descriptionAr: string;
+      descriptionFr?: string;
     }[];
   };
   marketingAngles: {
     angleName: string;
     angleNameAr: string;
+    angleNameFr?: string;
     hook3sAr: string;
+    hook3sFr?: string;
     mainPitchAr: string;
+    mainPitchFr?: string;
     callToActionAr: string;
+    callToActionFr?: string;
     fullScriptAr: string;
+    fullScriptFr?: string;
     adCopyTextAr: string;
     adCopyTextFr: string;
   }[];
   launchStrategy: {
     suggestedStructure: string;
+    suggestedStructureFr?: string;
     dailyBudgetMad: number;
     testingDays: number;
     killRuleDescriptionAr: string;
+    killRuleDescriptionFr?: string;
     scaleRuleDescriptionAr: string;
+    scaleRuleDescriptionFr?: string;
     keyTipsAr: string[];
+    keyTipsFr?: string[];
   };
 }
 
@@ -177,7 +199,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية روتين العناية الصباحي للحصول على بشرة زجاجية خالية من البقع والشوائب',
       'عرض الأسبوع الحصري: السيروم الأصلي + صابونة نيلة زرقاء مغربية هدية وتوصيل مجاني'
     ],
-    addedAt: '2026-11-10T19:00:00Z',
+        exactSpecificationFr: "Flacon verre 30ml avec pipette | Formule 10% Vitamine C pure + 5% Niacinamide & Acide Hyaluronique",
+    sourcingLocationFr: "Laboratoires cosmétiques certifiés à Casablanca (Sidi Maârouf, Aïn Sebaâ) ou grossistes Derb Omar (28 - 35 DH)",
+    topPlatformFr: "Meta (Instagram) + TikTok Ads",
+    targetDemographicFr: "Femmes 22 - 48 ans (soin anti-taches, éclat du teint, routine du matin)",
+addedAt: '2026-11-10T19:00:00Z',
     exactSpecificationAr: 'عبوة زجاجية فاخرة 30ml مع قطارة | تركيز 10% فيتامين C نقي + 5% نياسيناميد وحمض الهيالورونيك',
     sourcingLocationAr: 'مختبرات التجميل بالدار البيضاء (سيدي معاروف / عين السبع) أو جملة درب عمر بسعر 28 - 35 درهم',
     adLongevityDays: 45,
@@ -225,7 +251,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية تكثيف اللحية وملء الفراغات للرجال بمظهر رجولي جذاب وجريء',
       'عرض كورس العلاج المكثف: عبوتين بخصم 40% وتوصيل سريع حتى باب المنزل'
     ],
-    addedAt: '2026-11-10T19:30:00Z',
+        exactSpecificationFr: "Pot verre luxe 50g | Collagène naturel, huile essentielle d'encens Louban d'Oman & huile d'argan pure",
+    sourcingLocationFr: "Laboratoires cosmétiques de Casablanca ou coopératives d'Agadir / Taroudant (32 - 42 DH)",
+    topPlatformFr: "Meta (Facebook + Instagram) Ads",
+    targetDemographicFr: "Femmes 28 - 55 ans (anti-rides, fermeté et rajeunissement du visage)",
+addedAt: '2026-11-10T19:30:00Z',
     exactSpecificationAr: 'زيت نقي 100% عبوة 60ml بقطارة مع البيوتين وزيت الخروع الأسود لتحفيز البصيلات وملء الفراغات',
     sourcingLocationAr: 'معاصر الزيوت الطبيعية (مراكش / أكادير) أو درب عمر / كراج علال بالدار البيضاء بسعر 30 - 38 درهم',
     adLongevityDays: 55,
@@ -273,7 +303,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية التخلص من تشنجات العضلات والصداع النصفي والإرهاق اليومي المستمر',
       'عرض كورس الراحة التامة: علبتين بـ 379 درهم وتوصيل مجاني لجميع مدن المغرب'
     ],
-    addedAt: '2026-11-10T20:00:00Z',
+        exactSpecificationFr: "Sachet hermétique refermable 100g | Poudre Matcha de cérémonie Grade A biologique 100% pure",
+    sourcingLocationFr: "Importateurs directs Casablanca ou grossistes bio Derb Omar (35 - 45 DH)",
+    topPlatformFr: "TikTok Ads + Instagram Reels",
+    targetDemographicFr: "Hommes & Femmes 20 - 45 ans (détox, perte de poids, concentration et énergie)",
+addedAt: '2026-11-10T20:00:00Z',
     exactSpecificationAr: 'عبوة محكمة 60 كبسولة نباتية | مغنيسيوم بيسجليسينات مخلبي عالي الامتصاص 500mg مع فيتامين B6',
     sourcingLocationAr: 'مستوردو ومصنعو المكملات الغذائية المرخصة بالدار البيضاء بسعر 40 - 45 درهم',
     adLongevityDays: 40,
@@ -321,7 +355,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية زيادة طاقة العمل والتخلص من الخمول والكسل اليومي بمنتج طبيعي 100%',
       'عرض باقة الحيوية: علبة أشواغاندا + علبة فيتامين د3 مجانية وشحن سريع'
     ],
-    addedAt: '2026-11-10T20:30:00Z',
+        exactSpecificationFr: "Flacon 60 gélules végétales | Extrait concentré 500mg KSM-66 avec poivre noir pour absorption maximale",
+    sourcingLocationFr: "Laboratoires de compléments alimentaires Casablanca ou grossistes Derb Omar (38 - 50 DH)",
+    topPlatformFr: "Meta (Instagram) + TikTok Ads",
+    targetDemographicFr: "Professionnels, étudiants et sportifs 22 - 50 ans (anti-stress, sommeil profond et endurance)",
+addedAt: '2026-11-10T20:30:00Z',
     exactSpecificationAr: 'مستخلص جذور الأشواغاندا العضوية KSM-66 تركيز 600mg مع جينسنغ في عبوة 60 كبسولة',
     sourcingLocationAr: 'جملة المكملات بالدار البيضاء أو الاستيراد المباشر من تركيا/الهند بسعر 45 - 50 درهم',
     adLongevityDays: 48,
@@ -369,7 +407,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية قبل وبعد مع عرض رذاذ الماء المتبخر الذي يبهر المشاهد',
       'عرض خاص: الجهاز + سيروم مجاني وتوصيل مجاني'
     ],
-    addedAt: '2026-11-09T10:00:00Z',
+        exactSpecificationFr: "Appareil multifonction 1000W avec 5 têtes interchangeables en céramique ionique (type Airwrap)",
+    sourcingLocationFr: "Grossistes Derb Omar / Garage Allal Casablanca (80 - 95 DH)",
+    topPlatformFr: "TikTok Ads + Meta",
+    targetDemographicFr: "Jeunes femmes et étudiantes 18 - 35 ans (coiffage rapide à domicile)",
+addedAt: '2026-11-09T10:00:00Z',
     exactSpecificationAr: 'جهاز تقشير وتنظيف الوجه بالموجات فوق الصوتية 24KHz مع شاحن USB وقاعدة شحن و 3 أوضاع تشغيل',
     sourcingLocationAr: 'مستوردو الإلكترونيات والتجميل بدرب عمر وباب مراكش بالدار البيضاء بسعر 40 - 45 درهم',
     adLongevityDays: 60,
@@ -417,7 +459,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية تحضير أطباق رمضان والسلطات بدقة المطاعم في 5 دقائق',
       'عرض حبتين: واحدة لك وواحدة هدية للوالدة بسعر خاص'
     ],
-    addedAt: '2026-11-09T11:00:00Z',
+        exactSpecificationFr: "Harnais élastique médical ajustable avec capteur d'angle intelligent (vibre à +25° de courbure)",
+    sourcingLocationFr: "Grossistes Derb Omar Casablanca ou AliExpress / CJ (28 - 35 DH)",
+    topPlatformFr: "Facebook Ads + Google Ads",
+    targetDemographicFr: "Employés de bureau, chauffeurs et personnes souffrant de douleurs au dos 25 - 60 ans",
+addedAt: '2026-11-09T11:00:00Z',
     exactSpecificationAr: 'قطاعة خضار يدوية 14 في 1 بـ 8 شفرات ستانلس ستيل حادة مع حاوية سعة 1.5L ومقبض ضغط آمن',
     sourcingLocationAr: 'مستوردو الأواني المنزلية بدرب عمر ودرب ميلا بالدار البيضاء بسعر 50 - 55 درهم',
     adLongevityDays: 90,
@@ -465,7 +511,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية الشحن السريع بدون خيوط مزعجة متشابكة في السيارة',
       'عرض باقة: الحامل الذكي + كابل شحن سريع هدية'
     ],
-    addedAt: '2026-11-09T12:00:00Z',
+        exactSpecificationFr: "Bol inox 304 alimentaire 2 litres, moteur cuivre 300W puissant et 4 lames double étage",
+    sourcingLocationFr: "Importateurs électroménager Derb Omar Casablanca (65 - 80 DH)",
+    topPlatformFr: "Facebook Ads (Femmes au foyer)",
+    targetDemographicFr: "Femmes mariées et mères de famille 25 - 55 ans (cuisine rapide)",
+addedAt: '2026-11-09T12:00:00Z',
     exactSpecificationAr: 'حامل سيارة بمستشعر حركة أوتوماتيكي للأشعة تحت الحمراء مع شاحن لاسلكي 15W سريع وقفل هوائي',
     sourcingLocationAr: 'درب غلف ودرب عمر بالدار البيضاء بسعر 45 - 50 درهم',
     adLongevityDays: 35,
@@ -563,7 +613,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية الأناقة والرياضة والسفر مع بطارية تدوم طوال اليوم',
       'عرض خاص: اشتري 2 واحصل على خصم 20% وشحن مجاني'
     ],
-    addedAt: '2026-11-10T14:00:00Z',
+        exactSpecificationFr: "Ventilateur 360° sans pales, batterie 4000mAh Type-C et 3 vitesses silencieuses",
+    sourcingLocationFr: "Entrepôts FBA USA / CJ Dropshipping (5.5$)",
+    topPlatformFr: "TikTok Shop + Meta",
+    targetDemographicFr: "Jeunes, sportifs et randonneurs en période estivale",
+addedAt: '2026-11-10T14:00:00Z',
     exactSpecificationAr: 'مروحة رقبة بدون شفرات 360° قابلة لإعادة الشحن عبر Type-C ببطارية 4000mAh و 3 سرعات',
     sourcingLocationAr: 'موردي أمازون FBA ومستودعات التوصيل السريع في أمريكا بسعر 5.5$',
   },
@@ -608,7 +662,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية تقشير البشرة والحصول على نعومة خيالية في دقيقتين قبل الخروج',
       'باقة الألوان الصيفية مع شحن سريع مجاني'
     ],
-    addedAt: '2026-11-10T14:30:00Z',
+        exactSpecificationFr: "Grattoir exfoliant nano-verre lavable et réutilisable sans douleur",
+    sourcingLocationFr: "Entrepôts US / AliExpress (1.8$)",
+    topPlatformFr: "TikTok Ads Viral",
+    targetDemographicFr: "Femmes et adolescentes 15 - 35 ans",
+addedAt: '2026-11-10T14:30:00Z',
     exactSpecificationAr: 'ممحاة إزالة الشعر الكريستالية بتقنية النانو غلاس المقاومة للماء والقابلة لإعادة الاستخدام بدون ألم',
     sourcingLocationAr: 'مستودعات التوريد في أمريكا / AliExpress بسعر 1.8$',
   },
@@ -653,7 +711,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية طريقة تدريب آمنة 100% بدون أي صدمات كهربائية أو عنف',
       'ضمان استرجاع الأموال لمدة 30 يوماً إذا لم يتوقف النباح'
     ],
-    addedAt: '2026-11-10T15:00:00Z',
+        exactSpecificationFr: "Boîtier étanche extérieur/intérieur à détection automatique d'aboiements et ultrasons inoffensifs",
+    sourcingLocationFr: "Entrepôts US / AliExpress (8.5$)",
+    topPlatformFr: "Facebook Ads + TikTok",
+    targetDemographicFr: "Propriétaires de chiens 25 - 65 ans aux USA",
+addedAt: '2026-11-10T15:00:00Z',
   },
   {
     id: 'wp-us-4',
@@ -741,7 +803,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية كوي وتعقيم البدلات والفساتين الحساسة بأمان تام',
       'عرض باقة: توصيل سريع في فرنسا + رأس فرشاة خاص مجاني'
     ],
-    addedAt: '2026-11-10T16:00:00Z',
+        exactSpecificationFr: "Mini robot hachoir rechargeable USB 250ml avec lames inox 304 et nettoyage rapide",
+    sourcingLocationFr: "Entrepôts européens / CJ Dropshipping (3.2€)",
+    topPlatformFr: "TikTok Ads + Meta",
+    targetDemographicFr: "Cuisiniers amateurs et personnes vivant seules en France et UE",
+addedAt: '2026-11-10T16:00:00Z',
   },
   {
     id: 'wp-fr-2',
@@ -784,7 +850,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية قوة بطاريات الليثيوم وسهولة الاستخدام بيد واحدة لجميع أفراد العائلة',
       'باقة متكاملة: المنشار + بطاريتين + حقيبة أدوات وسلسلة إضافية مجاناً'
     ],
-    addedAt: '2026-11-10T16:30:00Z',
+        exactSpecificationFr: "Bac ultrasons 45 000 Hz 400ml avec minuterie automatique",
+    sourcingLocationFr: "Entrepôts UE / CJ Dropshipping (7.5€)",
+    topPlatformFr: "Meta (Instagram) + TikTok",
+    targetDemographicFr: "Porteurs de lunettes et amateurs de montres et bijoux 25 - 60 ans",
+addedAt: '2026-11-10T16:30:00Z',
   },
   {
     id: 'wp-fr-3',
@@ -921,7 +991,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية بديل طبيعي وآمن لعمليات الحقن والبوتوكس المكلفة',
       'عرض الكورس الثلاثي: 3 عبوات كولاجين تكفي 90 يوماً بسعر مخفض جداً وتوصيل فوري'
     ],
-    addedAt: '2026-11-10T21:30:00Z',
+        exactSpecificationFr: "Bocal verre 240g | Miel de jujubier Sidr sauvage, gelée royale, extrait de Ginseng rouge et pollen de palmier",
+    sourcingLocationFr: "Laboratoires certifiés SFDA ou grossistes marchés de gros Riyad / Dubaï (25 - 35 SAR)",
+    topPlatformFr: "Snapchat Ads + TikTok Ads",
+    targetDemographicFr: "Hommes 28 - 60 ans dans les pays du Golfe (énergie, vitalité et endurance)",
+addedAt: '2026-11-10T21:30:00Z',
     exactSpecificationAr: 'بودرة كولاجين بحري متحلل نقي 300g بنكهة التوت البري مع فيتامين C وحمض الهيالورونيك',
     sourcingLocationAr: 'مستوردو المكملات الصحية بالرياض ودبي بسعر 40 - 45 ريال',
     adLongevityDays: 65,
@@ -969,7 +1043,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية سيارة تفوح برائحة الفخامة عند ركوب الضيوف والعائلة',
       'عرض خاص: مبخرة إلكترونية + علبة عود فاخرة وتوصيل سريع والدفع عند الاستلام'
     ],
-    addedAt: '2026-11-10T17:30:00Z',
+        exactSpecificationFr: "Défroisseur vapeur pliable 1200W, réservoir amovible 180ml avec chauffe rapide en 20s",
+    sourcingLocationFr: "Entrepôts COD Partner Dubaï / Riyad ou fournisseurs CJ Dropshipping (32 - 40 SAR)",
+    topPlatformFr: "Snapchat Ads + TikTok Ads",
+    targetDemographicFr: "Hommes et femmes d'affaires, voyageurs fréquents 25 - 50 ans",
+addedAt: '2026-11-10T17:30:00Z',
     exactSpecificationAr: 'مبخرة شعر إلكترونية محمولة قابلة للشحن عبر USB مع مشطين للشعر والملابس وحقيبة مخملية فاخرة',
     sourcingLocationAr: 'سوق الجملة بالرياض وجدة أو علي إكسبريس بسعر 25 - 30 ريال',
     adLongevityDays: 80,
@@ -1017,7 +1095,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية الهواء الرطب والمنعش الذي يحمي من جفاف البشرة والعيون',
       'عرض الأسبوع: اشتري قطعتين واحصل على خصم 40 ريال وشحن مجاني'
     ],
-    addedAt: '2026-11-10T17:45:00Z',
+        exactSpecificationFr: "Appareil IPL 999 990 flashs avec capteur de peau automatique et 5 niveaux d'intensité",
+    sourcingLocationFr: "Entrepôts de gros Dubaï ou Chine direct DHL express (45 - 60 SAR)",
+    topPlatformFr: "Snapchat Ads + Instagram Ads",
+    targetDemographicFr: "Femmes 20 - 40 ans dans le Golfe (épilation permanente haut de gamme)",
+addedAt: '2026-11-10T17:45:00Z',
     exactSpecificationAr: 'مكيف ومبرد هواء صغير محمول 3 في 1 مع إضاءة ليلية LED وخزان ماء 500ml وفلتر نانو مائي',
     sourcingLocationAr: 'مستودعات الإلكترونيات بالرياض ودبي بسعر 30 - 35 ريال',
     adLongevityDays: 45,
@@ -1067,7 +1149,11 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
       'زاوية توفير الوقت والمجهود لربات البيوت في تحضير الأطباق السنغالية الشهية',
       'توصيل سريع في داكار وجميع المدن مع الدفع عند الاستلام'
     ],
-    addedAt: '2026-11-10T18:00:00Z',
+        exactSpecificationFr: "Mini machine à coudre électrique avec pédale, double vitesse et éclairage LED",
+    sourcingLocationFr: "Marché HLM Dakar ou conteneurs import direct Chine (4 000 - 5 500 FCFA)",
+    topPlatformFr: "Facebook Ads + TikTok",
+    targetDemographicFr: "Femmes et tailleurs de quartier 20 - 55 ans au Sénégal",
+addedAt: '2026-11-10T18:00:00Z',
     exactSpecificationAr: 'مطحنة قهوة وتوابل كهربائية من الفولاذ المقاوم للصدأ 300W بشفرات رباعية حادة',
     sourcingLocationAr: 'سوق الجملة في داكار (Dakar Plateau / Sandaga) بسعر 3500 - 4000 FCFA',
     adLongevityDays: 50,
