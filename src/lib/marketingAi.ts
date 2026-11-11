@@ -8,7 +8,7 @@ export interface WinningProduct {
   id: string;
   title: string;
   titleAr: string;
-  niche: 'BEAUTY' | 'KITCHEN' | 'CAR' | 'HEALTH' | 'GADGETS' | 'BABY' | 'HOME' | 'PETS';
+  niche: 'COSMETICS' | 'SUPPLEMENTS' | 'BEAUTY' | 'KITCHEN' | 'CAR' | 'HEALTH' | 'GADGETS' | 'BABY' | 'HOME' | 'PETS';
   country: MarketCountry;
   countryNameAr: string;
   countryFlag: string;
@@ -40,6 +40,7 @@ export interface WinningProduct {
 export interface ProductAnalysisInput {
   title: string;
   niche?: string;
+  targetCountry?: string;
   wholesalePrice: number;
   retailPrice: number;
   shippingFee?: number;
@@ -47,16 +48,30 @@ export interface ProductAnalysisInput {
   estDeliveryRate?: number;
   productUrl?: string;
   description?: string;
-  targetCountry?: string;
+  ingredientsOrDetails?: string;
 }
 
 export interface ProductAnalysisResult {
   productTitle: string;
+  targetCountry: string;
+  targetCountryNameAr: string;
+  targetCountryFlag: string;
+  currency: string;
   overallScore: number; // 0-100
   scoreLabel: string;
   scoreColor: string;
   verdictAr: string;
   verdictFr: string;
+  marketDemandAnalysisAr: string;
+  strengthsAr: string[];
+  challengesAr: string[];
+  regulatoryAndSafetyTipsAr: string[];
+  recommendedPlatforms: {
+    name: string;
+    suitability: number; // 0-100
+    reasonAr: string;
+    badge: string;
+  }[];
   breakdown: {
     problemSolving: number; // 0-100
     wowFactor: number;
@@ -71,11 +86,11 @@ export interface ProductAnalysisResult {
     estShippingFee: number;
     estConfirmationRate: number;
     estDeliveryRate: number;
-    breakEvenCpa: number; // Max CPA before loss in MAD
-    targetCpaMin: number; // Sweet spot min MAD
-    targetCpaMax: number; // Sweet spot max MAD
-    netProfitPerDelivered: number; // MAD
-    expectedNetProfitPer100Leads: number; // MAD
+    breakEvenCpa: number; // Max CPA before loss
+    targetCpaMin: number; // Sweet spot min
+    targetCpaMax: number; // Sweet spot max
+    netProfitPerDelivered: number;
+    expectedNetProfitPer100Leads: number;
     roasTarget: number;
   };
   targeting: {
@@ -115,6 +130,179 @@ export interface ProductAnalysisResult {
 // Curated worldwide winning products for Morocco, USA, Europe, GCC, Africa & Global
 const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
   // --- 🇲🇦 MAROC (MOROCCO) ---
+  // --- 🇲🇦 MAROC (MOROCCO) - COSMÉTIQUES & COMPLÉMENTS ALIMENTAIRES ---
+  {
+    id: 'wp-ma-cosm-1',
+    title: 'Sérum Anti-Taches & Éclaircissant Vitamine C + Niacinamide 10% (30ml)',
+    titleAr: 'سيروم فيتامين سي والنياسيناميد النقي لإزالة الكلف والتصبغات وتفتيح البشرة',
+    niche: 'COSMETICS',
+    country: 'MA',
+    countryNameAr: 'المغرب',
+    countryFlag: '🇲🇦',
+    currency: 'DH',
+    status: 'HOT',
+    type: 'PROBLEM_SOLVER',
+    wholesalePrice: 35,
+    retailPrice: 229,
+    estShippingFee: 35,
+    estConfirmationRate: 85,
+    estDeliveryRate: 82,
+    netProfitPerUnit: 114,
+    saturationScore: 30,
+    activeCompetitors: 14,
+    description: 'Sérum visage haute concentration pour corriger les taches brunes, le masque de grossesse (chloasma) et unifier le teint.',
+    descriptionAr: 'سيروم احترافي بتركيبة مركزة تعالج بقع الشمس، الكلف، والتصبغات مع إعطاء نضارة فورية وتوحيد لون البشرة.',
+    whyWinning: [
+      'Niche cosmétique #1 au Maroc : Forte demande constante des femmes pour éliminer les taches et le soleil',
+      'Excellente marge unitaire (Achat 35 DH / Vente 229 DH) et possibilité de pack 2 flacons à 349 DH',
+      'Taux de confirmation supérieur à 85% grâce à l\'effet "Glass Skin" très viral sur TikTok'
+    ],
+    whyWinningAr: [
+      'الطلب رقم 1 لدى النساء في المغرب على منتجات إزالة التصبغات والكلف وحروق الشمس',
+      'هامش ربح ضخم جداً (شراء بـ 35 درهم وبيعه بـ 229 درهم) مع إمكانية بيع حبتين بـ 349 درهم',
+      'فيديوهات النضارة الفورية والروتين اليومي (GRWM) تحقق ملايين المشاهدات على تيك توك وإنستغرام'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80',
+    metaAdLibraryKeyword: 'serum vitamine c anti taches',
+    tikTokSearchKeyword: 'vitamin c serum glowing skin',
+    tikTokTag: 'vitamincserum',
+    aliExpressSearchKeyword: 'vitamin c serum hyaluronic acid dark spots',
+    suggestedAnglesAr: [
+      'زاوية إشراقة ونضارة وتفتيح التصبغات بدون مواد كيميائية حارقة للبشرة',
+      'زاوية روتين العناية الصباحي للحصول على بشرة زجاجية خالية من البقع والشوائب',
+      'عرض الأسبوع الحصري: السيروم الأصلي + صابونة نيلة زرقاء مغربية هدية وتوصيل مجاني'
+    ],
+    addedAt: '2026-11-10T19:00:00Z',
+  },
+  {
+    id: 'wp-ma-cosm-2',
+    title: 'Huile de Romarin & Biotine Sérum Repousse Cheveux & Barbe (60ml)',
+    titleAr: 'سيروم زيت إكليل الجبل والبيوتين لإنبات الشعر وعلاج الفراغات وتساقط الشعر',
+    niche: 'COSMETICS',
+    country: 'MA',
+    countryNameAr: 'المغرب',
+    countryFlag: '🇲🇦',
+    currency: 'DH',
+    status: 'HOT',
+    type: 'PROBLEM_SOLVER',
+    wholesalePrice: 38,
+    retailPrice: 249,
+    estShippingFee: 35,
+    estConfirmationRate: 86,
+    estDeliveryRate: 83,
+    netProfitPerUnit: 128,
+    saturationScore: 28,
+    activeCompetitors: 16,
+    description: 'Huile capillaire fortifiante stimulatrice des follicules pour lutter contre la calvitie naissante et combler les trous de barbe.',
+    descriptionAr: 'زيت طبيعي 100% مستخلص من إكليل الجبل مدعم بالبيوتين لتحفيز البصيلات وملء فراغات الرأس واللحية وتقوية الجذور.',
+    whyWinning: [
+      'Le produit capillaire le plus viral au monde sur TikTok (#rosemaryoil dépasse 4 milliards de vues)',
+      'Double cible lucrative : Femmes (chute de cheveux, densité) et Hommes (barbe plus dense et comblement des trous)',
+      'Fort taux de réachat : Les clients commandent 2 à 3 flacons pour suivre la cure de 3 mois'
+    ],
+    whyWinningAr: [
+      'أشهر تريند فيروسي على تيك توك في العالم (#rosemaryoil) بأكثر من 4 مليارات مشاهدة',
+      'يستهدف فئتين ذهبيتين: النساء (تساقط وتكثيف الشعر) والرجال (إنبات وتكثيف اللحية وملء الفراغات)',
+      'الزبون يشتري باقة شهرين أو 3 أشهر دفعة واحدة مما يرفع قيمة السلة ومتوسط الأرباح'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1608248597359-00994f31cff1?auto=format&fit=crop&w=600&q=80',
+    metaAdLibraryKeyword: 'huile romarin cheveux repousse',
+    tikTokSearchKeyword: 'rosemary oil hair growth',
+    tikTokTag: 'rosemaryoil',
+    aliExpressSearchKeyword: 'rosemary hair growth essential oil biotin',
+    suggestedAnglesAr: [
+      'زاوية ملء الفراغات وإنبات شعر جديد في 30 يوماً بدون عمليات زراعة الشعر المكلفة',
+      'زاوية تكثيف اللحية وملء الفراغات للرجال بمظهر رجولي جذاب وجريء',
+      'عرض كورس العلاج المكثف: عبوتين بخصم 40% وتوصيل سريع حتى باب المنزل'
+    ],
+    addedAt: '2026-11-10T19:30:00Z',
+  },
+  {
+    id: 'wp-ma-supp-1',
+    title: 'Magnésium Bisglycinate Chélaté + Vitamine B6 (60 Gélules Végétales)',
+    titleAr: 'مكمل المغنيسيوم بيسجليسينات المخلبي النقي مع فيتامين B6 للنوم العميق والاسترخاء',
+    niche: 'SUPPLEMENTS',
+    country: 'MA',
+    countryNameAr: 'المغرب',
+    countryFlag: '🇲🇦',
+    currency: 'DH',
+    status: 'HOT',
+    type: 'PROBLEM_SOLVER',
+    wholesalePrice: 45,
+    retailPrice: 249,
+    estShippingFee: 35,
+    estConfirmationRate: 88,
+    estDeliveryRate: 85,
+    netProfitPerUnit: 122,
+    saturationScore: 22,
+    activeCompetitors: 9,
+    description: 'Complément alimentaire haute biodisponibilité pour réduire la fatigue chronique, calmer le système nerveux et favoriser un sommeil réparateur.',
+    descriptionAr: 'أجود أنواع المغنيسيوم سريع الامتصاص، لا يسبب اضطرابات هضمية، يساعد على النوم العميق والاسترخاء والتخلص من القلق وتشنج الساقين.',
+    whyWinning: [
+      'Le complément santé le plus recherché actuellement sur les réseaux sociaux (Anti-stress, fatigue et sommeil profond)',
+      'Taux de confirmation record (88%) car le problème de l\'insomnie et du stress touche tout le monde',
+      'Rétention exceptionnelle : 40% des clients rachètent une boîte chaque mois (Modèle d\'abonnement naturel)'
+    ],
+    whyWinningAr: [
+      'المكمل الغذائي الأكثر طلباً وبحثاً حالياً على السوشيال ميديا لعلاج الإجهاد والأرق والقلق',
+      'نسبة تأكيد قياسية تتجاوز 88% لأن الأرق والتعب مشكلة يعاني منها ملايين الناس يومياً',
+      'نسبة تكرار شراء شهرية هائلة؛ الزبون المرتاح يعيد الطلب كل شهر بانتظام'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80',
+    metaAdLibraryKeyword: 'magnesium bisglycinate sommeil stress',
+    tikTokSearchKeyword: 'magnesium glycinate sleep benefits',
+    tikTokTag: 'magnesiumglycinate',
+    aliExpressSearchKeyword: 'magnesium bisglycinate pure capsules sleep',
+    suggestedAnglesAr: [
+      'زاوية النوم العميق والاستيقاظ بنشاط وطاقة عالية بدون خفقان القلب وتوتر الأعصاب',
+      'زاوية التخلص من تشنجات العضلات والصداع النصفي والإرهاق اليومي المستمر',
+      'عرض كورس الراحة التامة: علبتين بـ 379 درهم وتوصيل مجاني لجميع مدن المغرب'
+    ],
+    addedAt: '2026-11-10T20:00:00Z',
+  },
+  {
+    id: 'wp-ma-supp-2',
+    title: 'Ashwagandha Bio KSM-66 & Ginseng pour Énergie & Réduction du Cortisol',
+    titleAr: 'مكمل كبسولات الأشواغاندا الهندية العضوية KSM-66 لمحاربة الإجهاد وتقوية الطاقة والمناعة',
+    niche: 'SUPPLEMENTS',
+    country: 'MA',
+    countryNameAr: 'المغرب',
+    countryFlag: '🇲🇦',
+    currency: 'DH',
+    status: 'HOT',
+    type: 'PROBLEM_SOLVER',
+    wholesalePrice: 50,
+    retailPrice: 269,
+    estShippingFee: 35,
+    estConfirmationRate: 87,
+    estDeliveryRate: 84,
+    netProfitPerUnit: 135,
+    saturationScore: 25,
+    activeCompetitors: 7,
+    description: 'Extrait concentré de racine d\'Ashwagandha certifié KSM-66 avec Ginseng pour réguler le cortisol, booster l\'énergie mentale et physique.',
+    descriptionAr: 'مستخلص عشبة الأشواغاندا العضوية المركزة (KSM-66) لخفض هرمون التوتر والكورتيزول، تعزيز النشاط البدني والذهني وتقوية المناعة.',
+    whyWinning: [
+      'Tendance mondiale explosive sur TikTok pour la gestion du stress, le fitness et la vitalité',
+      'Cible mixte : Hommes (vitalité, baisse du stress, testostérone) et Femmes (équilibre hormonal et calme mental)',
+      'Marge nette très élevée (> 135 DH par commande livrée)'
+    ],
+    whyWinningAr: [
+      'تريند عالمي كاسح على تيك توك ومحركات البحث للرياضيين والموظفين والطلبة',
+      'طلب قوي من الرجال (طاقة وحيوية ومناعة) ومن النساء (توازن الهرمونات ومزاج هادئ)',
+      'هامش ربح صافي يفوق 135 درهم للعلبة الواحدة مع معدل تسليم مرتفع'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1550572017-ed200f5e6343?auto=format&fit=crop&w=600&q=80',
+    metaAdLibraryKeyword: 'ashwagandha ksm 66 stress energie',
+    tikTokSearchKeyword: 'ashwagandha ksm66 benefits',
+    tikTokTag: 'ashwagandhaksm66',
+    aliExpressSearchKeyword: 'ashwagandha extract ksm 66 capsules stress relief',
+    suggestedAnglesAr: [
+      'زاوية خفض هرمون التوتر (الكورتيزول) والشعور براحة البال والهدوء والتركيز طوال اليوم',
+      'زاوية زيادة طاقة العمل والتخلص من الخمول والكسل اليومي بمنتج طبيعي 100%',
+      'عرض باقة الحيوية: علبة أشواغاندا + علبة فيتامين د3 مجانية وشحن سريع'
+    ],
+    addedAt: '2026-11-10T20:30:00Z',
+  },
   {
     id: 'wp-ma-1',
     title: 'Brosse Nettoyante Visage Ultrasonique & Anti-Points Noirs',
@@ -594,6 +782,93 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
   },
 
   // --- 🇸🇦 GULF & GCC (SAUDI ARABIA, UAE, QATAR) ---
+  // --- 🇸🇦 GULF & GCC - COSMÉTIQUES & COMPLÉMENTS ALIMENTAIRES ---
+  {
+    id: 'wp-gcc-cosm-1',
+    title: 'Crème Anti-Âge & Raffermissante au Venin & Collagène',
+    titleAr: 'كريم شد البشرة ومحاربة التجاعيد الفوري بخلاصة الكولاجين والببتيدات المركزة',
+    niche: 'COSMETICS',
+    country: 'GCC',
+    countryNameAr: 'دول الخليج والسعودية',
+    countryFlag: '🇸🇦',
+    currency: 'SAR',
+    status: 'HOT',
+    type: 'WOW_FACTOR',
+    wholesalePrice: 30,
+    retailPrice: 199,
+    estShippingFee: 25,
+    estConfirmationRate: 87,
+    estDeliveryRate: 81,
+    netProfitPerUnit: 108,
+    saturationScore: 28,
+    activeCompetitors: 12,
+    description: 'Soin tenseur instantané pour lifter le visage, lisser les rides d\'expression et redonner de la fermeté au cou.',
+    descriptionAr: 'كريم مبتكر لشد ترهلات الوجه والرقبة وإخفاء خطوط الابتسامة وتجاعيد الجبهة في دقائق معدودة بنتيجة فورية مبهرة.',
+    whyWinning: [
+      'Pouvoir d\'achat très élevé en Arabie Saoudite et Émirats pour les cosmétiques anti-âge',
+      'Vidéos à effet immédiat avant/après très fortes en conversion sur Snapchat Ads et TikTok',
+      'Marge exceptionnelle en Riyals Saoudiens (Vente à 199 SAR pour un coût de 30 SAR)'
+    ],
+    whyWinningAr: [
+      'قوة شرائية هائلة في السعودية والخليج لمنتجات العناية بالبشرة والشد الفوري',
+      'فيديوهات التأثير الفوري (قبل / بعد) تحقق مئات آلاف المشاهدات في سناب شات وتيك توك',
+      'سعر البيع 199 ريال مع تكلفة شراء لا تتعدى 30 ريال يمنح هامش ربح مريح جداً'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=600&q=80',
+    metaAdLibraryKeyword: 'كريم شد الوجه والتجاعيد كولاجين',
+    tikTokSearchKeyword: 'instant face lifting collagen cream',
+    tikTokTag: 'collagencream',
+    aliExpressSearchKeyword: 'anti wrinkle face cream instant firming collagen',
+    suggestedAnglesAr: [
+      'زاوية الظهور بمظهر أصغر بـ 10 سنوات بدون حقن الفيلر والبوتوكس المؤلمة',
+      'زاوية إطلالة المناسبات والأعراس: بشرة مشدودة ونضرة طوال اليوم',
+      'عرض باقة الجمال الخليجي: عبوتين + سيروم محيط العينين مجاناً وتوصيل مجاني'
+    ],
+    addedAt: '2026-11-10T21:00:00Z',
+  },
+  {
+    id: 'wp-gcc-supp-1',
+    title: 'Collagène Marin Hydrolysé en Poudre + Vitamine C & Acide Hyaluronique',
+    titleAr: 'بودرة الكولاجين البحري المحلل النقي مع فيتامين C وحمض الهيالورونيك للبشرة والمفاصل',
+    niche: 'SUPPLEMENTS',
+    country: 'GCC',
+    countryNameAr: 'دول الخليج والسعودية',
+    countryFlag: '🇸🇦',
+    currency: 'SAR',
+    status: 'HOT',
+    type: 'PROBLEM_SOLVER',
+    wholesalePrice: 45,
+    retailPrice: 249,
+    estShippingFee: 25,
+    estConfirmationRate: 89,
+    estDeliveryRate: 84,
+    netProfitPerUnit: 142,
+    saturationScore: 32,
+    activeCompetitors: 15,
+    description: 'Poudre de collagène marin pur pour rajeunir la peau, nourrir les cheveux et soulager les douleurs articulaires des genoux.',
+    descriptionAr: 'بودرة كولاجين بحري سريع الامتصاص، مخصصة لإعادة مرونة وشباب البشرة وتخفيف آلام المفاصل والخشونة وتغذية الأظافر والشعر.',
+    whyWinning: [
+      'Le produit de santé le plus vendu en continu dans les pays du Golfe (Femmes 30+ et personnes souffrant des articulations)',
+      'Ticket moyen élevé (249 à 299 SAR) offrant un CPA Break-even très large (> 70 SAR)',
+      'Les clientes commandent généralement la cure de 3 mois directement'
+    ],
+    whyWinningAr: [
+      'أقوى منتج صحي دائم في الخليج والسعودية، خاصة للنساء فوق 30 عاماً ولأصحاب آلام المفاصل',
+      'سعر بيع مرتفع (249 إلى 299 ريال) يمنح المعلن مساحة CPA مريحة جداً تصل لـ 70 ريال للطلب',
+      'زبائن الكولاجين أوفياء جداً ويشترون باقات 3 إلى 6 أشهر مسبقاً'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1556760544-74068565f05c?auto=format&fit=crop&w=600&q=80',
+    metaAdLibraryKeyword: 'كولاجين بحري بودرة للبشرة والمفاصل',
+    tikTokSearchKeyword: 'marine collagen powder skin joints',
+    tikTokTag: 'marinecollagen',
+    aliExpressSearchKeyword: 'pure marine collagen peptides powder hyaluronic acid',
+    suggestedAnglesAr: [
+      'زاوية استرجاع نضارة البشرة وشبابها والتخلص من آلام الركبة في ملعقة صباحية واحدة',
+      'زاوية بديل طبيعي وآمن لعمليات الحقن والبوتوكس المكلفة',
+      'عرض الكورس الثلاثي: 3 عبوات كولاجين تكفي 90 يوماً بسعر مخفض جداً وتوصيل فوري'
+    ],
+    addedAt: '2026-11-10T21:30:00Z',
+  },
   {
     id: 'wp-gcc-1',
     title: 'المبخرة الإلكترونية الذكية المحمولة للشعر والسيارة عبر USB',
@@ -886,6 +1161,58 @@ export function generateAiProductIdeas(
   const c = countryConfig[targetCountry] || countryConfig.GLOBAL;
 
   const templates: Record<string, any[]> = {
+    COSMETICS: [
+      {
+        title: 'Sérum Anti-Taches & Éclaircissant Vitamine C + Niacinamide 10%',
+        titleAr: 'سيروم فيتامين سي والنياسيناميد النقي لإزالة الكلف والتصبغات وتفتيح البشرة',
+        wholesale: Math.round(35 * c.wholesaleMul),
+        retail: Math.round(229 * c.retailMul),
+        descAr: 'سيروم علاجي عالي التركيز يزيل بقع الشمس والكلف ويوحد لون البشرة بنضارة وإشراقة طبيعية.',
+        whyAr: ['الطلب رقم 1 في سوق مستحضرات التجميل', 'هامش ربح صافي يتجاوز 65% مع مبيعات مكررة'],
+        hookAr: 'بشرة صافية وخالية من التصبغات في أسبوعين فقط! السيروم الطبيعي المعجزة لتفتيح ونضارة الوجه.',
+        metaKeyword: 'serum vitamine c anti taches',
+        tikTokKeyword: 'vitamin c serum glass skin',
+        aliKeyword: 'vitamin c niacinamide serum dark spots',
+      },
+      {
+        title: 'Huile de Romarin & Biotine Sérum Repousse Cheveux & Barbe',
+        titleAr: 'سيروم زيت إكليل الجبل والبيوتين لإنبات الشعر وعلاج الفراغات وتساقط الشعر',
+        wholesale: Math.round(38 * c.wholesaleMul),
+        retail: Math.round(249 * c.retailMul),
+        descAr: 'زيت طبيعي مقوي للبصيلات يحفز نمو الشعر ويملأ فراغات الرأس واللحية بدون مواد كيميائية.',
+        whyAr: ['أكبر تريند عالمي على تيك توك بأكثر من 4 مليارات مشاهدة', 'مستهدف للرجال والنساء بنسب تحويل قياسية'],
+        hookAr: 'وداعاً لتساقط الشعر وفراغات اللحية! الزيت الطبيعي الذي أثبت فعاليته في إنبات الشعر من الجذور.',
+        metaKeyword: 'huile romarin cheveux repousse',
+        tikTokKeyword: 'rosemary oil hair growth',
+        aliKeyword: 'rosemary essential oil biotin hair growth',
+      },
+    ],
+    SUPPLEMENTS: [
+      {
+        title: 'Magnésium Bisglycinate Chélaté + Vitamine B6 (60 Gélules)',
+        titleAr: 'مكمل المغنيسيوم بيسجليسينات المخلبي النقي مع فيتامين B6 للنوم العميق والراحة',
+        wholesale: Math.round(45 * c.wholesaleMul),
+        retail: Math.round(249 * c.retailMul),
+        descAr: 'مكمل غذائي سريع الامتصاص للتخلص من الأرق، القلق، الإجهاد العضلي وتشنجات الساقين لنوم هادئ وعميق.',
+        whyAr: ['المنتج الأكثر طلباً لمكافحة الأرق والإرهاق اليومي', 'نسبة تكرار شراء شهرية تتجاوز 40% من الزبائن'],
+        hookAr: 'كتعاني من قلة النوم والتعب المستمر؟ هاد المكمل الطبيعي غادي يرجع ليك نومك العميق وراحتك من أول ليلة.',
+        metaKeyword: 'magnesium bisglycinate sommeil stress',
+        tikTokKeyword: 'magnesium glycinate sleep anxiety',
+        aliKeyword: 'magnesium bisglycinate pure capsules sleep',
+      },
+      {
+        title: 'Ashwagandha Bio KSM-66 & Ginseng pour Énergie & Réduction du Cortisol',
+        titleAr: 'مكمل كبسولات الأشواغاندا الهندية العضوية KSM-66 لمحاربة الإجهاد وتقوية الطاقة',
+        wholesale: Math.round(50 * c.wholesaleMul),
+        retail: Math.round(269 * c.retailMul),
+        descAr: 'مستخلص جذور الأشواغاندا العضوية المركزة لخفض هرمون التوتر الكورتيزول وتعزيز النشاط البدني والمناعة.',
+        whyAr: ['تريند عالمي قوي جداً بين الرياضيين والموظفين', 'هامش ربح ممتاز ونسبة تسليم تتجاوز 84%'],
+        hookAr: 'تخلص من التوتر والخمول اليومي واسترجع طاقتك وتركيزك مع كبسولات الأشواغاندا العضوية الأصلية.',
+        metaKeyword: 'ashwagandha ksm 66 stress energie',
+        tikTokKeyword: 'ashwagandha ksm66 benefits',
+        aliKeyword: 'ashwagandha extract ksm 66 capsules stress',
+      },
+    ],
     BEAUTY: [
       {
         title: 'Appareil Laser Épilateur Permanent IPL à Domicile',
@@ -1031,11 +1358,28 @@ export function generateAiProductIdeas(
  * Performs 360° Financial & Marketing Analysis for any given product
  */
 export function analyzeProductDetails(input: ProductAnalysisInput): ProductAnalysisResult {
-  const wholesale = Number(input.wholesalePrice) || 50;
-  const retail = Number(input.retailPrice) || 249;
-  const shipping = Number(input.shippingFee) || 35;
-  const cr = Number(input.estConfirmationRate) || 80; // %
-  const dr = Number(input.estDeliveryRate) || 75;     // %
+  const targetCountry = (input.targetCountry || 'MA').toUpperCase();
+  const niche = (input.niche || 'BEAUTY').toUpperCase();
+
+  const countryConfig: Record<string, { flag: string; nameAr: string; currency: string; defaultShip: number; cities: string[]; excluded: string[] }> = {
+    MA: { flag: '🇲🇦', nameAr: 'المغرب', currency: 'DH', defaultShip: 35, cities: ['الدار البيضاء', 'الرباط', 'سلا', 'مراكش', 'طنجة', 'فاس', 'أكادير', 'القنيطرة', 'مكناس'], excluded: ['المناطق الجبلية الوعرة والقرى النائية'] },
+    GCC: { flag: '🇸🇦', nameAr: 'دول الخليج والسعودية', currency: 'SAR', defaultShip: 25, cities: ['الرياض', 'جدة', 'الدمام', 'مكة المكرمة', 'المدينة المنورة', 'الخبر', 'الطائف'], excluded: ['المناطق الحدودية النائية'] },
+    SN: { flag: '🇸🇳', nameAr: 'السنغال وغرب إفريقيا', currency: 'FCFA', defaultShip: 2500, cities: ['داكار (Dakar)', 'تييس (Thiès)', 'طوبى (Touba)', 'سانت لويس (Saint-Louis)', 'مبور (Mbour)'], excluded: ['القرى الريفية البعيدة لتفادي رجوع الطلبيات'] },
+    US: { flag: '🇺🇸', nameAr: 'الولايات المتحدة الأمريكية', currency: '$', defaultShip: 5, cities: ['California', 'Texas', 'Florida', 'New York', 'Illinois', 'Ohio', 'Georgia'], excluded: ['Alaska, Hawaii, Puerto Rico (Frais de port élevés)'] },
+    FR: { flag: '🇫🇷', nameAr: 'فرنسا وأوروبا', currency: '€', defaultShip: 4.5, cities: ['Paris & Île-de-France', 'Lyon', 'Marseille', 'Toulouse', 'Bordeaux', 'Nantes', 'Lille'], excluded: ['DOM-TOM (Guadeloupe, Martinique, Réunion)'] },
+    EU: { flag: '🇪🇺', nameAr: 'الاتحاد الأوروبي', currency: '€', defaultShip: 5, cities: ['Allemagne', 'Espagne', 'Italie', 'Belgique', 'Pays-Bas'], excluded: ['Zones insulaires isolées'] },
+    UK: { flag: '🇬🇧', nameAr: 'بريطانيا (UK)', currency: '£', defaultShip: 4, cities: ['Greater London', 'Manchester', 'Birmingham', 'Leeds', 'Glasgow'], excluded: ['Highlands & Islands'] },
+    CA: { flag: '🇨🇦', nameAr: 'كندا', currency: 'CAD$', defaultShip: 6, cities: ['Ontario (Toronto)', 'Québec (Montréal)', 'British Columbia (Vancouver)', 'Alberta'], excluded: ['Territoires du Nord'] },
+    GLOBAL: { flag: '🌍', nameAr: 'السوق العالمي', currency: '$', defaultShip: 5, cities: ['Global Tier 1 Markets (US, UK, CA, AU)'], excluded: ['Zones à haut risque de fraude'] },
+  };
+
+  const c = countryConfig[targetCountry] || countryConfig.MA;
+
+  const wholesale = Number(input.wholesalePrice) || (targetCountry === 'SN' ? 3500 : (targetCountry === 'GCC' ? 35 : (targetCountry === 'US' || targetCountry === 'FR' ? 5 : 45)));
+  const retail = Number(input.retailPrice) || (targetCountry === 'SN' ? 16500 : (targetCountry === 'GCC' ? 199 : (targetCountry === 'US' || targetCountry === 'FR' ? 29.99 : 249)));
+  const shipping = Number(input.shippingFee) || c.defaultShip;
+  const cr = Number(input.estConfirmationRate) || (targetCountry === 'US' || targetCountry === 'FR' ? 95 : (targetCountry === 'GCC' ? 86 : 82));
+  const dr = Number(input.estDeliveryRate) || (targetCountry === 'US' || targetCountry === 'FR' ? 95 : (targetCountry === 'GCC' ? 82 : 78));
 
   const crDecimal = Math.max(0.2, Math.min(1, cr / 100));
   const drDecimal = Math.max(0.2, Math.min(1, dr / 100));
@@ -1043,10 +1387,10 @@ export function analyzeProductDetails(input: ProductAnalysisInput): ProductAnaly
   const grossMargin = retail - wholesale;
   const deliveredNetMargin = (drDecimal * grossMargin) - shipping;
   const rawBreakEvenCpa = crDecimal * deliveredNetMargin;
-  const breakEvenCpa = Math.max(10, Math.round(rawBreakEvenCpa));
+  const breakEvenCpa = Math.max(targetCountry === 'SN' ? 1000 : 5, Math.round(rawBreakEvenCpa));
 
-  const targetCpaMin = Math.max(15, Math.round(breakEvenCpa * 0.45));
-  const targetCpaMax = Math.max(22, Math.round(breakEvenCpa * 0.65));
+  const targetCpaMin = Math.max(targetCountry === 'SN' ? 1500 : 10, Math.round(breakEvenCpa * 0.42));
+  const targetCpaMax = Math.max(targetCountry === 'SN' ? 2500 : 15, Math.round(breakEvenCpa * 0.65));
 
   const adSpendPerDelivered = targetCpaMax / (crDecimal * drDecimal);
   const netProfitPerDelivered = Math.round(grossMargin - shipping - adSpendPerDelivered);
@@ -1056,13 +1400,13 @@ export function analyzeProductDetails(input: ProductAnalysisInput): ProductAnaly
     expectedDeliveredOrdersPer100 * netProfitPerDelivered
   );
 
-  const roasTarget = Number(((retail * expectedDeliveredOrdersPer100) / (100 * targetCpaMax)).toFixed(2)) || 2.5;
+  const roasTarget = Number(((retail * expectedDeliveredOrdersPer100) / (100 * targetCpaMax)).toFixed(2)) || 2.6;
 
-  const marginHealth = Math.min(100, Math.max(20, Math.round((grossMargin / retail) * 120)));
-  const problemSolving = input.niche === 'HEALTH' || input.niche === 'KITCHEN' ? 92 : 86;
-  const wowFactor = input.niche === 'GADGETS' || input.niche === 'BEAUTY' ? 94 : 85;
-  const shippingFeasibility = wholesale < 80 ? 90 : 75;
-  const marketDemand = breakEvenCpa > 40 ? 88 : 72;
+  const marginHealth = Math.min(100, Math.max(20, Math.round((grossMargin / retail) * 125)));
+  const problemSolving = niche === 'HEALTH' || niche === 'SUPPLEMENTS' || niche === 'COSMETICS' || niche === 'KITCHEN' ? 95 : 86;
+  const wowFactor = niche === 'GADGETS' || niche === 'BEAUTY' || niche === 'COSMETICS' ? 94 : 84;
+  const shippingFeasibility = wholesale < (targetCountry === 'SN' ? 8000 : 70) ? 92 : 78;
+  const marketDemand = breakEvenCpa > (targetCountry === 'SN' ? 3000 : 35) ? 90 : 74;
 
   const overallScore = Math.round(
     (marginHealth * 0.3) +
@@ -1072,71 +1416,258 @@ export function analyzeProductDetails(input: ProductAnalysisInput): ProductAnaly
     (marketDemand * 0.1)
   );
 
-  let scoreLabel = 'ممتاز ومربح جداً (High Winner)';
+  let scoreLabel = 'منتج رابح بقوة في هذا السوق (High Potential Winner)';
   let scoreColor = 'text-emerald-600 bg-emerald-50 border-emerald-200';
-  let verdictAr = `المنتج واعد للغاية ومؤهل لتحقيق أرباح ممتازة بهامش أمان مرتفع (Break-even CPA يبلغ ${breakEvenCpa} درهم). يُنصح ببدء الاختبار فوراً بميزانية 150 درهم/يوم.`;
-  let verdictFr = `Produit à très fort potentiel avec une marge sécurisée (CPA Seuil de rentabilité : ${breakEvenCpa} DH). Lancement recommandé à 150 DH/jour.`;
+  let verdictAr = `المنتج مؤهل بقوة لتحقيق مبيعات ممتازة في سوق ${c.nameAr} ${c.flag}. هامش الأمان الإعلاني ممتاز بـ Break-even CPA يصل إلى ${breakEvenCpa} ${c.currency} وصافي ربح متوقع ${netProfitPerDelivered} ${c.currency} لكل طلب مستلم. يُنصح ببدء الاختبار الإعلاني فوراً.`;
+  let verdictFr = `Produit à très fort potentiel sur le marché ${c.nameAr}. Marge sécurisée avec un CPA Seuil de ${breakEvenCpa} ${c.currency}. Lancement recommandé.`;
 
   if (overallScore < 70) {
-    scoreLabel = 'يحتاج تعديل السعر (Marge Serrée)';
+    scoreLabel = 'هامش ضيق - يحتاج تعديل التسعير (Tight Margin)';
     scoreColor = 'text-amber-600 bg-amber-50 border-amber-200';
-    verdictAr = `هامش الربح ضيق قليلاً عند سعر ${retail} درهم. نقترح رفع سعر البيع إلى ${Math.round(retail * 1.2)} درهم أو التفاوض على سعر الشراء لتوسيع هامش الأمان الإعلاني.`;
-    verdictFr = `Marge publicitaire un peu juste. Recommandez de tester à ${Math.round(retail * 1.2)} DH pour augmenter votre CPA de rentabilité.`;
+    verdictAr = `المنتج قابل للنجاح لكن هامش الربح ضيق عند سعر البيع الحالي (${retail} ${c.currency}). لحماية ميزانيتك الإعلانية، نقترح رفع السعر إلى ${Math.round(retail * 1.2)} ${c.currency} أو شراء كميات أكبر لتخفيض سعر الجملة لتوسيع الـ Break-even CPA.`;
+    verdictFr = `Marge publicitaire un peu juste à ce prix de vente. Ajustez le prix à ${Math.round(retail * 1.2)} ${c.currency} pour plus de sécurité.`;
   }
+
+  // Market Viability Analysis
+  let marketDemandAnalysisAr = '';
+  if (targetCountry === 'MA') {
+    marketDemandAnalysisAr = `السوق المغربي ${c.flag} يتميز بطلب قوي جداً على الدفع عند الاستلام (COD). المستهلك المغربي يبحث عن الجودة والمصداقية والحلول العملية. المنتجات ذات السعر بين 199 و 299 درهم مع توصيل مجاني وسريع تحقق أعلى معدلات تأكيد تفوق 82%.`;
+  } else if (targetCountry === 'GCC') {
+    marketDemandAnalysisAr = `السوق الخليجي والسعودي ${c.flag} يمتلك قوة شرائية جبارة وسرعة فائقة في اتخاذ قرار الشراء إذا كان الإعلان يعرض نتيجة مبهرة. سلة الشراء المرتفعة (199 إلى 299 ريال) تمنحك أريحية خيالية في تكلفة الإعلانات.`;
+  } else if (targetCountry === 'SN') {
+    marketDemandAnalysisAr = `سوق السنغال وغرب إفريقيا ${c.flag} يشهد نمواً هائلاً في التجارة الإلكترونية بنظام الدفع كاش عند الاستلام. الطلب يتركز في داكار والمدن الكبرى مع تفضيل التواصل المباشر عبر WhatsApp.`;
+  } else {
+    marketDemandAnalysisAr = `سوق ${c.nameAr} ${c.flag} يتميز بالدفع الإلكتروني المباشر (Stripe / Cartes) وانعدام مشاكل الإلغاء أو المرتجعات. التركيز يكون على سرعة الشحن (3-5 أيام) وصفحة هبوط احترافية مع فيديوهات UGC طبيعية.`;
+  }
+
+  // Category & Regulatory Safety Tips (Special focus on Cosmetics & Supplements)
+  const regulatoryAndSafetyTipsAr: string[] = [];
+  if (niche === 'COSMETICS') {
+    regulatoryAndSafetyTipsAr.push('⚠️ سياسة فيسبوك وتيك توك للجمال: يمنع منعاً باتاً وضع زووم مقرب مبالغ فيه (Zoom-in) على البثور أو الكلف. اعتمد على فيديوهات الروتين الطبيعي (GRWM) ولقطات تطبيق السيروم/الكريم بانسيابية.');
+    regulatoryAndSafetyTipsAr.push('💄 المصداقية والمكونات: أظهر المكونات الطبيعية (مثل فيتامين C، زيت الأرغان، النياسيناميد) بوضوح لرفع معدل التحويل في صفحة الهبوط.');
+    regulatoryAndSafetyTipsAr.push('📦 جودة التعبئة والتغليف: احرص على تغليف الزجاجات والعلب بـ Bubble Wrap محكم لتفادي أي كسر أو تسرب أثناء النقل والتوصيل.');
+    regulatoryAndSafetyTipsAr.push('🎁 استراتيجية الباقات: الزبائن في مستحضرات التجميل يفضلون شراء (سيروم + كريم هدية) أو (عبوتين بخصم خاص).');
+  } else if (niche === 'SUPPLEMENTS') {
+    regulatoryAndSafetyTipsAr.push('⚠️ سياسات الإعلانات للمكملات: تجنب الادعاءات الطبية بعلاج الأمراض المزمنة (السكري، السرطان، الضغط). ركز على: "تعزيز النشاط"، "نوم هادئ ومريح"، "حيوية وطاقة يومية طبيعية".');
+    regulatoryAndSafetyTipsAr.push('🌿 الشفافية وراحة الزبون: اذكر دائماً طريقة الاستعمال والجرعة اليومية بوضوح في صفحة المنتج وخلال مكالمة تأكيد الطلب.');
+    regulatoryAndSafetyTipsAr.push('🔄 نموذج تكرار الشراء (Retention): المكملات هي المجال الوحيد الذي يشتري فيه الزبون كل شهر مجدداً؛ فعّل نظام إعادة المتابعة عبر WhatsApp بعد 25 يوماً.');
+    regulatoryAndSafetyTipsAr.push('📦 شروط الحفظ والتخزين: تأكد من تخزين المكملات في مكان بارد وجاف لتفادي تلف المواد الفعالة.');
+  } else {
+    regulatoryAndSafetyTipsAr.push('📦 فحص جودة الشحنات: تأكد من فحص عينات عشوائية من المورد قبل الشحن للتأكد من خلوها من أي عيوب مصنعية.');
+    regulatoryAndSafetyTipsAr.push('⚡ سياسة الإرجاع والضمان: تقديم ضمان تجربة واستبدال فوري لمدة 7 أيام يرفع نسبة تأكيد الطلبيات بأكثر من 15%.');
+  }
+
+  // Recommended Ad Platforms
+  const recommendedPlatforms = [];
+  if (targetCountry === 'GCC') {
+    recommendedPlatforms.push(
+      { name: 'Snapchat Ads', suitability: 96, reasonAr: 'المنصة رقم 1 بلا منازع في السعودية والخليج للجمال والمكملات بنسب مشاهدة قياسية', badge: 'أعلى عائد 🥇' },
+      { name: 'TikTok Ads', suitability: 94, reasonAr: 'أقوى منصة لتحقيق المبيعات الفيروسية السريعة عبر فيديوهات الـ UGC الطبيعية', badge: 'فيروسية عالية 🔥' },
+      { name: 'Meta Ads (Instagram)', suitability: 82, reasonAr: 'ممتاز للبراندات ذات القيمة العالية وإعادة الاستهداف (Retargeting)', badge: 'براندينغ ✨' }
+    );
+  } else if (targetCountry === 'MA') {
+    recommendedPlatforms.push(
+      { name: 'Meta Ads (Facebook & Instagram)', suitability: 96, reasonAr: 'المنصة الأساسية والأشمل في المغرب للوصول لكافة المدن وربات البيوت والموظفين', badge: 'الأكثر استقراراً 🏆' },
+      { name: 'TikTok Ads', suitability: 93, reasonAr: 'أرخص تكلفة ظهور (CPM) وتفاعل استثنائي مع الفيديوهات بالدارجة المغربية', badge: 'أقل تكلفة ⚡' },
+      { name: 'Google Ads / YouTube', suitability: 72, reasonAr: 'ممتاز لمن يبحث بالاسم عن المنتج أو الكورس العلاجي مباشرة', badge: 'استهداف نوايا 🎯' }
+    );
+  } else if (targetCountry === 'SN') {
+    recommendedPlatforms.push(
+      { name: 'TikTok Ads', suitability: 95, reasonAr: 'المنصة الأكثر نمواً وسرعة انتشار بين فئة الشباب في داكار والسنغال', badge: 'الخيار الأول 🥇' },
+      { name: 'Meta Ads & WhatsApp Direct', suitability: 92, reasonAr: 'إعلانات تقود مباشرة إلى محادثة واتساب لتحويل الطلب وإتمام البيع فوراً', badge: 'تحويل مباشر 💬' }
+    );
+  } else {
+    recommendedPlatforms.push(
+      { name: 'TikTok Ads', suitability: 96, reasonAr: 'المنصة الرائدة للشراء العفوي (Impulse Buying) في أمريكا وأوروبا', badge: 'الأقوى عالمياً 🚀' },
+      { name: 'Meta Ads (Advantage+)', suitability: 94, reasonAr: 'خوارزميات الذكاء الاصطناعي الأفضل في العالم لمتاجر الـ E-commerce', badge: 'دقة الاستهداف 🎯' }
+    );
+  }
+
+  // Strengths and Challenges
+  const strengthsAr = [
+    `هامش أمان ممتاز يسمح بصرف حتى ${breakEvenCpa} ${c.currency} لكل مبيعة بدون خسارة.`,
+    `طلب استهلاكي مرتفع في مجال ${niche} في سوق ${c.nameAr}.`,
+    `سهولة بناء باقات وعروض مضاعفة (Bundle Packs) لرفع قيمة السلة الشرائية.`
+  ];
+
+  const challengesAr = [
+    targetCountry === 'MA' || targetCountry === 'SN' || targetCountry === 'GCC'
+      ? 'ضرورة المتابعة السريعة لطلبات الـ COD عبر الكول سنتر في أول 15 دقيقة لرفع نسبة التوصيل.'
+      : 'الحاجة إلى تقديم تجربة مستخدم سريعة وشحن لا يتجاوز 3-5 أيام لمنافسة أمازون.',
+    niche === 'COSMETICS' || niche === 'SUPPLEMENTS'
+      ? 'الحاجة لمحتوى فيديو واقعي وطبيعي يبرز ثقة الزبون والمكونات بدون مبالغات ترويجية.'
+      : 'احتمال دخول منافسين جدد بسرعة في حال انتشار الفيديو على تيك توك.'
+  ];
 
   const titleText = input.title || 'هذا المنتج المميز';
 
-  const marketingAngles = [
-    {
-      angleName: 'Angle 1: Pain & Problem Relief',
-      angleNameAr: 'الزاوية الأولى: علاج المشكلة والألم اليومي (Pain-Solver)',
-      hook3sAr: `واش عييتي من المشاكل اليومية مع ${titleText}؟ شوف هاد الحل لي غادي يريحك نهائياً!`,
-      mainPitchAr: `كولنا كنعانيو من نفس المشكل وكنضيعو الوقت والفلوس. اليوم جبنا ليك الحل الذكي لي خلا الآلاف د الناس يرتاحو ويوفر الوقت من أول استعمال وبجودة أصلية ممتازة.`,
-      callToActionAr: `التوصيل مجاني وسريع حتى لباب دارك، وما كتخلص حتى كيوصلك وتشوف الجودة بعينيك! اضغط على الرابط أسفله للطلب الآن قبل نفاد الكمية.`,
-      fullScriptAr: `[0-3 ثوانٍ - خطف الانتباه]: واش باغي تهنى من المشكل د ${titleText} ومبقيتيش قادر تضيع وقتك؟\n[3-10 ثوانٍ - استعراض المشكلة]: شحال من واحد كيخسر الفلوس فحلول عادية وماكتعطيش نتيجة.\n[10-25 ثانية - الحل السحري]: مع هاد ${titleText} المبتكر، كتحصل على نتيجة احترافية فثواني معدودة وبدون أي مجهود، سهل فالاستعمال ومصنوع بجودة عالية كتدوم.\n[25-35 ثانية - العرض والضمان]: استفد اليوم من عرض حصري: تخفيض خاص + توصيل مجاني وسريع حتى لباب الدار والدفع عند الاستلام بعد المعاينة! اضغط على الطلب الآن!`,
-      adCopyTextAr: `✨ وداعاً للعناء مع ${titleText}! 
+  // Customized Marketing Angles
+  let marketingAngles = [];
+  if (niche === 'COSMETICS') {
+    marketingAngles = [
+      {
+        angleName: 'Angle 1: Glowing Skin & Spot Removal',
+        angleNameAr: 'الزاوية الأولى: النضارة والتخلص من التصبغات (Glass Skin)',
+        hook3sAr: `سر البشرة الصافية لي كيسول عليها كلشي! شوف النتيجة كيفاش كتبان من أول أسبوع.`,
+        mainPitchAr: `شحال من واحدة كتخسر فلوسها في منتجات عادية بلا نتيجة. اليوم مع ${titleText} الأصلي، غادي تحصلي على إشراقة وتوحيد لون طبيعي بدون مواد كيميائية حارقة للبشرة.`,
+        callToActionAr: `الكمية محدودة في المخزون! اطلبي ديالك دابا والتوصيل فابور حتى لباب دارك وما تخلصي حتى تعايني.`,
+        fullScriptAr: `[0-3 ثوانٍ]: بشرة زجاجية ونقية بلا فلاتر ولا مكياج تقيل؟ شوف النتيجة مع ${titleText}!
+[3-12 ثانية]: تركيبة طبيعية مركزة كتغذي البشرة من الأعماق، كتقضي على التصبغات وبقع الشمس وكتوحد لون الوجه ففترة قياسية.
+[12-25 ثانية]: المئات من الزبونات جربوه وشكروا النتيجة السريعة والملمس الخفيف لي مكيخليش أي لمعان دهني.
+[25-35 ثانية]: استفيدي اليوم من عرض الأسبوع: تخفيض استثنائي + توصيل مجاني وسريع والدفع عند الاستلام. الرابط أسفله للطلب!`,
+        adCopyTextAr: `✨ وداعاً للبشرة الباهتة والتصبغات!
+استرجعي نضارة وإشراقة بشرتك الطبيعية مع ${titleText}.
+🌿 تركيبة طبيعية 100% وآمنة
+🚚 التوصيل مجاني وسريع لجميع المدن
+💵 الدفع عند الاستلام بعد التأكد من جودة المنتج
+🎁 اطلبي الآن قبل نفاد الكمية!`,
+        adCopyTextFr: `Révélez l\'éclat naturel de votre peau avec ${titleText}. Soin haute performance anti-taches et illuminateur. Livraison gratuite partout au Maroc et paiement à la livraison.`,
+      },
+      {
+        angleName: 'Angle 2: Daily Skincare Routine (GRWM)',
+        angleNameAr: 'الزاوية الثانية: روتين العناية اليومي الممتع (Morning Routine)',
+        hook3sAr: `هاد الحركة فـ روتيني الصباحي هي لي بدلات ليا وجهي 180 درجة!`,
+        mainPitchAr: `قطرات قليلة كل صباح من ${titleText} كافية باش تحمي بشرتك وترطبها وتخليها ناعمة ومشرقة طوال النهار.`,
+        callToActionAr: `العرض كيسالي الليلة! اضغط على الزر واكتشف سر البشرة المثالية.`,
+        fullScriptAr: `[0-3 ثوانٍ]: روتيني الصباحي لبشرة مشرقة: هاد الخطوة مكنستغناش عليها أبداً!
+[3-15 ثانية]: كنطبق قطرات من ${titleText} على الوجه والرقبة، كيمتص فثواني وكيخلي البشرة رطبة ومشدودة ومحمية من العوامل الخارجية.
+[15-30 ثانية]: إذا كنتي كتقلبي على عناية احترافية بجودة الصالونات فالدار، هذا هو الاختيار رقم 1. اطلبي دابا واستفيدي من الشحن المجاني!`,
+        adCopyTextAr: `🌸 روتينك اليومي لبشرة الأحلام!
+${titleText} هو سر الجمال الطبيعي والإشراقة الدائمة.
+✅ ترطيب عميق بدون أثر دهني
+✅ حماية وتغذية مكثفة
+✅ عرض خاص لهذا الأسبوع مع توصيل مجاني`,
+        adCopyTextFr: `Votre nouvel allié beauté quotidien. Intégrez ${titleText} dans votre routine et observez la transformation. Commandez maintenant.`,
+      },
+      {
+        angleName: 'Angle 3: Duo Bundle Offer',
+        angleNameAr: 'الزاوية الثالثة: عرض الباقة المزدوجة (Pack 2 Pièces Économique)',
+        hook3sAr: `عرض حصري: خودي علبة واحصلي على الثانية بخصم 50% وتوصيل مجاني!`,
+        mainPitchAr: `لأن النتيجة كتبغي الاستمرارية، وفرنا ليك باقة التوفير الاقتصادية باش تكملي الكورس نتي والصديقة ديالك أو الوالدة بأحسن سعر في السوق.`,
+        callToActionAr: `العرض متوفر لـ 50 شخص فقط اليوم! اضغطي هنا واختاري باقة التوفير.`,
+        fullScriptAr: `[0-5 ثوانٍ]: باغة التوفير لي كيتسناها الجميع رجعات من جديد!
+[5-18 ثانية]: كورس شهرين متكامل من ${titleText} لضمان أفضل وأقوى نتيجة، واليوم مع تخفيض كيوصل لـ 40% عند اختيار باقة القطعتين!
+[18-30 ثانية]: الضمان ديالنا الدائم: المعاينة عند الاستلام والتوصيل مجاني حتى لباب دارك. سارعي بالطلب الآن قبل انتهاء الكمية!`,
+        adCopyTextAr: `🎉 عرض التوفير الحصري!
+احصلي على كورس ${titleText} بخصم خاص جداً عند اختيار الباقة المزدوجة.
+📦 توصيل سريع ومجاني
+🛡️ ضمان الأصالة 100% والدفع عند الاستلام`,
+        adCopyTextFr: `Offre Spéciale Cure Complète : Bénéficiez d\'une réduction immédiate sur le pack duo ${titleText} avec livraison gratuite.`,
+      },
+    ];
+  } else if (niche === 'SUPPLEMENTS') {
+    marketingAngles = [
+      {
+        angleName: 'Angle 1: Deep Sleep & Stress Relief',
+        angleNameAr: 'الزاوية الأولى: النوم العميق والراحة النفسية (Sleep & Anti-Stress)',
+        hook3sAr: `كتعاني من الأرق والتعب المستمر؟ شوف هاد الحل الطبيعي لي غادي يرجع ليك راحتك من أول ليلة!`,
+        mainPitchAr: `قلة النوم والتوتر كيدمرو الطاقة والتركيز. مع ${titleText} الطبيعي، كتحصل على راحة عضلية ونوم عميق بدون أي إدمان أو أعراض جانبية.`,
+        callToActionAr: `ارتاح اليوم واسترجع عافيتك! اطلب الآن والتوصيل مجاني حتى لباب دارك مع الدفع عند الاستلام.`,
+        fullScriptAr: `[0-3 ثوانٍ]: واش عييتي من تقلب فالفراش والاستيقاظ عيان ومهرس؟
+[3-12 ثانية]: التوتر ونقص الفيتامينات الأساسية كيحرموك من النوم العميق. مع ${titleText} النقي، كتسترجع توازن جهازك العصبي وكتنعس مرتاح فثواني.
+[12-25 ثانية]: مستخلص طبيعي 100% معتمد، سريع الامتصاص وما كيسبب حتى اضطراب فالمعدة.
+[25-35 ثانية]: صحتك هي رأس مالك! استفد من عرض هذا الأسبوع: تخفيض استثنائي + توصيل مجاني والدفع بعد المعاينة.`,
+        adCopyTextAr: `🌿 استرجع نومك العميق وراحتك النفسية!
+مع ${titleText}، تخلص من الأرق والإجهاد اليومي واستيقظ بكامل طاقتك.
+✅ تركيبة طبيعية 100% آمنة
+✅ امتصاص سريع بدون اضطرابات هضمية
+🚚 التوصيل فابور والدفع عند الاستلام`,
+        adCopyTextFr: `Retrouvez un sommeil réparateur et une sérénité totale avec ${titleText}. Formule naturelle pour soulager le stress et la fatigue.`,
+      },
+      {
+        angleName: 'Angle 2: Daily Vitality & Energy Boost',
+        angleNameAr: 'الزاوية الثانية: الطاقة والنشاط ومحاربة الخمول (Energy & Focus)',
+        hook3sAr: `وداعاً للخمول والكسل طوال النهار! كيفاش تبدا نهارك بنشاط جبار وبلا قهوة كتيرة.`,
+        mainPitchAr: `العمل والروتين اليومي كينهكو الجسم. ${titleText} كيمدك بالطاقة المستمرة والصفاء الذهني لي محتاجو باش تنجز مهامك بكل حيوية.`,
+        callToActionAr: `جرب بنفسك وشوف الفرق في طاقتك! اطلب دابا قبل نفاد المخزون.`,
+        fullScriptAr: `[0-3 ثوانٍ]: كتحس براسك ديما فاشل وماقادرش تركز فالخدمة؟
+[3-15 ثانية]: ${titleText} هو المكمل لي كيعتمدو عليه آلاف الناس يومياً لرفع مستويات الطاقة الطبيعية، تقوية المناعة، وتصفية الذهن من التشتت.
+[15-30 ثانية]: كبسولة واحدة يومياً كافية باش تبدل نهارك. اطلب علبتك الآن واستفد من العرض الحصري مع توصيل فوري بالمجان!`,
+        adCopyTextAr: `⚡ طاقة وحيوية مستمرة طوال اليوم!
+تغلب على التعب المزمن وضعف التركيز مع ${titleText}.
+✅ نشاط بدني وذهني متجدد
+✅ تقوية طبيعية للمناعة
+🚚 شحن مجاني وسريع حتى لباب منزلك`,
+        adCopyTextFr: `Boostez votre énergie naturelle et votre concentration au quotidien grâce à ${titleText}. Livraison rapide et paiement à la livraison.`,
+      },
+      {
+        angleName: 'Angle 3: 2-Month Cure Pack',
+        angleNameAr: 'الزاوية الثالثة: كورس العلاج التام لشهرين (Pack Cure 2 Mois)',
+        hook3sAr: `أقوى عرض صحي: كورس شهرين كاملين من ${titleText} بخصم حصري وتوصيل مجاني!`,
+        mainPitchAr: `لأن صحتك كتستحق العناية الدائمة، وفرنا ليك كورس الشهرين بسعر خاص باش تحصل على أقصى فائدة مستمرة وتوفر مصاريف الشحن الإضافية.`,
+        callToActionAr: `العرض الترويجي ساري حتى نهاية الأسبوع فقط! اضغط هنا واطلب باقتك الصحية.`,
+        fullScriptAr: `[0-5 ثوانٍ]: باقة الصحة والعافية الكاملة!
+[5-18 ثانية]: كورس متكامل من ${titleText} يكفيك لشهرين من النشاط والراحة، مع تخفيض خاص يوصل لـ 35% وتوصيل سريع ومجاني لجميع المدن!
+[18-30 ثانية]: الدفع عند الاستلام بعد المعاينة، وضمان الجودة الأصلية 100%. اطلب الآن قبل انتهاء الكمية المخصصة لهذا العرض!`,
+        adCopyTextAr: `🎁 باقة كورس الشهرين الكاملة!
+استفد من خصم كبير وتوصيل مجاني عند طلب باقة ${titleText} الصحية.
+🛡️ منتج أصلي ومضمون 100%
+🚚 التوصيل مجاني والدفع عند الاستلام`,
+        adCopyTextFr: `Pack Cure Santé 2 Mois : Profitez de notre remise exclusive sur ${titleText} avec livraison offerte partout au Maroc.`,
+      },
+    ];
+  } else {
+    marketingAngles = [
+      {
+        angleName: 'Angle 1: Pain & Problem Relief',
+        angleNameAr: 'الزاوية الأولى: علاج المشكلة والألم اليومي (Pain-Solver)',
+        hook3sAr: `واش عييتي من المشاكل اليومية مع ${titleText}؟ شوف هاد الحل لي غادي يريحك نهائياً!`,
+        mainPitchAr: `كولنا كنعانيو من نفس المشكل وكنضيعو الوقت والفلوس. اليوم جبنا ليك الحل الذكي لي خلا الآلاف د الناس يرتاحو ويوفر الوقت من أول استعمال وبجودة أصلية ممتازة.`,
+        callToActionAr: `التوصيل مجاني وسريع حتى لباب دارك، وما كتخلص حتى كيوصلك وتشوف الجودة بعينيك! اضغط على الرابط أسفله للطلب الآن قبل نفاد الكمية.`,
+        fullScriptAr: `[0-3 ثوانٍ - خطف الانتباه]: واش باغي تهنى من المشكل د ${titleText} ومبقيتيش قادر تضيع وقتك؟\n[3-10 ثوانٍ - استعراض المشكلة]: شحال من واحد كيخسر الفلوس فحلول عادية وماكتعطيش نتيجة.\n[10-25 ثانية - الحل السحري]: مع هاد ${titleText} المبتكر، كتحصل على نتيجة احترافية فثواني معدودة وبدون أي مجهود، سهل فالاستعمال ومصنوع بجودة عالية كتدوم.\n[25-35 ثانية - العرض والضمان]: استفد اليوم من عرض حصري: تخفيض خاص + توصيل مجاني وسريع حتى لباب الدار والدفع عند الاستلام بعد المعاينة! اضغط على الطلب الآن!`,
+        adCopyTextAr: `✨ وداعاً للعناء مع ${titleText}! 
 الحل الذكي والمريح لي كيبحث عليه الجميع باش يوفر الوقت والمجهود.
-🚚 التوصيل مجاني لجميع مدن المغرب
+🚚 التوصيل مجاني لجميع مدن ${c.nameAr}
 💵 الدفع عند الاستلام بعد التأكد من الجودة
 🎁 اطلب الآن واستفد من تخفيض خاص لهذا الأسبوع!`,
-      adCopyTextFr: `Découvrez la solution innovante pour ${titleText}. Simple, efficace et rapide ! Livraison gratuite partout au Maroc et paiement à la livraison. Commandez le vôtre dès maintenant.`,
-    },
-    {
-      angleName: 'Angle 2: Transformation & Demonstration (Before / After)',
-      angleNameAr: 'الزاوية الثانية: الإبهار البصري والنتيجة الفورية (Before / After)',
-      hook3sAr: `شوف الفرق الخيالي فثواني معدودة! هاد لقطة كيبغيو يشوفوها الجميع.`,
-      mainPitchAr: `النتيجة واضحة قدام عينيك وبدون أي فلاتر. بمجرد ما كتجرب ${titleText} كتلاحظ التغيير والراحة من أول دقيقة.`,
-      callToActionAr: `الكمية المتوفرة فالمخزون محدودة بزاف. اطلب دابا قبل ما يسالي العرض الترويجي.`,
-      fullScriptAr: `[0-3 ثوانٍ]: صدمة النتيجة قبل وبعد باستعمال ${titleText}! شوف كيفاش تبدلات النتيجة فـ 5 ثواني!\n[3-15 ثانية]: كل ما عليك هو تشغيله بهاد الطريقة السهلة وغادي تشوف بنفسك النتيجة المبهرة.\n[15-30 ثانية]: الآلاف من الزبناء فالمغرب جربوه وشكروا الجودة ديالو. متفوتش الفرصة واطلب ديالك دابا بتوصيل فابور!`,
-      adCopyTextAr: `🔥 النتيجة لي كتهضر على راسها!
+        adCopyTextFr: `Découvrez la solution innovante pour ${titleText}. Simple, efficace et rapide ! Livraison gratuite et paiement à la livraison.`,
+      },
+      {
+        angleName: 'Angle 2: Transformation & Demonstration (Before / After)',
+        angleNameAr: 'الزاوية الثانية: الإبهار البصري والنتيجة الفورية (Before / After)',
+        hook3sAr: `شوف الفرق الخيالي فثواني معدودة! هاد لقطة كيبغيو يشوفوها الجميع.`,
+        mainPitchAr: `النتيجة واضحة قدام عينيك وبدون أي فلاتر. بمجرد ما كتجرب ${titleText} كتلاحظ التغيير والراحة من أول دقيقة.`,
+        callToActionAr: `الكمية المتوفرة فالمخزون محدودة بزاف. اطلب دابا قبل ما يسالي العرض الترويجي.`,
+        fullScriptAr: `[0-3 ثوانٍ]: صدمة النتيجة قبل وبعد باستعمال ${titleText}! شوف كيفاش تبدلات النتيجة فـ 5 ثواني!\n[3-15 ثانية]: كل ما عليك هو تشغيله بهاد الطريقة السهلة وغادي تشوف بنفسك النتيجة المبهرة.\n[15-30 ثانية]: الآلاف من الزبناء جربوه وشكروا الجودة ديالو. متفوتش الفرصة واطلب ديالك دابا بتوصيل فابور!`,
+        adCopyTextAr: `🔥 النتيجة لي كتهضر على راسها!
 شاهد الفرق الحقيقي قبل وبعد استعمال ${titleText}.
 ✅ جودة أصلية مضمونة
 ✅ سهولة تامة فالاستعمال
 ✅ التوصيل حتى لباب منزلك بالمجان`,
-      adCopyTextFr: `La preuve en vidéo ! Obtenez des résultats impeccables en quelques instants grâce à ${titleText}. Offre limitée avec livraison gratuite.`,
-    },
-    {
-      angleName: 'Angle 3: Irresistible Bundle Offer',
-      angleNameAr: 'الزاوية الثالثة: عرض الباقة المغري (Pack 1 + 1 خصم كبير)',
-      hook3sAr: `عرض حصري لمدة 48 ساعة فقط: خود 1 واحصل على الثاني بخصم 50% وتوصيل فابور!`,
-      mainPitchAr: `باش تستافد نتا والعائلة أو تهدي واحد لأقرب شخص ليك، وفرنا ليك باقة التوفير بسعر مكيتقاومش.`,
-      callToActionAr: `العرض كيسالي الليلة! اضغط على الزر واختار الباقة المناسبة ليك.`,
-      fullScriptAr: `[0-5 ثوانٍ]: بغيتي توفر وتشري بأحسن ثمن فالمغرب؟ عندنا ليك اليوم أفضل عرض على ${titleText}!\n[5-20 ثانية]: إذا خديتي حبة واحدة كتوصلك بتخفيض، وإلى خديتي الباقة المزدوجة كتوفر حتى لـ 100 درهم إضافية مع هدية وتوصيل مجاني!\n[20-30 ثانية]: الضمان ديالنا: معاينة المنتج قبل الدفع. اطلب الآن واستفد من العرض العائلي.`,
-      adCopyTextAr: `🎉 عرض التوفير العائلي!
+        adCopyTextFr: `La preuve en vidéo ! Obtenez des résultats impeccables en quelques instants grâce à ${titleText}. Offre limitée avec livraison gratuite.`,
+      },
+      {
+        angleName: 'Angle 3: Irresistible Bundle Offer',
+        angleNameAr: 'الزاوية الثالثة: عرض الباقة المغري (Pack 1 + 1 خصم كبير)',
+        hook3sAr: `عرض حصري لمدة 48 ساعة فقط: خود 1 واحصل على الثاني بخصم 50% وتوصيل فابور!`,
+        mainPitchAr: `باش تستافد نتا والعائلة أو تهدي واحد لأقرب شخص ليك، وفرنا ليك باقة التوفير بسعر مكيتقاومش.`,
+        callToActionAr: `العرض كيسالي الليلة! اضغط على الزر واختار الباقة المناسبة ليك.`,
+        fullScriptAr: `[0-5 ثوانٍ]: بغيتي توفر وتشري بأحسن ثمن؟ عندنا ليك اليوم أفضل عرض على ${titleText}!\n[5-20 ثانية]: إذا خديتي حبة واحدة كتوصلك بتخفيض، وإلى خديتي الباقة المزدوجة كتوفر خصم إضافي مع هدية وتوصيل مجاني!\n[20-30 ثانية]: الضمان ديالنا: معاينة المنتج قبل الدفع. اطلب الآن واستفد من العرض العائلي.`,
+        adCopyTextAr: `🎉 عرض التوفير العائلي!
 اطلب ${titleText} واستفد من تخفيض استثنائي عند اختيار باقة القطعتين.
 📦 التوصيل مجاني وسريع حتى لباب دارك
 🛡️ ضمان الرضا 100% والدفع عند الاستلام`,
-      adCopyTextFr: `Pack Spécial Économie : 1 acheté + le 2ème à moitié prix ! Profitez vite de notre offre promotionnelle avec livraison offerte partout au Maroc.`,
-    },
-  ];
+        adCopyTextFr: `Pack Spécial Économie : 1 acheté + le 2ème à moitié prix ! Profitez vite de notre offre promotionnelle avec livraison offerte.`,
+      },
+    ];
+  }
 
   const result: ProductAnalysisResult = {
     productTitle: input.title,
+    targetCountry,
+    targetCountryNameAr: c.nameAr,
+    targetCountryFlag: c.flag,
+    currency: c.currency,
     overallScore,
     scoreLabel,
     scoreColor,
     verdictAr,
     verdictFr,
+    marketDemandAnalysisAr,
+    strengthsAr,
+    challengesAr,
+    regulatoryAndSafetyTipsAr,
+    recommendedPlatforms,
     breakdown: {
       problemSolving,
       wowFactor,
@@ -1159,26 +1690,26 @@ export function analyzeProductDetails(input: ProductAnalysisInput): ProductAnaly
       roasTarget,
     },
     targeting: {
-      recommendedGender: input.niche === 'CAR' ? 'MEN' : (input.niche === 'BEAUTY' ? 'WOMEN' : 'ALL'),
-      ageRange: '24 - 55 سنة',
-      priorityCities: ['الدار البيضاء', 'الرباط', 'سلا', 'مراكش', 'طنجة', 'فاس', 'مكناس', 'أكادير', 'القنيطرة'],
-      excludedZones: ['المناطق الجبلية الوعرة البعيدة لتفادي تأخير التوصيل'],
+      recommendedGender: niche === 'CAR' ? 'MEN' : (niche === 'BEAUTY' || niche === 'COSMETICS' ? 'WOMEN' : 'ALL'),
+      ageRange: '23 - 55 سنة',
+      priorityCities: c.cities,
+      excludedZones: c.excluded,
       adsetStrategies: [
         {
           name: 'AdSet 1: Broad / Open Targeting (Recommandé)',
           nameAr: 'المجموعة 1: استهداف مفتوح (Broad بدون أي اهتمامات)',
           audienceType: 'Open (Tous centres d\'intérêts)',
           budgetShare: '50% من الميزانية',
-          interests: ['لا شيء - اترك خوارزمية فيسبوك تبحث عن الشارين بنفسها بناءً على الفيديو'],
-          descriptionAr: 'أقوى استراتيجية في فيسبوك وتيك توك حالياً، خوارزمية الذكاء الاصطناعي تفهم محتوى الفيديو وتجلبه للشخص المناسب بأقل CPM.',
+          interests: ['بدون اهتمامات - اترك خوارزميات الذكاء الاصطناعي للمنصة تجلب المهتمين الحقيقيين بناءً على محتوى الفيديو'],
+          descriptionAr: 'أقوى استراتيجية في 2026؛ المنصات تفهم سياق الفيديو بدقة وتستهدف المشترين بأقل CPM.',
         },
         {
           name: 'AdSet 2: Niche Interests',
           nameAr: 'المجموعة 2: اهتمامات دقيقة ذات صلة بالمنتج',
           audienceType: 'Niche Interests',
           budgetShare: '30% من الميزانية',
-          interests: input.niche === 'BEAUTY' ? ['Soins de la peau', 'Cosmétiques', 'Salons de beauté'] : (input.niche === 'CAR' ? ['Automobile', 'Accessoires auto', 'Voitures'] : ['Achats en ligne', 'Gadgets utiles']),
-          descriptionAr: 'لاختبار فئة الزبناء المهتمين بالمجال مباشرة ومقارنة سعر الليد مع المجموعة المفتوحة.',
+          interests: niche === 'COSMETICS' ? ['Soins de la peau', 'Cosmétiques', 'Beauté naturelle'] : (niche === 'SUPPLEMENTS' ? ['Vitamines', 'Santé et bien-être', 'Nutrition'] : ['Achats en ligne', 'Produits tendance']),
+          descriptionAr: 'لاختبار فئة الزبناء المهتمين بالمجال مباشرة ومقارنة تكلفة الليد مع المجموعة المفتوحة.',
         },
         {
           name: 'AdSet 3: Engaged Shoppers (Acheteurs Actifs)',
@@ -1186,44 +1717,28 @@ export function analyzeProductDetails(input: ProductAnalysisInput): ProductAnaly
           audienceType: 'Behavior Targeting',
           budgetShare: '20% من الميزانية',
           interests: ['Acheteurs actifs (Engaged Shoppers)'],
-          descriptionAr: 'يستهدف فقط الحسابات التي ضغطت على زر "اشتري الآن" وقامت بعمليات شراء سابقة عبر إعلانات فيسبوك.',
+          descriptionAr: 'يستهدف فقط الحسابات التي اعتادت النقر على زر "تسوق الآن" وإجراء عمليات الشراء عبر الإنترنت.',
         },
       ],
     },
     marketingAngles,
     launchStrategy: {
-      suggestedStructure: 'CBO (Campagne Avantage Budget) ou ABO 3 AdSets x 50 DH',
-      dailyBudgetMad: 150,
+      suggestedStructure: targetCountry === 'GCC' ? 'CBO: 1 Campagne x 3 AdSets x 3 Vidéos (Budget: 150-200 SAR/j)' : 'ABO ou CBO: 1 Campagne x 3 AdSets x 3 Vidéos (Budget: 150 DH/j)',
+      dailyBudgetMad: targetCountry === 'GCC' ? 200 : (targetCountry === 'SN' ? 15000 : 150),
       testingDays: 3,
-      killRuleDescriptionAr: `أوقف أي مجموعة إعلانية (AdSet) إذا صرفت 1.5x من الـ Target CPA (${Math.round(targetCpaMax * 1.5)} درهم) بدون أي طلب مؤكد، أو إذا كان الـ CTR أقل من 1% وسعر النقرة CPC يفوق 2 دراهم.`,
-      scaleRuleDescriptionAr: `إذا حققت الحملة 4 طلبات مؤكدة بسعر أقل من ${targetCpaMax} درهم ونسبة تسليم ممتازة، قم بزيادة الميزانية بنسبة +20% كل 24 ساعة بدون إعادة تعيين مرحلة التعلم (Learning Phase).`,
+      killRuleDescriptionAr: `إذا وصل صرف أي إعلان أو AdSet إلى ضعف الـ Target CPA (${targetCpaMax * 2} ${c.currency}) دون تحقيق أي مبيعة، أوقفه فوراً.`,
+      scaleRuleDescriptionAr: `أي AdSet يحقق CPA أقل من ${targetCpaMin} ${c.currency} مع 3 مبيعات على الأقل، ارفع ميزانيته بنسبة 25% كل 48 ساعة أو انسخه بحملة جديدة بميزانية أعلى.`,
       keyTipsAr: [
-        'ركز في أول 3 ثوانٍ من الفيديو على المشكلة الحقيقية أو اللقطة المبهرة.',
-        'ضع دائماً خيار باقة قطعتين في صفحة الهبوط لرفع متوسط قيمة السلة (AOV).',
-        'اتصل بالزبون في أقل من 15 دقيقة من تسجيل الطلب لرفع نسبة التأكيد لأكثر من 85%.',
-      ],
-    },
+        'تأكد من سرعة تحميل صفحة الهبوط في أقل من ثانيتين على الهواتف.',
+        'قدم عرض 1+1 بنصف السعر أو عبوتين بخصم خاص لرفع متوسط قيمة السلة (AOV).',
+        'فعّل رسائل التأكيد والمتابعة التلقائية عبر WhatsApp لرفع نسبة التسليم.'
+      ]
+    }
   };
-
-  // Save analysis to store
-  const store = loadStoredData();
-  store.customAnalyses = [
-    {
-      id: `analysis-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      input,
-      result,
-    },
-    ...(store.customAnalyses || []).slice(0, 49),
-  ];
-  saveStoredData(store);
 
   return result;
 }
 
-/**
- * Live Media Buyer Monitor: Fetches ad spend, matches with orders, and generates Kill / Scale / Bottleneck actions
- */
 export async function getLiveCampaignAudits(storeId?: string) {
   const where: any = {};
   if (storeId && storeId !== 'ALL' && !storeId.includes(',')) {

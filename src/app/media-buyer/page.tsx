@@ -36,6 +36,7 @@ import {
   Globe,
   Package,
   Video,
+  ShieldAlert,
 } from 'lucide-react';
 import { WinningProduct, ProductAnalysisResult } from '@/lib/marketingAi';
 
@@ -75,15 +76,71 @@ export default function MediaBuyerPage() {
   const [selectedStockId, setSelectedStockId] = useState('');
   const [analysisInput, setAnalysisInput] = useState({
     title: '',
-    niche: 'BEAUTY',
-    wholesalePrice: 45,
+    niche: 'COSMETICS',
+    targetCountry: 'MA',
+    wholesalePrice: 35,
     retailPrice: 229,
     shippingFee: 35,
-    estConfirmationRate: 80,
-    estDeliveryRate: 75,
+    estConfirmationRate: 85,
+    estDeliveryRate: 80,
     productUrl: '',
     description: '',
+    ingredientsOrDetails: '',
   });
+
+  const handleCountryChange = (country: string) => {
+    let defaultShip = 35;
+    let defaultWholesale = 35;
+    let defaultRetail = 229;
+    let defaultCr = 85;
+    let defaultDr = 80;
+
+    if (country === 'GCC') {
+      defaultShip = 25;
+      defaultWholesale = 30;
+      defaultRetail = 199;
+      defaultCr = 87;
+      defaultDr = 82;
+    } else if (country === 'SN') {
+      defaultShip = 2500;
+      defaultWholesale = 3500;
+      defaultRetail = 16500;
+      defaultCr = 86;
+      defaultDr = 82;
+    } else if (country === 'US' || country === 'FR' || country === 'EU') {
+      defaultShip = 5;
+      defaultWholesale = 6;
+      defaultRetail = 29.99;
+      defaultCr = 96;
+      defaultDr = 95;
+    } else if (country === 'UK') {
+      defaultShip = 4;
+      defaultWholesale = 5;
+      defaultRetail = 24.99;
+      defaultCr = 97;
+      defaultDr = 95;
+    }
+
+    setAnalysisInput((prev) => ({
+      ...prev,
+      targetCountry: country,
+      shippingFee: defaultShip,
+      wholesalePrice: defaultWholesale,
+      retailPrice: defaultRetail,
+      estConfirmationRate: defaultCr,
+      estDeliveryRate: defaultDr,
+    }));
+  };
+
+  const getCurrencySymbol = (countryCode?: string) => {
+    const c = countryCode || analysisInput.targetCountry;
+    if (c === 'GCC') return 'SAR';
+    if (c === 'SN') return 'FCFA';
+    if (c === 'US' || c === 'GLOBAL') return '$';
+    if (c === 'FR' || c === 'EU') return '€';
+    if (c === 'UK') return '£';
+    return 'DH';
+  };
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<ProductAnalysisResult | null>(null);
   const [activeScriptAngle, setActiveScriptAngle] = useState(0);
@@ -166,7 +223,8 @@ export default function MediaBuyerPage() {
     if (found) {
       setAnalysisInput({
         title: found.name || '',
-        niche: 'BEAUTY',
+        niche: 'COSMETICS',
+        targetCountry: 'MA',
         wholesalePrice: Number(found.costPrice) || 45,
         retailPrice: Number(found.sellingPrice) || 249,
         shippingFee: 35,
@@ -174,15 +232,18 @@ export default function MediaBuyerPage() {
         estDeliveryRate: 75,
         productUrl: '',
         description: found.description || '',
+        ingredientsOrDetails: '',
       });
     }
   };
 
   // Transfer winning product to validator
   const handleSendToValidator = (wp: WinningProduct) => {
-    setAnalysisInput({
+    const targetCountry = wp.country === 'GLOBAL' ? 'US' : wp.country;
+    const payload = {
       title: wp.titleAr || wp.title,
       niche: wp.niche,
+      targetCountry,
       wholesalePrice: wp.wholesalePrice,
       retailPrice: wp.retailPrice,
       shippingFee: wp.estShippingFee || 35,
@@ -190,19 +251,13 @@ export default function MediaBuyerPage() {
       estDeliveryRate: wp.estDeliveryRate || 75,
       productUrl: '',
       description: wp.descriptionAr || wp.description,
-    });
+      ingredientsOrDetails: '',
+    };
+    setAnalysisInput(payload);
     setSelectedProductDetails(null);
     setActiveTab('PRODUCT_VALIDATOR');
     // Auto-trigger analysis
-    triggerAnalysis({
-      title: wp.titleAr || wp.title,
-      niche: wp.niche,
-      wholesalePrice: wp.wholesalePrice,
-      retailPrice: wp.retailPrice,
-      shippingFee: wp.estShippingFee || 35,
-      estConfirmationRate: wp.estConfirmationRate || 80,
-      estDeliveryRate: wp.estDeliveryRate || 75,
-    });
+    triggerAnalysis(payload);
   };
 
   // Trigger analysis
@@ -378,7 +433,7 @@ export default function MediaBuyerPage() {
               }`}
             >
               <Target className="w-4 h-4 text-indigo-600" />
-              <span>محلل المنتج والسكريبتات (Validator & Scripts 🎯)</span>
+              <span>فحص واستشارة منتجك مع الخبير (Product Audit & Scripts 🎯)</span>
             </button>
 
             <button
@@ -937,26 +992,33 @@ export default function MediaBuyerPage() {
       {/* ========================================================================= */}
       {activeTab === 'PRODUCT_VALIDATOR' && (
         <div className="space-y-6">
-          {/* Product Input Card */}
-          <div className="bg-white rounded-3xl p-6 md:p-7 border border-slate-200/90 shadow-sm space-y-5">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-5 border-b border-slate-100">
+          {/* Product Input Card - Prestige Studio Form */}
+          <div className="bg-white rounded-3xl p-6 md:p-7 border border-slate-200/90 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-lg">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-black text-2xl shadow-xs">
                   🎯
                 </div>
                 <div>
-                  <h2 className="text-base font-black text-slate-900 font-heading">فحص المنتج وتصميم الحملة الإعلانية (Campaign Architect)</h2>
-                  <p className="text-xs text-slate-500 font-medium">أدخل معلومات أي منتج لحساب الـ Break-even CPA، سكريبتات الدارجة، والاستهداف الدقيق.</p>
+                  <h2 className="text-base md:text-lg font-black text-slate-900 font-heading flex items-center gap-2">
+                    <span>فحص واستشارة منتجك مع الخبير الإعلاني (AI Product & Market Audit)</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold border border-emerald-200">
+                      مباشر ومخصص
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium">
+                    أدخل معلومات أي منتج لديك وحدد السوق المستهدف (المغرب، الخليج، السنغال، أوروبا...) ليقوم الخبير بدراسة فرص نجاحه، حساب الـ Break-even CPA، تقديم إرشادات السياسات، واقتراح سكريبتات الدارجة والاستهداف.
+                  </p>
                 </div>
               </div>
 
               {/* Quick Select from existing Sanadokom Stock */}
               {stockItems.length > 0 && (
-                <div className="w-full sm:w-auto">
+                <div className="w-full sm:w-auto shrink-0">
                   <select
                     value={selectedStockId}
                     onChange={(e) => handleStockSelect(e.target.value)}
-                    className="w-full sm:w-64 text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-bold text-slate-800 cursor-pointer focus:bg-white"
+                    className="w-full sm:w-64 text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-800 cursor-pointer focus:bg-white shadow-2xs"
                   >
                     <option value="">⚡ اختر منتجاً من مخزونك (Stock)...</option>
                     {stockItems.map((item) => (
@@ -970,108 +1032,177 @@ export default function MediaBuyerPage() {
             </div>
 
             {/* Input Form Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  اسم أو رابط المنتج <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="مثال: جهاز تنظيف الوجه بالبخار أو رابط المنتج"
-                  value={analysisInput.title}
-                  onChange={(e) => setAnalysisInput({ ...analysisInput, title: e.target.value })}
-                  className="w-full text-xs border border-slate-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-800"
-                />
+            <div className="space-y-4">
+              {/* Row 1: Title, Target Country, Niche */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                <div className="md:col-span-6">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    اسم المنتج أو الفكرة <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="مثال: سيروم فيتامين سي للتفتيح، مكمل المغنيسيوم للنوم، أو جهاز مساج الرقبة"
+                    value={analysisInput.title}
+                    onChange={(e) => setAnalysisInput({ ...analysisInput, title: e.target.value })}
+                    className="w-full text-xs border border-slate-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900 bg-slate-50 focus:bg-white transition-all"
+                  />
+                </div>
+
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    السوق / الدولة المستهدفة <span className="text-indigo-600 font-extrabold">({getCurrencySymbol()})</span>
+                  </label>
+                  <select
+                    value={analysisInput.targetCountry}
+                    onChange={(e) => handleCountryChange(e.target.value)}
+                    className="w-full text-xs border border-indigo-200 rounded-xl p-3 bg-indigo-50/50 font-black text-slate-900 cursor-pointer focus:bg-white focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="MA">🇲🇦 المغرب (Morocco - DH)</option>
+                    <option value="GCC">🇸🇦 دول الخليج والسعودية (GCC - SAR)</option>
+                    <option value="SN">🇸🇳 السنغال وغرب إفريقيا (Senegal - FCFA)</option>
+                    <option value="US">🇺🇸 الولايات المتحدة (USA - $)</option>
+                    <option value="FR">🇫🇷 فرنسا وأوروبا (France & EU - €)</option>
+                    <option value="UK">🇬🇧 بريطانيا (UK - £)</option>
+                    <option value="CA">🇨🇦 كندا (Canada - CAD$)</option>
+                    <option value="GLOBAL">🌍 السوق العالمي الشامل (Global - $)</option>
+                  </select>
+                </div>
+
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">المجال / النيتش</label>
+                  <select
+                    value={analysisInput.niche}
+                    onChange={(e) => setAnalysisInput({ ...analysisInput, niche: e.target.value })}
+                    className="w-full text-xs border border-slate-300 rounded-xl p-3 bg-white font-bold text-slate-800 cursor-pointer focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="COSMETICS">💄 مستحضرات التجميل والعناية (Cosmetics & Skincare)</option>
+                    <option value="SUPPLEMENTS">🌿 مكملات غذائية وصحة طبيعية (Supplements & Wellness)</option>
+                    <option value="BEAUTY">✨ الجمال وأجهزة العناية (Beauty Tech)</option>
+                    <option value="KITCHEN">🍳 أدوات المطبخ والمنزل (Kitchen & Home)</option>
+                    <option value="CAR">🚗 إكسسوارات السيارات (Car Accessories)</option>
+                    <option value="HEALTH">🏋️ الصحة والعلاج الطبيعي (Health & Pain Relief)</option>
+                    <option value="GADGETS">⚡ إلكترونيات وأدوات ذكية (Gadgets)</option>
+                    <option value="HOME">🏠 ديكور وأثاث منزلي (Home Decor)</option>
+                    <option value="PETS">🐾 مستلزمات الحيوانات الأليفة (Pets)</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">المجال / النيتش</label>
-                <select
-                  value={analysisInput.niche}
-                  onChange={(e) => setAnalysisInput({ ...analysisInput, niche: e.target.value })}
-                  className="w-full text-xs border border-slate-300 rounded-xl p-3 bg-white font-bold text-slate-800"
-                >
-                  <option value="BEAUTY">💄 تجميل وعناية بالبشرة</option>
-                  <option value="KITCHEN">🍳 أدوات المطبخ والمنزل</option>
-                  <option value="CAR">🚗 إكسسوارات السيارات</option>
-                  <option value="HEALTH">🏋️ الصحة والعلاج الطبيعي</option>
-                  <option value="GADGETS">⚡ إلكترونيات وأدوات ذكية</option>
-                  <option value="HOME">🏠 المنزل والديكور</option>
-                  <option value="PETS">🐾 مستلزمات الحيوانات الأليفة</option>
-                </select>
+              {/* Row 2: Financials & COD Economics */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 pt-1">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    سعر الشراء بالجملة ({getCurrencySymbol()})
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="45"
+                    value={analysisInput.wholesalePrice}
+                    onChange={(e) => setAnalysisInput({ ...analysisInput, wholesalePrice: Number(e.target.value) })}
+                    className="w-full text-xs border border-slate-300 rounded-xl p-3 font-bold text-slate-900 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    سعر البيع المقترح ({getCurrencySymbol()})
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="249"
+                    value={analysisInput.retailPrice}
+                    onChange={(e) => setAnalysisInput({ ...analysisInput, retailPrice: Number(e.target.value) })}
+                    className="w-full text-xs border border-indigo-300 rounded-xl p-3 font-black text-indigo-700 bg-indigo-50/40 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    تكلفة الشحن ({getCurrencySymbol()})
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="35"
+                    value={analysisInput.shippingFee}
+                    onChange={(e) => setAnalysisInput({ ...analysisInput, shippingFee: Number(e.target.value) })}
+                    className="w-full text-xs border border-slate-300 rounded-xl p-3 font-bold text-slate-900 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">نسبة التأكيد التقديرية %</label>
+                  <input
+                    type="number"
+                    placeholder="85"
+                    value={analysisInput.estConfirmationRate}
+                    onChange={(e) => setAnalysisInput({ ...analysisInput, estConfirmationRate: Number(e.target.value) })}
+                    className="w-full text-xs border border-slate-300 rounded-xl p-3 font-bold text-slate-900 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">نسبة التسليم التقديرية %</label>
+                  <input
+                    type="number"
+                    placeholder="80"
+                    value={analysisInput.estDeliveryRate}
+                    onChange={(e) => setAnalysisInput({ ...analysisInput, estDeliveryRate: Number(e.target.value) })}
+                    className="w-full text-xs border border-slate-300 rounded-xl p-3 font-bold text-slate-900 bg-white"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">سعر الشراء بالجملة (DH)</label>
-                <input
-                  type="number"
-                  placeholder="مثال: 45"
-                  value={analysisInput.wholesalePrice}
-                  onChange={(e) => setAnalysisInput({ ...analysisInput, wholesalePrice: Number(e.target.value) })}
-                  className="w-full text-xs border border-slate-300 rounded-xl p-3 font-bold text-slate-900"
-                />
-              </div>
+              {/* Row 3: Description, Ingredients, and Link */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    المكونات، المميزات، أو المشكلة التي يحلها المنتج (Description & Ingredients)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="مثال: يحتوي على زيت الأرغان وفيتامين E، يعالج تساقط الشعر ويملأ الفراغات في 30 يوماً"
+                    value={analysisInput.ingredientsOrDetails || analysisInput.description}
+                    onChange={(e) => setAnalysisInput({ ...analysisInput, ingredientsOrDetails: e.target.value, description: e.target.value })}
+                    className="w-full text-xs border border-slate-300 rounded-xl p-3 font-medium text-slate-800 bg-slate-50 focus:bg-white"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">سعر البيع المقترح (DH)</label>
-                <input
-                  type="number"
-                  placeholder="مثال: 249"
-                  value={analysisInput.retailPrice}
-                  onChange={(e) => setAnalysisInput({ ...analysisInput, retailPrice: Number(e.target.value) })}
-                  className="w-full text-xs border border-slate-300 rounded-xl p-3 font-black text-indigo-600 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">تكلفة التوصيل التقديرية (DH)</label>
-                <input
-                  type="number"
-                  placeholder="35"
-                  value={analysisInput.shippingFee}
-                  onChange={(e) => setAnalysisInput({ ...analysisInput, shippingFee: Number(e.target.value) })}
-                  className="w-full text-xs border border-slate-300 rounded-xl p-3 font-bold text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">نسبة التأكيد المتوقعة %</label>
-                <input
-                  type="number"
-                  placeholder="80"
-                  value={analysisInput.estConfirmationRate}
-                  onChange={(e) => setAnalysisInput({ ...analysisInput, estConfirmationRate: Number(e.target.value) })}
-                  className="w-full text-xs border border-slate-300 rounded-xl p-3 font-bold text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">نسبة التوصيل المتوقعة %</label>
-                <input
-                  type="number"
-                  placeholder="75"
-                  value={analysisInput.estDeliveryRate}
-                  onChange={(e) => setAnalysisInput({ ...analysisInput, estDeliveryRate: Number(e.target.value) })}
-                  className="w-full text-xs border border-slate-300 rounded-xl p-3 font-bold text-slate-900"
-                />
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    رابط المنتج أو رابط صفحة المنافس (Product URL / Competitor)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="مثال: رابط علي إكسبريس، موقع المنافس، أو رابط الإعلان"
+                    value={analysisInput.productUrl}
+                    onChange={(e) => setAnalysisInput({ ...analysisInput, productUrl: e.target.value })}
+                    className="w-full text-xs border border-slate-300 rounded-xl p-3 font-medium text-slate-800 bg-slate-50 focus:bg-white"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end pt-3">
+            {/* Launch Analysis Button */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
+              <div className="text-xs text-slate-500 font-medium flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>التحليل يتضمن: فحص قبول الإعلانات في تيك توك وفيسبوك، حساب أقصى CPA مسموح، و3 سكريبتات إعلانية بالدارجة.</span>
+              </div>
+
               <button
                 onClick={() => triggerAnalysis()}
                 disabled={analyzing || !analysisInput.title.trim()}
-                className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 hover:from-indigo-700 hover:to-purple-800 disabled:opacity-50 text-white font-black text-xs md:text-sm shadow-md shadow-indigo-600/25 flex items-center justify-center gap-2 cursor-pointer transition-transform active:scale-95"
+                className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 hover:from-indigo-700 hover:to-purple-800 disabled:opacity-50 text-white font-black text-xs md:text-sm shadow-md shadow-indigo-600/25 flex items-center justify-center gap-2 cursor-pointer transition-transform active:scale-95 shrink-0"
               >
                 {analyzing ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>الذكاء الاصطناعي يقوم بالفحص والتحليل الآن...</span>
+                    <span>الخبير يقوم بفحص السوق وتحليل الجدوى الآن...</span>
                   </>
                 ) : (
                   <>
                     <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
-                    <span>تشغيل الفحص والتحليل الذكي للمنتج 🚀</span>
+                    <span>فحص المنتج واستشارة الخبير الإعلاني فوراً 🚀</span>
                   </>
                 )}
               </button>
@@ -1081,18 +1212,18 @@ export default function MediaBuyerPage() {
           {/* Analysis Results Display */}
           {analysisResult && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              {/* Verdict & Score Banner */}
+              {/* Verdict & Market Viability Banner */}
               <div className="bg-white rounded-3xl p-6 md:p-7 border border-slate-200/90 shadow-sm space-y-6">
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="px-3 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
-                        نتيجة فحص المنتج (Product Dossier)
+                        {analysisResult.targetCountryFlag || '🌍'} تقرير السوق: {analysisResult.targetCountryNameAr || analysisResult.targetCountry}
                       </span>
                       <span className="text-xs text-slate-400">|</span>
-                      <span className="text-xs font-bold text-slate-700">{analysisResult.productTitle}</span>
+                      <span className="text-xs font-black text-slate-900">{analysisResult.productTitle}</span>
                     </div>
-                    <h3 className="text-lg md:text-xl font-black text-slate-900 font-heading leading-snug">
+                    <h3 className="text-base md:text-lg font-black text-slate-900 font-heading leading-snug">
                       {analysisResult.verdictAr}
                     </h3>
                   </div>
@@ -1105,13 +1236,61 @@ export default function MediaBuyerPage() {
                     </div>
                     <div>
                       <div className="text-xs font-black text-slate-900">{analysisResult.scoreLabel}</div>
-                      <div className="text-[11px] text-slate-500 font-medium">تقييم الجدوى والربحية</div>
+                      <div className="text-[11px] text-slate-500 font-medium">مؤشر النجاح والربحية</div>
                     </div>
                   </div>
                 </div>
 
+                {/* Market Demand In-Depth Analysis */}
+                {analysisResult.marketDemandAnalysisAr && (
+                  <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-1.5">
+                    <div className="text-xs font-black text-indigo-900 flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-indigo-600" />
+                      <span>هل سينجح هذا المنتج في سوق {analysisResult.targetCountryNameAr || analysisResult.targetCountry}؟</span>
+                    </div>
+                    <p className="text-xs text-indigo-950 font-medium leading-relaxed">
+                      {analysisResult.marketDemandAnalysisAr}
+                    </p>
+                  </div>
+                )}
+
+                {/* Strengths & Challenges */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Strengths */}
+                  <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2">
+                    <div className="text-xs font-black text-emerald-900 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span>نقاط القوة والفرص الرابحة:</span>
+                    </div>
+                    <ul className="text-xs text-emerald-950 space-y-1.5 font-medium list-disc list-inside">
+                      {(analysisResult.strengthsAr || [
+                        'هامش ربح يسمح باختبار إعلاني مريح دون مخاطرة.',
+                        'منتج يحل مشكلة يومية أو يثير الإبهار البصري عند المشاهد.'
+                      ]).map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Challenges */}
+                  <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2">
+                    <div className="text-xs font-black text-amber-900 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      <span>التحديات والتوصيات لتفادي الخسارة:</span>
+                    </div>
+                    <ul className="text-xs text-amber-950 space-y-1.5 font-medium list-disc list-inside">
+                      {(analysisResult.challengesAr || [
+                        'ضرورة تأكيد الطلبيات بسرعة عبر الهاتف خلال أول 15 دقيقة.',
+                        'الاعتماد على فيديوهات طبيعية بدون وعود مبالغ فيها لتفادي رفض الإعلانات.'
+                      ]).map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
                 {/* Score Breakdown Bars */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 pt-1">
                   <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
                     <div className="text-[11px] font-bold text-slate-600">حل المشكلة</div>
                     <div className="text-sm font-black text-indigo-600">{analysisResult.breakdown.problemSolving}%</div>
@@ -1150,6 +1329,71 @@ export default function MediaBuyerPage() {
                 </div>
               </div>
 
+              {/* Recommended Ad Platforms & Regulatory Guidelines */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Recommended Ad Platforms */}
+                <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+                    <TrendingUp className="w-5 h-5 text-indigo-600" />
+                    <span>المنصات الإعلانية الأنسب لهذا المنتج في {analysisResult.targetCountryNameAr || analysisResult.targetCountry}</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(analysisResult.recommendedPlatforms || [
+                      { name: 'Meta Ads (Facebook / Instagram)', suitability: 95, reasonAr: 'المنصة الأكثر استقراراً ووصولاً للمشترين', badge: 'الأكثر استقراراً 🏆' },
+                      { name: 'TikTok Ads', suitability: 92, reasonAr: 'أرخص تكلفة ظهور وتفاعل فايرل مع فيديوهات الدارجة', badge: 'فيروسية عالية 🔥' },
+                    ]).map((plat, idx) => (
+                      <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black text-slate-900">{plat.name}</span>
+                          <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] font-extrabold">
+                            {plat.badge}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 bg-slate-200 h-2 rounded-full overflow-hidden">
+                            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 h-full rounded-full" style={{ width: `${plat.suitability}%` }} />
+                          </div>
+                          <span className="text-xs font-black text-indigo-600">{plat.suitability}%</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 font-medium">{plat.reasonAr}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Regulatory, Policy & Safety Guidelines */}
+                <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+                    <ShieldAlert className="w-5 h-5 text-amber-500" />
+                    <span>إرشادات السياسات الإعلانية والسلامة (Ad Policy & Compliance)</span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2.5">
+                    <div className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>تنبيهات هامة لتفادي حظر الحسابات الإعلانية في تيك توك وفيسبوك:</span>
+                    </div>
+                    <ul className="text-xs text-amber-950 space-y-2 font-medium">
+                      {(analysisResult.regulatoryAndSafetyTipsAr || [
+                        'تجنب الادعاءات الطبية المبالغ فيها أو الوعود بالعلاج الفوري لتفادي رفض الإعلانات.',
+                        'احرص على تغليف آمن ومحكم لتفادي تلف الشحنات في شركة التوصيل.'
+                      ]).map((tip, idx) => (
+                        <li key={idx} className="flex items-start gap-1.5">
+                          <span className="text-amber-600 font-bold">•</span>
+                          <span>{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1 font-medium">
+                    <div className="font-extrabold text-slate-800">💡 نصيحة الخبير:</div>
+                    <p>في مستحضرات التجميل والمكملات، الفيديوهات الطبيعية العفوية (UGC) التي تتحدث عن الروتين اليومي تحقق أعلى نسبة مبيعات دون أن يعترض عليها روبوت مراجعة الإعلانات.</p>
+                  </div>
+                </div>
+              </div>
+
               {/* COD Economics Matrix - Crisp Dark Slate Card */}
               <div className="bg-slate-900 rounded-3xl p-6 md:p-7 text-white shadow-xl border border-slate-800 space-y-5">
                 <div className="flex items-center gap-3">
@@ -1157,9 +1401,11 @@ export default function MediaBuyerPage() {
                     💰
                   </div>
                   <div>
-                    <h3 className="text-base font-black">حاسبة الأرباح الدقيقة وهامش الأمان الإعلاني (COD Economics)</h3>
+                    <h3 className="text-base font-black">
+                      حاسبة الأرباح الدقيقة وهامش الأمان الإعلاني (COD Economics - {analysisResult.currency || 'DH'})
+                    </h3>
                     <p className="text-xs text-slate-300 font-medium">
-                      معادلة واقعية تأخذ بعين الاعتبار نسبة التأكيد والتوصيل وتكلفة الإعلانات الحقيقية.
+                      معادلة واقعية تأخذ بعين الاعتبار نسبة التأكيد والتسليم وتكلفة الشحن الحقيقية في سوق {analysisResult.targetCountryNameAr || analysisResult.targetCountry}.
                     </p>
                   </div>
                 </div>
@@ -1169,7 +1415,7 @@ export default function MediaBuyerPage() {
                   <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-400/40 space-y-1">
                     <div className="text-[11px] font-bold text-rose-300">أقصى CPA مسموح (Break-even)</div>
                     <div className="text-2xl font-black text-rose-400">
-                      {analysisResult.economics.breakEvenCpa} DH
+                      {analysisResult.economics.breakEvenCpa} {analysisResult.currency || 'DH'}
                     </div>
                     <div className="text-[10px] text-rose-200/80 font-medium">إذا تجاوزته تصبح في خسارة</div>
                   </div>
@@ -1178,7 +1424,7 @@ export default function MediaBuyerPage() {
                   <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-400/40 space-y-1">
                     <div className="text-[11px] font-bold text-emerald-300">سعر الطلب المستهدف (Target CPA)</div>
                     <div className="text-2xl font-black text-emerald-400">
-                      {analysisResult.economics.targetCpaMin} - {analysisResult.economics.targetCpaMax} DH
+                      {analysisResult.economics.targetCpaMin} - {analysisResult.economics.targetCpaMax} {analysisResult.currency || 'DH'}
                     </div>
                     <div className="text-[10px] text-emerald-200/80 font-medium">المنطقة الذهبية لتحقيق ربح مرتفع</div>
                   </div>
@@ -1187,7 +1433,7 @@ export default function MediaBuyerPage() {
                   <div className="p-4 rounded-2xl bg-white/10 border border-white/20 space-y-1">
                     <div className="text-[11px] font-bold text-indigo-200">الربح الصافي لكل طلب مستلم</div>
                     <div className="text-2xl font-black text-white">
-                      +{analysisResult.economics.netProfitPerDelivered} DH
+                      +{analysisResult.economics.netProfitPerDelivered} {analysisResult.currency || 'DH'}
                     </div>
                     <div className="text-[10px] text-slate-300 font-medium">بعد خصم الإعلانات والشحن وتكلفة المنتج</div>
                   </div>
@@ -1196,7 +1442,7 @@ export default function MediaBuyerPage() {
                   <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-400/40 space-y-1">
                     <div className="text-[11px] font-bold text-amber-300">الربح المتوقع لكل 100 ليد</div>
                     <div className="text-2xl font-black text-amber-400">
-                      +{analysisResult.economics.expectedNetProfitPer100Leads} DH
+                      +{analysisResult.economics.expectedNetProfitPer100Leads} {analysisResult.currency || 'DH'}
                     </div>
                     <div className="text-[10px] text-amber-200/80 font-medium">عائد مستهدف (ROAS): {analysisResult.economics.roasTarget}x</div>
                   </div>
@@ -1210,8 +1456,8 @@ export default function MediaBuyerPage() {
                     🎬
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-slate-900 font-heading">زوايا التسويق وسيناريوهات الفيديو بالدارجة المغربية</h3>
-                    <p className="text-xs text-slate-500 font-medium">سكريبتات جاهزة لتصوير الـ UGC ونصوص الإعلانات (Ad Copies) لنسخها في فيسبوك وتيك توك.</p>
+                    <h3 className="text-base font-black text-slate-900 font-heading">زوايا التسويق وسيناريوهات الفيديو بالدارجة المغربية / الترويجية</h3>
+                    <p className="text-xs text-slate-500 font-medium">سكريبتات جاهزة لتصوير الـ UGC ونصوص الإعلانات (Ad Copies) لنسخها في فيسبوك وتيك توك بنقرة واحدة.</p>
                   </div>
                 </div>
 
@@ -1326,7 +1572,7 @@ export default function MediaBuyerPage() {
                 <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
                   <div className="flex items-center gap-2 text-sm font-black text-slate-900">
                     <Target className="w-5 h-5 text-indigo-600" />
-                    <span>خطة الاستهداف والجمهور (Targeting Blueprint)</span>
+                    <span>خطة الاستهداف والجمهور في {analysisResult.targetCountryNameAr || analysisResult.targetCountry}</span>
                   </div>
 
                   <div className="space-y-3 text-xs">
@@ -1342,11 +1588,11 @@ export default function MediaBuyerPage() {
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 space-y-2">
-                      <div className="font-bold text-slate-600">المدن ذات الأولوية في المغرب:</div>
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1.5">
+                      <span className="font-bold text-slate-600 block">أفضل المدن ذات نسبة تسليم مرتفعة:</span>
                       <div className="flex flex-wrap gap-1.5">
-                        {analysisResult.targeting.priorityCities.map((city, idx) => (
-                          <span key={idx} className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs">
+                        {(analysisResult.targeting.priorityCities || []).map((city, i) => (
+                          <span key={i} className="px-2 py-0.5 rounded-md bg-white border border-slate-200 font-extrabold text-slate-800 text-[11px]">
                             {city}
                           </span>
                         ))}
@@ -1354,56 +1600,69 @@ export default function MediaBuyerPage() {
                     </div>
 
                     <div className="space-y-2 pt-2">
-                      <div className="font-extrabold text-slate-800">هيكلة المجموعات الإعلانية (3 AdSets المقترحة):</div>
-                      {analysisResult.targeting.adsetStrategies.map((adset, idx) => (
-                        <div key={idx} className="p-3 rounded-xl border border-slate-200 space-y-1">
-                          <div className="flex items-center justify-between font-bold text-indigo-700">
+                      <div className="font-extrabold text-slate-800">مجموعات الإعلانات المقترحة (AdSets):</div>
+                      {analysisResult.targeting.adsetStrategies.map((adset, i) => (
+                        <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1">
+                          <div className="flex items-center justify-between font-bold text-slate-900">
                             <span>{adset.nameAr}</span>
-                            <span className="text-[10px] px-2 py-0.5 bg-indigo-50 rounded-full font-black">{adset.budgetShare}</span>
+                            <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-black border border-indigo-200">
+                              {adset.budgetShare}
+                            </span>
                           </div>
-                          <p className="text-xs text-slate-600 font-medium">{adset.descriptionAr}</p>
+                          <p className="text-[11px] text-slate-600 font-medium">{adset.descriptionAr}</p>
+                          <div className="text-[11px] text-slate-700 font-semibold">
+                            <span className="text-slate-500">الاهتمامات: </span>
+                            {adset.interests.join(', ')}
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                {/* Kill & Scale Rules Blueprint */}
+                {/* Launch, Kill & Scale Strategy */}
                 <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
                   <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                    <Sliders className="w-5 h-5 text-purple-600" />
-                    <span>خطة الاختبار وقواعد الإيقاف والتكبير (Kill & Scale)</span>
+                    <Zap className="w-5 h-5 text-amber-500" />
+                    <span>قواعد إيقاف وتكبير الإعلانات (Kill & Scale Rules)</span>
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 space-y-1">
-                      <div className="text-xs font-black text-rose-800 flex items-center gap-1.5">
-                        <XCircle className="w-4 h-4 text-rose-600" />
+                  <div className="space-y-3 text-xs">
+                    {/* Structure */}
+                    <div className="p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-200 space-y-1">
+                      <div className="font-black text-indigo-900">هيكل الحملة للاختبار (Testing Structure):</div>
+                      <div className="font-bold text-indigo-950">{analysisResult.launchStrategy.suggestedStructure}</div>
+                      <div className="text-[11px] text-indigo-800/80 font-medium">مدة الاختبار: 3 أيام متتالية دون تعديل الإعلانات</div>
+                    </div>
+
+                    {/* Kill Rule */}
+                    <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 space-y-1">
+                      <div className="font-black text-rose-900 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-rose-600" />
                         <span>قاعدة الإيقاف الفوري (Kill Rule):</span>
                       </div>
-                      <p className="text-xs text-rose-950 leading-relaxed font-semibold">
+                      <p className="text-rose-950 font-bold leading-relaxed">
                         {analysisResult.launchStrategy.killRuleDescriptionAr}
                       </p>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
-                      <div className="text-xs font-black text-emerald-800 flex items-center gap-1.5">
-                        <TrendingUp className="w-4 h-4 text-emerald-600" />
-                        <span>قاعدة التكبير وزيادة الميزانية (Scaling Rule):</span>
+                    {/* Scale Rule */}
+                    <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
+                      <div className="font-black text-emerald-900 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                        <span>قاعدة التكبير والتوسع (Scale Rule):</span>
                       </div>
-                      <p className="text-xs text-emerald-950 leading-relaxed font-semibold">
+                      <p className="text-emerald-950 font-bold leading-relaxed">
                         {analysisResult.launchStrategy.scaleRuleDescriptionAr}
                       </p>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
-                      <div className="text-xs font-black text-amber-900 flex items-center gap-1.5">
-                        <Lightbulb className="w-4 h-4 text-amber-600" />
-                        <span>نصائح الخبير لرفع نسبة التأكيد والتوصيل:</span>
-                      </div>
-                      <ul className="text-xs text-amber-950 space-y-1 list-disc list-inside font-medium leading-relaxed">
-                        {analysisResult.launchStrategy.keyTipsAr.map((tip, idx) => (
-                          <li key={idx}>{tip}</li>
+                    {/* Tips */}
+                    <div className="space-y-1.5 pt-1">
+                      <div className="font-black text-slate-800">نصائح حاسمة لمضاعفة النتائج:</div>
+                      <ul className="space-y-1 text-slate-600 list-disc list-inside font-medium">
+                        {analysisResult.launchStrategy.keyTipsAr.map((tip, i) => (
+                          <li key={i}>{tip}</li>
                         ))}
                       </ul>
                     </div>
