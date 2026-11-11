@@ -1,6 +1,5 @@
 import { runtimeDataPath } from './runtimeData';
 import fs from 'fs';
-import { prisma } from './prisma';
 
 export type MarketCountry = 'ALL' | 'MA' | 'SN' | 'GCC' | 'US' | 'FR' | 'EU' | 'UK' | 'CA' | 'GLOBAL';
 
@@ -2196,32 +2195,7 @@ ${titleText} هو سر الجمال الطبيعي والإشراقة الدائ
   return result;
 }
 
-export async function getLiveCampaignAudits(storeId?: string) {
-  const storeIds = storeId && storeId !== 'ALL'
-    ? storeId.split(',').map(id => id.trim()).filter(Boolean)
-    : null;
-  const groups = await prisma.order.groupBy({
-    by: ['status'],
-    where: storeIds ? { storeId: { in: storeIds } } : undefined,
-    _count: { _all: true },
-  });
-  const statuses = new Map(groups.map(group => [group.status, group._count._all]));
-  const count = (...names: string[]) => names.reduce((sum, name) => sum + (statuses.get(name) ?? 0), 0);
-  const total = groups.reduce((sum, group) => sum + group._count._all, 0);
-  const delivered = count('DELIVERED', 'PAID_TO_SELLER');
-  const confirmed = delivered + count('CONFIRMED', 'SHIPPED', 'IN_TRANSIT', 'RETURNED');
-
-  return {
-    success: true,
-    kpis: {
-      totalOrders: total,
-      totalConfirmedOrders: confirmed,
-      totalDeliveredOrders: delivered,
-      realConfirmationRate: total ? Math.round(100 * confirmed / total) : null,
-      realDeliveryRate: confirmed ? Math.round(100 * delivered / confirmed) : null,
-    },
-  };
-}
+export { getLiveCampaignAudits } from './campaignSummary';
 
 export interface ImageScanResult {
   title: string;

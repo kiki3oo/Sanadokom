@@ -9,6 +9,33 @@ import {
 } from '@/lib/marketingAi';
 
 import { researchMarkets } from '@/lib/marketResearch';
+import { isCampaignPeriod } from '@/lib/campaignSummary';
+import { prisma } from '@/lib/prisma';
+import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/session';
+
+async function campaignResponse(req: NextRequest, storeId: unknown, period: unknown) {
+  if ((storeId !== undefined && typeof storeId !== 'string') || !isCampaignPeriod(period)) {
+    return NextResponse.json({ success: false, error: 'Filtres de campagne invalides.' }, { status: 400 });
+  }
+  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const user = session && await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { role: true, active: true, permissions: true },
+  });
+  let permissions: { viewDashboard?: boolean; assignedStoreIds?: string[] } = {};
+  try {
+    permissions = JSON.parse(user?.permissions || '{}') ?? {};
+  } catch {
+    // Invalid stored permissions grant no extra access.
+  }
+  if (!user?.active || (user.role !== 'ADMIN' && user.role !== 'LOGISTICS_MANAGER' && !permissions.viewDashboard)) {
+    return NextResponse.json({ success: false, error: 'Accès au copilote refusé.' }, { status: 403 });
+  }
+  const allowedStores = user.role === 'CALL_AGENT' && Array.isArray(permissions.assignedStoreIds) && permissions.assignedStoreIds.length
+    ? permissions.assignedStoreIds
+    : undefined;
+  return NextResponse.json(await getLiveCampaignAudits(storeId, period, allowedStores));
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -24,8 +51,7 @@ export async function GET(req: NextRequest) {
     const storeId = searchParams.get('storeId') || undefined;
 
     if (tab === 'CAMPAIGN_AUDIT') {
-      const audit = await getLiveCampaignAudits(storeId);
-      return NextResponse.json(audit);
+      return await campaignResponse(req, storeId, searchParams.get('period') ?? 'all');
     }
 
     const products = getWinningProducts({
@@ -53,20 +79,21 @@ export async function POST(req: NextRequest) {
     const { action } = body;
 
     if (action === 'RESEARCH_MARKETS') {
-      const { mode, target, source, product, language } = body;
+      const { mode, target, source, product, language, category } = body;
       if (
         (mode !== 'scout' && mode !== 'audit') ||
         typeof target !== 'string' || !target.trim() || target.length > 120 ||
         typeof source !== 'string' || source.length > 180 ||
         typeof product !== 'string' || product.length > 1600 ||
-        (mode === 'audit' && !product.trim())
+        (mode === 'audit' && !product.trim()) ||
+        (category !== undefined && !['COSMETICS', 'SUPPLEMENTS', 'BOTH'].includes(category))
       ) {
         return NextResponse.json({ success: false, error: 'MARKET_RESEARCH_INPUT' }, { status: 400 });
       }
 
       try {
         const report = await researchMarkets({
-          mode, target: target.trim(), source: source.trim(), product: product.trim(),
+          mode, target: target.trim(), source: source.trim(), product: product.trim(), category,
           language: language === 'ar' ? 'ar' : 'fr',
         });
         return NextResponse.json({ success: true, report });
@@ -107,9 +134,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'AUDIT_CAMPAIGNS') {
-      const storeId = body.storeId || undefined;
-      const audit = await getLiveCampaignAudits(storeId);
-      return NextResponse.json(audit);
+      return await campaignResponse(req, body.storeId, body.period ?? 'all');
     }
 
     if (action === 'TOGGLE_CAMPAIGN') {
