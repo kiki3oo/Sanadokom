@@ -31,6 +31,7 @@ export interface WinningProduct {
   videoExampleUrl?: string;
   metaAdLibraryKeyword: string;
   tikTokSearchKeyword: string;
+  tikTokTag?: string;
   aliExpressSearchKeyword?: string;
   suggestedAnglesAr: string[];
   addedAt: string;
@@ -148,6 +149,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'ultrasonic skin scrubber',
     tikTokSearchKeyword: 'ultrasonic skin scrubber',
+    tikTokTag: 'ultrasonicskinscrubber',
     aliExpressSearchKeyword: 'ultrasonic skin scrubber face spatula',
     suggestedAnglesAr: [
       'زاوية إزالة الرؤوس السوداء بدون ألم وبدون الذهاب إلى صالونات التجميل باهظة الثمن',
@@ -190,6 +192,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'vegetable chopper kitchen',
     tikTokSearchKeyword: 'vegetable chopper hack',
+    tikTokTag: 'vegetablechopper',
     aliExpressSearchKeyword: 'vegetable chopper mandoline slicer 14 in 1',
     suggestedAnglesAr: [
       'زاوية توفير الوقت ووداعاً لدموع تقطيع البصل ورائحة الثوم في اليدين',
@@ -232,6 +235,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'car wireless charger mount',
     tikTokSearchKeyword: 'car phone holder wireless charger',
+    tikTokTag: 'carphoneholder',
     aliExpressSearchKeyword: 'smart sensor wireless car charger mount 15w',
     suggestedAnglesAr: [
       'زاوية الأمان أثناء القيادة وتفادي مخالفات الهاتف واستعمال الـ GPS بسهولة',
@@ -274,6 +278,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'knee compression sleeve',
     tikTokSearchKeyword: 'knee compression sleeve pain relief',
+    tikTokTag: 'kneesleeve',
     aliExpressSearchKeyword: 'knee brace compression sleeve sports',
     suggestedAnglesAr: [
       'زاوية الصلاة براحة تامة وصعود السلالم بدون ألم أو طقطقة في الركبة',
@@ -318,6 +323,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1591290619615-99882299bb71?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'bladeless neck fan',
     tikTokSearchKeyword: 'portable neck fan',
+    tikTokTag: 'portableneckfan',
     aliExpressSearchKeyword: 'portable neck fan bladeless rechargeable',
     suggestedAnglesAr: [
       'زاوية التخلص من حرارة الصيف والتعرق أثناء العمل والمشي بدون استخدام اليدين',
@@ -360,6 +366,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'crystal hair eraser',
     tikTokSearchKeyword: 'crystal hair eraser',
+    tikTokTag: 'crystalhaireraser',
     aliExpressSearchKeyword: 'crystal hair eraser painless physical nano glass',
     suggestedAnglesAr: [
       'زاوية وداعاً للنتوءات الحمراء وجروح الشفرات ومصاريف الشمع المؤلمة',
@@ -402,6 +409,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'anti barking device dog',
     tikTokSearchKeyword: 'dog bark deterrent ultrasonic',
+    tikTokTag: 'dogbarkdeterrent',
     aliExpressSearchKeyword: 'ultrasonic dog bark control deterrent device',
     suggestedAnglesAr: [
       'زاوية النوم الهادئ وراحة البال بدون إزعاج نباح الكلب في الليل',
@@ -444,6 +452,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1588286840104-8957b019727f?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'lumbar decompression belt',
     tikTokSearchKeyword: 'spinal decompression back belt',
+    tikTokTag: 'decompressionbelt',
     aliExpressSearchKeyword: 'inflatable decompression back belt spinal traction',
     suggestedAnglesAr: [
       'زاوية استعادة القدرة على المشي والجلوس بدون ألم الديسك وعرق النسا',
@@ -488,6 +497,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'defroisseur vapeur portable',
     tikTokSearchKeyword: 'defroisseur vapeur vetements',
+    tikTokTag: 'defroisseurvapeur',
     aliExpressSearchKeyword: 'handheld garment steamer portable clothes',
     suggestedAnglesAr: [
       'زاوية التخلص من طاولة الكوي ومضيعة الوقت في الصباح مع بخار فوري في 15 ثانية',
@@ -530,6 +540,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'mini tronconneuse sans fil',
     tikTokSearchKeyword: 'mini chainsaw cordless',
+    tikTokTag: 'minichainsaw',
     aliExpressSearchKeyword: 'mini electric chainsaw cordless 21v battery',
     suggestedAnglesAr: [
       'زاوية تقليم حديقة منزلك بسهولة بدون مناشير بنزين ثقيلة وخطيرة',
@@ -572,6 +583,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'electric scalp massager hair growth',
     tikTokSearchKeyword: 'scalp massager red light hair growth',
+    tikTokTag: 'scalpmassager',
     aliExpressSearchKeyword: 'electric scalp massager red light therapy hair oil applicator',
     suggestedAnglesAr: [
       'زاوية وقف تساقط الشعر وتكثيف البصيلات في 3 أسابيع من الاستخدام اليومي',
@@ -616,6 +628,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'مبخرة الكترونية للشعر والسيارة',
     tikTokSearchKeyword: 'مبخرة الشعر الالكترونية',
+    tikTokTag: 'مبخرة_الكترونية',
     aliExpressSearchKeyword: 'portable electric bakhoor burner hair incense usb',
     suggestedAnglesAr: [
       'زاوية تبخير الشعر وتثبيت رائحة العود الذكية طوال اليوم بدون فحم ولا حروق',
@@ -658,6 +671,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1545259741-2ea3ebf61fa3?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'مكيف صحراوي صغير متنقل',
     tikTokSearchKeyword: 'portable mini air cooler',
+    tikTokTag: 'portableaircooler',
     aliExpressSearchKeyword: 'mini portable air conditioner cooler fan usb water ice',
     suggestedAnglesAr: [
       'زاوية التبريد الشخصي المريح أثناء العمل أو الطبخ في المطبخ بدون تكاليف التكييف الكبيرة',
@@ -702,6 +716,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'moulin electrique epices cafe',
     tikTokSearchKeyword: 'electric spice grinder stainless',
+    tikTokTag: 'electricspicegrinder',
     aliExpressSearchKeyword: 'electric coffee grinder spice grains stainless steel',
     suggestedAnglesAr: [
       'زاوية طحن التوابل والقهوة الطازجة في 10 ثوانٍ وداعاً للتعب اليدوي',
@@ -746,6 +761,7 @@ const DEFAULT_WINNING_PRODUCTS: WinningProduct[] = [
     imageUrl: 'https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: 'sunset projection lamp rgb',
     tikTokSearchKeyword: 'sunset lamp room decor',
+    tikTokTag: 'sunsetlamp',
     aliExpressSearchKeyword: 'sunset lamp projection led atmosphere light 16 colors',
     suggestedAnglesAr: [
       'زاوية تحويل غرفتك إلى استوديو تصوير رومانسي وساحر في لحظة',
@@ -993,6 +1009,7 @@ export function generateAiProductIdeas(
     imageUrl: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80',
     metaAdLibraryKeyword: item.metaKeyword || item.title.split(' ').slice(0, 3).join(' '),
     tikTokSearchKeyword: item.tikTokKeyword || item.title.split(' ').slice(0, 2).join(' '),
+    tikTokTag: item.tikTokTag || (item.tikTokKeyword || item.title).toLowerCase().replace(/[^a-z0-9]/g, ''),
     aliExpressSearchKeyword: item.aliKeyword || item.title,
     suggestedAnglesAr: [
       item.hookAr,

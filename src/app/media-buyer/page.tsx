@@ -289,12 +289,28 @@ export default function MediaBuyerPage() {
   // URL Helpers
   const getMetaAdLibraryUrl = (p: WinningProduct, countryCode: string = 'ALL') => {
     const query = encodeURIComponent(p.metaAdLibraryKeyword || p.title);
-    return `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${countryCode}&q=${query}&sort_data[direction]=desc&sort_data[mode]=relevancy_monthly_grouped`;
+    return `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${countryCode}&q=${query}&search_type=keyword_unordered&media_type=all`;
+  };
+
+  const getTikTokTagUrl = (p: WinningProduct) => {
+    if (p.tikTokTag) {
+      return `https://www.tiktok.com/tag/${encodeURIComponent(p.tikTokTag)}`;
+    }
+    const raw = (p.tikTokSearchKeyword || p.metaAdLibraryKeyword || p.title)
+      .toLowerCase()
+      .replace(/[^a-z0-9\u0600-\u06FF]/gi, '');
+    return `https://www.tiktok.com/tag/${encodeURIComponent(raw || 'viral')}`;
   };
 
   const getTikTokSearchUrl = (p: WinningProduct) => {
-    const query = encodeURIComponent(p.tikTokSearchKeyword || p.title);
-    return `https://www.tiktok.com/search?q=${query}`;
+    // Direct /search?q= on TikTok web throws "Une erreur est survenue" for non-logged-in desktop users.
+    // TikTok hashtag pages (/tag/...) are public SSR pages that load 100% reliably.
+    return getTikTokTagUrl(p);
+  };
+
+  const getTikTokGoogleSearchUrl = (p: WinningProduct) => {
+    const query = encodeURIComponent((p.tikTokSearchKeyword || p.metaAdLibraryKeyword || p.title) + ' site:tiktok.com');
+    return `https://www.google.com/search?tbm=vid&q=${query}`;
   };
 
   const getAliExpressUrl = (p: WinningProduct) => {
@@ -845,15 +861,39 @@ export default function MediaBuyerPage() {
                     <span>إعلانات فيسبوك ({selectedProductDetails.countryFlag || 'المحلي'})</span>
                   </a>
 
-                  {/* TikTok Search */}
+                  {/* TikTok Hashtag Videos (Direct & 100% Reliable) */}
                   <a
-                    href={getTikTokSearchUrl(selectedProductDetails)}
+                    href={getTikTokTagUrl(selectedProductDetails)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
+                    title="مشاهدة فيديوهات وتريندات تيك توك بدون أي خطأ في السيرفر"
+                  >
+                    <Play className="w-3.5 h-3.5 text-pink-400 fill-pink-400" />
+                    <span>فيديوهات تيك توك (هاشتاغ 🎵)</span>
+                  </a>
+
+                  {/* TikTok Google Videos (Fallback 100% Garanti) */}
+                  <a
+                    href={getTikTokGoogleSearchUrl(selectedProductDetails)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
+                    title="تصفح جميع فيديوهات تيك توك لهذا المنتج عبر Google"
+                  >
+                    <Video className="w-3.5 h-3.5 text-pink-400" />
+                    <span>فيديوهات تيك توك (Google 🎬)</span>
+                  </a>
+
+                  {/* TikTok Creative Center Top Ads */}
+                  <a
+                    href="https://ads.tiktok.com/business/creativecenter/inspiration/topads/pc/en"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
                   >
-                    <Play className="w-3.5 h-3.5 text-pink-400 fill-pink-400" />
-                    <span>فيديوهات تيك توك 🎵</span>
+                    <Zap className="w-3.5 h-3.5 text-amber-300" />
+                    <span>TikTok Top Ads Center 🔥</span>
                   </a>
 
                   {/* AliExpress Supplier Search */}
@@ -865,28 +905,6 @@ export default function MediaBuyerPage() {
                   >
                     <Package className="w-3.5 h-3.5" />
                     <span>الموردين (AliExpress 📦)</span>
-                  </a>
-
-                  {/* Google Video Ads */}
-                  <a
-                    href={getGoogleVideoAdsUrl(selectedProductDetails)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
-                  >
-                    <Video className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>إعلانات فيديو (Google 🎬)</span>
-                  </a>
-
-                  {/* TikTok Creative Center */}
-                  <a
-                    href="https://ads.tiktok.com/business/creativecenter/inspiration/topads/pc/en"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
-                  >
-                    <Zap className="w-3.5 h-3.5 text-amber-300" />
-                    <span>TikTok Top Ads Center</span>
                   </a>
                 </div>
               </div>
