@@ -1,5 +1,5 @@
+import { runtimeDataPath } from './runtimeData';
 import fs from 'fs';
-import path from 'path';
 
 export interface OutgoingWebhookConfig {
   enabled: boolean;
@@ -28,8 +28,8 @@ export interface WebhookDeliveryLog {
   timestamp: string;
 }
 
-const CONFIG_FILE = path.join(process.cwd(), 'prisma', 'outgoing-webhooks.json');
-const LOGS_FILE = path.join(process.cwd(), 'prisma', 'outgoing-webhooks-logs.json');
+const CONFIG_FILE = runtimeDataPath('outgoing-webhooks.json');
+const LOGS_FILE = runtimeDataPath('outgoing-webhooks-logs.json');
 
 const DEFAULT_CONFIG: OutgoingWebhookConfig = {
   enabled: false,

@@ -1,5 +1,5 @@
+import { runtimeDataPath } from './runtimeData';
 import fs from 'fs';
-import path from 'path';
 import { prisma } from './prisma';
 
 export type MarketCountry = 'ALL' | 'MA' | 'SN' | 'GCC' | 'US' | 'FR' | 'EU' | 'UK' | 'CA' | 'GLOBAL';
@@ -1211,7 +1211,7 @@ addedAt: '2026-11-10T18:00:00Z',
   },
 ];
 
-const DATA_FILE_PATH = path.join(process.cwd(), 'prisma', 'marketing-ai-data.json');
+const DATA_FILE_PATH = runtimeDataPath('marketing-ai-data.json');
 
 interface StoredMarketingData {
   winningProducts: WinningProduct[];
@@ -2197,148 +2197,29 @@ ${titleText} هو سر الجمال الطبيعي والإشراقة الدائ
 }
 
 export async function getLiveCampaignAudits(storeId?: string) {
-  const where: any = {};
-  if (storeId && storeId !== 'ALL' && !storeId.includes(',')) {
-    where.storeId = storeId;
-  }
-
-  const orders = await prisma.order.findMany({
-    where,
-    select: {
-      id: true,
-      orderNumber: true,
-      totalAmount: true,
-      status: true,
-      courierStatus: true,
-      createdAt: true,
-      utmSource: true,
-      utmCampaign: true,
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 500,
+  const storeIds = storeId && storeId !== 'ALL'
+    ? storeId.split(',').map(id => id.trim()).filter(Boolean)
+    : null;
+  const groups = await prisma.order.groupBy({
+    by: ['status'],
+    where: storeIds ? { storeId: { in: storeIds } } : undefined,
+    _count: { _all: true },
   });
-
-  const totalOrders = orders.length;
-  const confirmedOrders = orders.filter((o) =>
-    ['CONFIRMED', 'SHIPPED', 'DELIVERED', 'PAID_TO_SELLER'].includes(o.status)
-  ).length;
-  const deliveredOrders = orders.filter((o) =>
-    ['DELIVERED', 'PAID_TO_SELLER', 'Livré'].includes(o.courierStatus || '') || o.status === 'DELIVERED'
-  ).length;
-
-  const realConfirmationRate = totalOrders > 0 ? Math.round((confirmedOrders / totalOrders) * 100) : 80;
-  const realDeliveryRate = confirmedOrders > 0 ? Math.round((deliveredOrders / confirmedOrders) * 100) : 75;
-
-  const fbSetting = await prisma.facebookSetting.findFirst({
-    where: storeId && storeId !== 'ALL' ? { storeId } : undefined,
-  });
-
-  const sampleCampaigns = [
-    {
-      id: 'cmp-101',
-      name: 'Campagne_Sérum_Rovanx_CBO_Q4',
-      status: 'ACTIVE',
-      budgetDaily: 300,
-      spendToday: 265,
-      impressions: 14200,
-      clicks: 340,
-      ctr: 2.39,
-      cpc: 0.78,
-      cpm: 18.6,
-      metaLeads: 14,
-      confirmedLeads: 12,
-      deliveredLeads: 9,
-      realCprMad: 22.1,
-      realRoas: 3.4,
-      diagnosis: 'WINNER_SCALE',
-      actionTitleAr: '🟢 حملة رابحة ومربحة: جاهزة للتكبير (Scale) الآن!',
-      actionDescAr: 'الحملة تحقق عائد حقيقي ROAS 3.4 ونسبة تأكيد 85%. نوصي بزيادة الميزانية بنسبة +20% (من 300 درهم إلى 360 درهم/يوم).',
-      recommendationType: 'SCALE',
-      recommendedBudgetMad: 360,
-    },
-    {
-      id: 'cmp-102',
-      name: 'Test_AdSet_Brosse_Visage_Broad',
-      status: 'ACTIVE',
-      budgetDaily: 150,
-      spendToday: 135,
-      impressions: 4800,
-      clicks: 42,
-      ctr: 0.88,
-      cpc: 3.21,
-      cpm: 28.1,
-      metaLeads: 2,
-      confirmedLeads: 0,
-      deliveredLeads: 0,
-      realCprMad: 135,
-      realRoas: 0.2,
-      diagnosis: 'KILL_STOP_LOSS',
-      actionTitleAr: '🔴 أوقف هذه المجموعة الإعلانية فوراً (Stop Loss)!',
-      actionDescAr: 'صرفت 135 درهم ولم تحقق أي طلب مؤكد، مع نسبة نقر ضعيفة (CTR 0.88%). أوقفها فوراً لمنع هدر الميزانية.',
-      recommendationType: 'KILL',
-      recommendedBudgetMad: 0,
-    },
-    {
-      id: 'cmp-103',
-      name: 'Campagne_Hachoir_Kitchen_Retargeting',
-      status: 'ACTIVE',
-      budgetDaily: 200,
-      spendToday: 180,
-      impressions: 8900,
-      clicks: 195,
-      ctr: 2.19,
-      cpc: 0.92,
-      cpm: 20.2,
-      metaLeads: 9,
-      confirmedLeads: 7,
-      deliveredLeads: 5,
-      realCprMad: 25.7,
-      realRoas: 2.8,
-      diagnosis: 'STABLE_MONITOR',
-      actionTitleAr: '🟡 أداء جيد ومستقر: واصل المراقبة',
-      actionDescAr: 'الأداء في نطاق الربحية المستهدف (تكلفة الطلب المؤكد 25.7 درهم). اتركها شغالة وراقب نسبة التوصيل في نهاية اليوم.',
-      recommendationType: 'MONITOR',
-      recommendedBudgetMad: 200,
-    },
-    {
-      id: 'cmp-104',
-      name: 'Test_Creatives_Support_Voiture',
-      status: 'ACTIVE',
-      budgetDaily: 150,
-      spendToday: 110,
-      impressions: 7200,
-      clicks: 85,
-      ctr: 1.18,
-      cpc: 1.29,
-      cpm: 15.3,
-      metaLeads: 8,
-      confirmedLeads: 2,
-      deliveredLeads: 1,
-      realCprMad: 55.0,
-      realRoas: 1.1,
-      diagnosis: 'FUNNEL_BOTTLENECK',
-      actionTitleAr: '⚠️ مشكلة في جودة الليدات أو الكول سنتر (Bottleneck)',
-      actionDescAr: 'جاء 8 ليدات لكن تم تأكيد 2 فقط (نسبة تأكيد ضعيفة 25%). راجع صفحة الهبوط لتأكيد مصداقية الزوار أو اتصل سريعاً بالأرقام المسجلة.',
-      recommendationType: 'FIX_FUNNEL',
-      recommendedBudgetMad: 150,
-    },
-  ];
+  const statuses = new Map(groups.map(group => [group.status, group._count._all]));
+  const count = (...names: string[]) => names.reduce((sum, name) => sum + (statuses.get(name) ?? 0), 0);
+  const total = groups.reduce((sum, group) => sum + group._count._all, 0);
+  const delivered = count('DELIVERED', 'PAID_TO_SELLER');
+  const confirmed = delivered + count('CONFIRMED', 'SHIPPED', 'IN_TRANSIT', 'RETURNED');
 
   return {
     success: true,
-    metaConnected: Boolean(fbSetting?.accessToken && fbSetting?.adAccountId),
-    adAccountId: fbSetting?.adAccountId || 'act_sample_rovanx',
     kpis: {
-      totalAdSpendToday: 690,
-      totalConfirmedOrders: confirmedOrders > 0 ? confirmedOrders : 21,
-      realCprAvg: 32.8,
-      realCodRoasAvg: 2.85,
-      realConfirmationRate,
-      realDeliveryRate,
-      urgentKillCount: 1,
-      scalingReadyCount: 1,
+      totalOrders: total,
+      totalConfirmedOrders: confirmed,
+      totalDeliveredOrders: delivered,
+      realConfirmationRate: total ? Math.round(100 * confirmed / total) : null,
+      realDeliveryRate: confirmed ? Math.round(100 * delivered / confirmed) : null,
     },
-    campaigns: sampleCampaigns,
   };
 }
 

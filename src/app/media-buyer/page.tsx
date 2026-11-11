@@ -46,7 +46,7 @@ import {
   Scan,
   Factory,
 } from 'lucide-react';
-import type { WinningProduct } from '@/lib/marketingAi';
+import type { WinningProduct, getLiveCampaignAudits } from '@/lib/marketingAi';
 import { calculateCod, codFees, validCodInputs } from '@/lib/codEconomics';
 import { MarketResearch } from './MarketResearch';
 import { mediaBuyerTranslations } from '@/lib/mediaBuyerTranslations';
@@ -268,9 +268,10 @@ export default function MediaBuyerPage() {
   };
 
   // --- Tab 3: Media Buyer Copilot State ---
-  const [campaignData, setCampaignData] = useState<any | null>(null);
+  const [campaignData, setCampaignData] = useState<Awaited<ReturnType<typeof getLiveCampaignAudits>> | null>(null);
   const [campaignLoading, setCampaignLoading] = useState(false);
-  const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(null);
+  const [campaignError, setCampaignError] = useState(false);
+  const [campaignRefresh, setCampaignRefresh] = useState(0);
 
   // 1. Fetch Winning Products
   const fetchProducts = async () => {
@@ -306,35 +307,39 @@ export default function MediaBuyerPage() {
     } catch (e) {}
   };
 
-  // 3. Fetch Live Campaign Audit
-  const fetchCampaigns = async () => {
-    setCampaignLoading(true);
-    try {
-      const url =
-        selectedStoreId && selectedStoreId !== 'ALL'
-          ? `/api/marketing-ai?tab=CAMPAIGN_AUDIT&storeId=${selectedStoreId}`
-          : `/api/marketing-ai?tab=CAMPAIGN_AUDIT`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success) {
-        setCampaignData(data);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setCampaignLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchProducts();
     fetchStock();
-    fetchCampaigns();
   }, []);
 
   useEffect(() => {
     fetchProducts();
   }, [selectedNiche, selectedCountry, selectedStatus, selectedType]);
+
+  useEffect(() => {
+    if (activeTab !== 'MEDIA_BUYER_COPILOT') return;
+    const controller = new AbortController();
+    const query = new URLSearchParams({ tab: 'CAMPAIGN_AUDIT' });
+    if (selectedStoreId) query.set('storeId', selectedStoreId);
+    setCampaignData(null);
+    setCampaignError(false);
+    setCampaignLoading(true);
+
+    async function fetchCampaignSummary() {
+      try {
+        const response = await fetch(`/api/marketing-ai?${query}`, { signal: controller.signal });
+        if (!response.ok) throw new Error('Campaign summary unavailable');
+        const data = await response.json();
+        if (!controller.signal.aborted) setCampaignData(data);
+      } catch {
+        if (!controller.signal.aborted) setCampaignError(true);
+      } finally {
+        if (!controller.signal.aborted) setCampaignLoading(false);
+      }
+    }
+
+    void fetchCampaignSummary();
+    return () => controller.abort();
+  }, [activeTab, selectedStoreId, campaignRefresh]);
 
   // Handle selecting product from stock
   const handleStockSelect = (stockId: string) => {
@@ -500,30 +505,6 @@ export default function MediaBuyerPage() {
     }
   };
 
-  // Quick Action execution (Pause or Scale)
-  const handleCampaignAction = async (campaignId: string, actionType: 'KILL' | 'SCALE') => {
-    try {
-      const res = await fetch('/api/marketing-ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'TOGGLE_CAMPAIGN',
-          campaignId,
-          newStatus: actionType === 'KILL' ? 'PAUSED' : 'SCALED_+20%',
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setActionSuccessMessage(
-          actionType === 'KILL'
-            ? '✅ تم إيقاف الحملة بنجاح في فيسبوك وحماية الميزانية من الهدر!'
-            : '🚀 تم تطبيق زيادة الميزانية بنسبة +20% بنجاح دون إرباك خوارزمية التعلم!'
-        );
-        setTimeout(() => setActionSuccessMessage(null), 4000);
-      }
-    } catch (e) {}
-  };
-
   // URL Helpers
   const getMetaAdLibraryUrl = (p: WinningProduct, countryCode: string = 'ALL') => {
     const query = encodeURIComponent(p.metaAdLibraryKeyword || p.title);
@@ -633,13 +614,6 @@ export default function MediaBuyerPage() {
           </div>
         </div>
       </div>
-
-      {actionSuccessMessage && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 font-bold text-sm flex items-center gap-3 animate-in fade-in duration-200 shadow-sm">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-          <span>{actionSuccessMessage}</span>
-        </div>
-      )}
 
       {/* ========================================================================= */}
       {/* TAB 1: صائد المنتجات الرابحة الدقيقة (PRECISE WINNING PRODUCTS RADAR)      */}
@@ -1805,198 +1779,46 @@ export default function MediaBuyerPage() {
       {/* TAB 3: خبير الميديا باير اليومي (DAILY MEDIA BUYER COPILOT)                */}
       {/* ========================================================================= */}
       {activeTab === 'MEDIA_BUYER_COPILOT' && (
-        <div className="space-y-6">
-          {/* Top Real COD KPI Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-1">
-              <div className="text-xs font-bold text-slate-500">{t.copilotSpendToday}</div>
-              <div className="text-2xl font-black text-slate-900">
-                {campaignData?.kpis?.totalAdSpendToday || 690} DH
-              </div>
-              <div className="text-[11px] text-slate-500 font-medium">{t.copilotSpendSub}</div>
+        <section className="space-y-5 rounded-3xl border border-slate-200 bg-white p-5 sm:p-7">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-1">
+              <h2 className="text-lg font-black">{isAr ? 'متابعة الطلبات والتسليم' : 'Suivi des commandes et livraisons'}</h2>
+              <p className="text-sm text-slate-600">
+                {isAr ? 'كل الطلبات للمتاجر المحددة، حسب حالتها الحالية.' : 'Toutes les commandes des boutiques sélectionnées, selon leur statut actuel.'}
+              </p>
             </div>
-
-            <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-1">
-              <div className="text-xs font-bold text-slate-500">{t.copilotConfirmedOrders}</div>
-              <div className="text-2xl font-black text-emerald-600">
-                {campaignData?.kpis?.totalConfirmedOrders || 21} طلب
-              </div>
-              <div className="text-[11px] text-emerald-700 font-bold">{t.copilotConfRate} {campaignData?.kpis?.realConfirmationRate || 84}%</div>
-            </div>
-
-            <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-1">
-              <div className="text-xs font-bold text-slate-500">{t.copilotRealCpr}</div>
-              <div className="text-2xl font-black text-indigo-600">
-                {campaignData?.kpis?.realCprAvg || 32.8} DH
-              </div>
-              <div className="text-[11px] text-indigo-700 font-bold">{t.copilotCprSub}</div>
-            </div>
-
-            <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-1">
-              <div className="text-xs font-bold text-slate-500">{t.copilotRealRoas}</div>
-              <div className="text-2xl font-black text-purple-600">
-                {campaignData?.kpis?.realCodRoasAvg || 2.85}x
-              </div>
-              <div className="text-[11px] text-purple-700 font-bold">توصيل فعلي: {campaignData?.kpis?.realDeliveryRate || 79}%</div>
-            </div>
+            <button type="button" disabled={campaignLoading} onClick={() => setCampaignRefresh(value => value + 1)}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold disabled:opacity-50">
+              <RefreshCw className={`h-4 w-4 ${campaignLoading ? 'animate-spin' : ''}`} />
+              {isAr ? 'تحديث' : 'Actualiser'}
+            </button>
           </div>
 
-          {/* Urgent Daily Actions (Kill / Scale / Alerts) */}
-          <div className="bg-white rounded-3xl p-6 md:p-7 border border-slate-200/90 shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-lg">
-                  ⚡
+          {campaignLoading && <p role="status" className="text-sm text-slate-600">{isAr ? 'جارٍ التحميل…' : 'Chargement…'}</p>}
+          {campaignError && <p role="alert" className="text-sm text-red-700">{isAr ? 'تعذر تحميل الطلبات.' : 'Impossible de charger les commandes.'}</p>}
+          {campaignData && (
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {([
+                [isAr ? 'الطلبات' : 'Commandes', campaignData.kpis.totalOrders, null],
+                [isAr ? 'مؤكدة' : 'Confirmées', campaignData.kpis.totalConfirmedOrders, campaignData.kpis.realConfirmationRate],
+                [isAr ? 'مسلّمة' : 'Livrées', campaignData.kpis.totalDeliveredOrders, campaignData.kpis.realDeliveryRate],
+              ] as const).map(([label, count, rate]) => (
+                <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <dt className="text-sm font-semibold text-slate-600">{label}</dt>
+                  <dd className="mt-1 text-2xl font-black tabular-nums">
+                    {count} {rate !== null && <span className="text-sm font-semibold text-slate-600">({rate} %)</span>}
+                  </dd>
                 </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-900 font-heading">خطة العمل والتوصيات اليومية (Daily Action Plan)</h3>
-                  <p className="text-xs text-slate-500 font-medium">توجيهات الذكاء الاصطناعي بناءً على أداء الحملات ونسبة تأكيد الكول سنتر.</p>
-                </div>
-              </div>
+              ))}
+            </dl>
+          )}
 
-              <button
-                onClick={fetchCampaigns}
-                className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${campaignLoading ? 'animate-spin' : ''}`} />
-                <span>تحديث التوصيات</span>
-              </button>
-            </div>
-
-            {/* Recommendations Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(campaignData?.campaigns || []).map((camp: any) => {
-                const isKill = camp.recommendationType === 'KILL';
-                const isScale = camp.recommendationType === 'SCALE';
-                const isWarning = camp.recommendationType === 'FIX_FUNNEL';
-
-                return (
-                  <div
-                    key={camp.id}
-                    className={`p-5 rounded-2xl border transition-all space-y-3 ${
-                      isKill
-                        ? 'bg-rose-50/80 border-rose-200 text-rose-950'
-                        : isScale
-                        ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
-                        : isWarning
-                        ? 'bg-amber-50/80 border-amber-200 text-amber-950'
-                        : 'bg-slate-50 border-slate-200 text-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-black tracking-wide">{camp.actionTitleAr}</span>
-                        </div>
-                        <div className="text-[11px] font-mono text-slate-600 font-bold">{camp.name}</div>
-                      </div>
-
-                      {/* Action Button */}
-                      {isKill && (
-                        <button
-                          onClick={() => handleCampaignAction(camp.id, 'KILL')}
-                          className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-xs cursor-pointer shrink-0"
-                        >
-                          إيقاف الإعلان الآن 🛑
-                        </button>
-                      )}
-                      {isScale && (
-                        <button
-                          onClick={() => handleCampaignAction(camp.id, 'SCALE')}
-                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-xs cursor-pointer shrink-0"
-                        >
-                          زيادة الميزانية +20% 🚀
-                        </button>
-                      )}
-                    </div>
-
-                    <p className="text-xs leading-relaxed font-medium">{camp.actionDescAr}</p>
-
-                    <div className="grid grid-cols-4 gap-2 pt-2 border-t border-black/5 text-center text-xs">
-                      <div>
-                        <div className="opacity-70 text-[10px] font-bold">الصرف</div>
-                        <div className="font-black text-slate-900">{camp.spendToday} DH</div>
-                      </div>
-                      <div>
-                        <div className="opacity-70 text-[10px] font-bold">المؤكد</div>
-                        <div className="font-black text-emerald-700">{camp.confirmedLeads}</div>
-                      </div>
-                      <div>
-                        <div className="opacity-70 text-[10px] font-bold">سعر الطلب</div>
-                        <div className="font-black text-indigo-700">{camp.realCprMad} DH</div>
-                      </div>
-                      <div>
-                        <div className="opacity-70 text-[10px] font-bold">الـ CTR</div>
-                        <div className="font-black text-slate-900">{camp.ctr}%</div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* All Monitored Campaigns Table */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm space-y-4">
-            <h3 className="text-base font-black text-slate-900 font-heading">{t.copilotTableTitle}</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-right">
-                <thead className="bg-slate-50 text-slate-600 font-extrabold border-y border-slate-200">
-                  <tr>
-                    <th className="py-3 px-4">{t.copilotColName}</th>
-                    <th className="py-3 px-4">{t.copilotColStatus}</th>
-                    <th className="py-3 px-4">{t.copilotColBudget}</th>
-                    <th className="py-3 px-4">{t.copilotColSpend}</th>
-                    <th className="py-3 px-4">{t.copilotColClicks}</th>
-                    <th className="py-3 px-4">{t.copilotColConfirmed}</th>
-                    <th className="py-3 px-4">{t.copilotColCpr}</th>
-                    <th className="py-3 px-4">{t.copilotColRoas}</th>
-                    <th className="py-3 px-4">{t.copilotColAction}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {(campaignData?.campaigns || []).map((camp: any) => (
-                    <tr key={camp.id} className="hover:bg-slate-50/80 transition-colors font-semibold">
-                      <td className="py-3.5 px-4 font-bold text-slate-900 font-mono text-[11px]">{camp.name}</td>
-                      <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          {camp.status}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-800 font-bold">{camp.budgetDaily} DH</td>
-                      <td className="py-3.5 px-4 font-black text-slate-900">{camp.spendToday} DH</td>
-                      <td className="py-3.5 px-4 text-slate-700 font-bold">
-                        {camp.clicks} نقرة ({camp.ctr}%)
-                      </td>
-                      <td className="py-3.5 px-4 font-black text-emerald-600">{camp.confirmedLeads} طلب</td>
-                      <td className="py-3.5 px-4 font-black text-indigo-600">{camp.realCprMad} DH</td>
-                      <td className="py-3.5 px-4 font-black text-purple-600">{camp.realRoas}x</td>
-                      <td className="py-3.5 px-4">
-                        {camp.recommendationType === 'KILL' ? (
-                          <button
-                            onClick={() => handleCampaignAction(camp.id, 'KILL')}
-                            className="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 hover:bg-rose-200 font-black text-[10px] cursor-pointer"
-                          >
-                            إيقاف 🛑
-                          </button>
-                        ) : camp.recommendationType === 'SCALE' ? (
-                          <button
-                            onClick={() => handleCampaignAction(camp.id, 'SCALE')}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 hover:bg-emerald-200 font-black text-[10px] cursor-pointer"
-                          >
-                            تكبير +20% 🚀
-                          </button>
-                        ) : (
-                          <span className="text-slate-400 text-[11px] font-normal">مستقر</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+          <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+            {isAr
+              ? 'الإنفاق والعائد وإدارة الحملات غير متاحة. تتطلب هذه الميزات ربط منصة إعلانية مع بيانات الحملات.'
+              : 'Dépenses, ROAS et pilotage des campagnes indisponibles. Ces fonctions nécessitent une intégration publicitaire qui remonte les données de campagne.'}
+          </p>
+        </section>
       )}
 
       {/* ========================================================================= */}

@@ -113,13 +113,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'TOGGLE_CAMPAIGN') {
-      const { campaignId, newStatus } = body;
       return NextResponse.json({
-        success: true,
-        campaignId,
-        newStatus,
-        message: `La campagne/adset ${campaignId} a été mise à jour avec succès (${newStatus}).`,
-      });
+        success: false,
+        error: 'Les actions sur les campagnes publicitaires sont indisponibles.',
+      }, { status: 501 });
     }
 
     if (action === 'SCAN_IMAGE') {

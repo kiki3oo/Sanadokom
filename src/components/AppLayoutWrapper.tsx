@@ -60,11 +60,14 @@ export default function AppLayoutWrapper({ children }: { children: React.ReactNo
   }
 
   return (
-    <div dir={dir} className="flex min-h-screen bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-hidden">
+    <div dir={dir} className="flex min-h-screen bg-slate-50 text-slate-900 selection:bg-slate-900 selection:text-white overflow-x-clip">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:start-3 focus:z-[60] focus:rounded-lg focus:bg-slate-950 focus:px-4 focus:py-2 focus:text-white">
+        {dir === 'rtl' ? 'انتقل إلى المحتوى' : 'Aller au contenu'}
+      </a>
       <Sidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
-      <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-clip">
         <Header onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)} />
-        <main className="flex-1 p-3 sm:p-5 lg:p-7 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-slate-50 via-slate-50/70 to-slate-100/50">
+        <main id="main-content" tabIndex={-1} className="flex-1 p-3 sm:p-5 lg:p-7 overflow-x-clip bg-gradient-to-b from-slate-50 via-slate-50/70 to-slate-100/50">
           <div className="max-w-[1700px] mx-auto w-full">
             {children}
           </div>

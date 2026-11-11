@@ -252,7 +252,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (path === '/integrations') return hasPermission('viewIntegrations');
     if (path === '/whatsapp-bot') return hasPermission('viewIntegrations') || isManager || isAdmin;
     if (path === '/simulator') return hasPermission('viewSimulator');
-    if (path === '/admin') return hasPermission('viewAdmin');
+    if (path === '/admin') return false;
     if (path === '/audit-logs') return hasPermission('viewAdmin');
     if (path === '/productivity') return hasPermission('viewConfirmers') || isAdmin;
     if (path === '/media-buyer') return isManager || isAdmin || hasPermission('viewDashboard');

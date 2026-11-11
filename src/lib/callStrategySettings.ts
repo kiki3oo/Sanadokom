@@ -1,5 +1,5 @@
+import { runtimeDataPath } from './runtimeData';
 import fs from 'fs';
-import path from 'path';
 
 export interface CallStrategySettings {
   enableAutoRotation: boolean;
@@ -18,7 +18,7 @@ const DEFAULT_SETTINGS: CallStrategySettings = {
 };
 
 // Store in prisma/ directory which is always present and writable
-const SETTINGS_FILE_PATH = path.join(process.cwd(), 'prisma/call-strategy-settings.json');
+const SETTINGS_FILE_PATH = runtimeDataPath('call-strategy-settings.json');
 
 let memoryCache: CallStrategySettings | null = null;
 

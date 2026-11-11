@@ -283,7 +283,7 @@ function SidebarBody({ isMobile, onClose }: { isMobile?: boolean; onClose?: () =
       )}
 
       {/* Navigation Groups */}
-      <nav className="flex-1 px-2.5 py-3 space-y-3 overflow-y-auto custom-scrollbar relative">
+      <nav className="min-h-0 flex-1 px-2.5 py-3 space-y-3 overflow-y-auto custom-scrollbar relative">
         {visibleGroups.map((group, groupIdx) => {
           const GroupIcon = group.groupIcon;
 
@@ -330,9 +330,10 @@ function SidebarBody({ isMobile, onClose }: { isMobile?: boolean; onClose?: () =
                       key={item.href}
                       href={item.href}
                       onClick={() => onClose?.()}
-                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all relative group ${
+                      aria-current={isActive ? 'page' : undefined}
+                      className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all relative group ${
                         isActive
-                          ? 'bg-gradient-to-r from-slate-800/90 via-slate-800/60 to-slate-900/40 text-white font-bold border-l-2 border-amber-400 shadow-md shadow-black/20'
+                          ? 'bg-gradient-to-r from-slate-800/90 via-slate-800/60 to-slate-900/40 text-white font-bold border-s-2 border-amber-400 shadow-md shadow-black/20'
                           : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
                       }`}
                     >
@@ -344,7 +345,7 @@ function SidebarBody({ isMobile, onClose }: { isMobile?: boolean; onClose?: () =
                               : 'text-slate-400 group-hover:text-slate-200 group-hover:scale-105'
                           }`}
                         />
-                        <span className="truncate">{label}</span>
+                        <span className="leading-snug break-words">{label}</span>
                       </div>
                       {item.badge && (
                         <span
@@ -404,7 +405,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   return (
     <>
       {/* Desktop Persistent Sidebar (md+) */}
-      <aside className="hidden md:flex w-64 bg-[#0B0F19] text-white flex-col shrink-0 min-h-screen border-r border-slate-800/80 shadow-2xl relative select-none z-20">
+      <aside className="hidden md:flex w-64 xl:w-72 bg-[#0B0F19] text-white flex-col shrink-0 h-dvh self-start sticky top-0 border-e border-slate-800/80 select-none z-20">
         <SidebarBody />
       </aside>
 

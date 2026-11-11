@@ -1,3 +1,4 @@
+import { runtimeDataPath } from './runtimeData';
 import fs from 'fs';
 import path from 'path';
 
@@ -49,8 +50,8 @@ export interface WhatsAppMessageLog {
   upsellAccepted?: boolean;
 }
 
-const CONFIG_FILE_PATH = path.join(process.cwd(), 'prisma', 'whatsapp-bot-config.json');
-const LOGS_FILE_PATH = path.join(process.cwd(), 'prisma', 'whatsapp-bot-logs.json');
+const CONFIG_FILE_PATH = runtimeDataPath('whatsapp-bot-config.json');
+const LOGS_FILE_PATH = runtimeDataPath('whatsapp-bot-logs.json');
 
 const DEFAULT_CONFIG: WhatsAppBotConfig = {
   enabled: true,

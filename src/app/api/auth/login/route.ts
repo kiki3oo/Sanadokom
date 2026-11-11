@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
-import { createSessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { createSessionToken, SESSION_COOKIE_NAME, sessionSigningConfigured } from '@/lib/session';
+
+import { hashPassword, isLegacyPassword, verifyPassword } from '@/lib/passwords';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,11 +12,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { email, password } = body;
 
-    if (!email || !password) {
+    if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' ||
+        !password.trim() || Buffer.byteLength(password.trim(), 'utf8') > 1024) {
       return NextResponse.json(
         { error: 'Email et mot de passe obligatoires' },
         { status: 400 }
       );
+    }
+
+    if (!sessionSigningConfigured()) {
+      return NextResponse.json({ error: 'Authentification temporairement indisponible.' }, { status: 503 });
     }
 
     const cleanEmail = email.trim().toLowerCase();
@@ -36,12 +43,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Direct password match (or hashed comparison in SaaS)
-    if (user.passwordHash !== password.trim()) {
+    const suppliedPassword = password.trim();
+    if (!await verifyPassword(suppliedPassword, user.passwordHash)) {
       return NextResponse.json(
         { error: 'Adresse email ou mot de passe incorrect' },
         { status: 401 }
       );
+    }
+
+    if (isLegacyPassword(user.passwordHash)) {
+      const updated = await prisma.user.updateMany({
+        where: { id: user.id, passwordHash: user.passwordHash, active: true },
+        data: { passwordHash: await hashPassword(suppliedPassword) },
+      });
+      if (!updated.count) {
+        return NextResponse.json({ error: 'Veuillez réessayer de vous connecter.' }, { status: 409 });
+      }
     }
 
     // Safe user object (do not leak passwordHash)

@@ -117,11 +117,10 @@ export default function Header({ onToggleMobileMenu }: { onToggleMobileMenu?: ()
             </div>
           ) : (
             <div className="flex items-center gap-1 bg-slate-50 hover:bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs transition-all shrink-0">
-              <span className="text-base ml-1 sm:ml-2">{currentCountry.flag}</span>
-              <select
+              <select aria-label={t('header.changeCountry', 'Changer de pays')}
                 value={selectedCountry}
                 onChange={(e) => setSelectedCountry(e.target.value)}
-                className="bg-transparent text-xs font-black text-slate-900 pr-5 sm:pr-6 py-1 focus:outline-none cursor-pointer max-w-[100px] sm:max-w-none truncate"
+                className="bg-transparent text-xs font-black text-slate-900 ps-2 pe-1 py-1 cursor-pointer max-w-[110px] sm:max-w-none truncate"
               >
                 {availableCountries.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -134,11 +133,10 @@ export default function Header({ onToggleMobileMenu }: { onToggleMobileMenu?: ()
         ) : (
           /* Admin & Manager Country Switcher */
           <div className="flex items-center gap-1 bg-slate-50 hover:bg-slate-100/90 transition-all p-1 rounded-xl border border-slate-200 shadow-2xs shrink-0">
-            <span className="text-base ml-1 sm:ml-2">{currentCountry.flag}</span>
-            <select
+            <select aria-label={t('header.changeCountry', 'Changer de pays')}
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
-              className="bg-transparent text-xs font-black text-slate-900 pr-4 sm:pr-6 py-1 focus:outline-none cursor-pointer max-w-[110px] sm:max-w-none truncate"
+              className="bg-transparent text-xs font-black text-slate-900 ps-2 pe-1 py-1 cursor-pointer max-w-[135px] sm:max-w-none truncate"
               title="Changer de pays"
             >
               {availableCountries.map((c) => (

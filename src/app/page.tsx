@@ -468,13 +468,15 @@ export default function DashboardPage() {
               <span className="text-xs font-black uppercase tracking-wider text-slate-800">
                 {t('dash.diagnosticTitle')}
               </span>
-              <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${topCostDriver.badgeColor}`}>
+              {topCostDriver.amount > 0 && <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${topCostDriver.badgeColor}`}>
                 {t('dash.topCostItem')} {topCostDriver.name} ({topCostPct}%)
-              </span>
+              </span>}
             </div>
             <p className="text-xs text-slate-600 mt-1.5 font-medium leading-relaxed max-w-3xl">
-              💡 <span className="text-slate-800 font-bold">{t('dash.adviceHeader')} </span>
-              {topCostDriver.advice}
+              {topCostDriver.amount > 0 ? (
+                <><span className="font-bold text-slate-800">{t('dash.adviceHeader')} </span>{topCostDriver.advice}</>
+              ) : t('dash.noExpenses', language === 'ar' ? 'لا توجد مصاريف مسجلة ضمن الفلاتر المحددة.' :
+                language === 'en' ? 'No expenses recorded for the selected filters.' : 'Aucune charge enregistrée pour les filtres sélectionnés.')}
             </p>
           </div>
         </div>

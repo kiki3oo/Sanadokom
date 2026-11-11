@@ -1,3 +1,4 @@
+import { runtimeDataPath } from './runtimeData';
 import fs from 'fs';
 import path from 'path';
 import { AVAILABLE_COURIERS } from '@/lib/couriers';
@@ -31,7 +32,7 @@ export interface ShippingWorkflowConfig {
   lastDispatchedCount?: number;
 }
 
-const CONFIG_FILE_PATH = path.join(process.cwd(), 'prisma', 'shipping-workflow-config.json');
+const CONFIG_FILE_PATH = runtimeDataPath('shipping-workflow-config.json');
 
 export const DEFAULT_SHIPPING_CONFIG: ShippingWorkflowConfig = {
   mode: 'SINGLE_COURIER', // Default to Single Courier as preferred by user

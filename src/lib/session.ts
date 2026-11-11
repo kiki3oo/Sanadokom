@@ -1,7 +1,14 @@
 // Session Utility for Cookie-Based Authentication
 // Edge Runtime and Node.js Compatible (Standard Web Crypto API)
 
-const SESSION_SECRET = process.env.SESSION_SECRET || 'sanadokom-cod-platform-security-secret-2026-key';
+export function sessionSigningConfigured(): boolean {
+  return process.env.NODE_ENV !== 'production' || (process.env.SESSION_SECRET?.trim().length ?? 0) >= 32;
+}
+
+function sessionSigningSecret(): string {
+  if (!sessionSigningConfigured()) throw new Error('SESSION_SECRET is missing or too short.');
+  return process.env.SESSION_SECRET?.trim() || 'local-development-only-sanadokom-session';
+}
 export const SESSION_COOKIE_NAME = 'sanadokom_session';
 
 function base64UrlEncode(str: string): string {
@@ -36,7 +43,7 @@ export async function createSessionToken(userId: string, role: string, email: st
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',
-    encoder.encode(SESSION_SECRET),
+    encoder.encode(sessionSigningSecret()),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
@@ -62,7 +69,7 @@ export async function verifySessionToken(
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
       'raw',
-      encoder.encode(SESSION_SECRET),
+      encoder.encode(sessionSigningSecret()),
       { name: 'HMAC', hash: 'SHA-256' },
       false,
       ['verify']

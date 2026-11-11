@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
+import { hashPassword, validNewPassword } from '@/lib/passwords';
+import { getActiveAdmin, userFields } from './access';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const admin = await getActiveAdmin(req);
+    if (!admin) return NextResponse.json({ error: 'Accès réservé aux administrateurs.' }, { status: 403 });
     const users = await prisma.user.findMany({
-      include: {
+      select: {
+        ...userFields,
         _count: {
           select: {
             assignedOrders: true,
@@ -27,6 +32,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const admin = await getActiveAdmin(req);
+    if (!admin) return NextResponse.json({ error: 'Accès réservé aux administrateurs.' }, { status: 403 });
     const body = await req.json();
     const { name, email, password, role, phone, commissionFee, active, permissions } = body;
 
@@ -35,6 +42,10 @@ export async function POST(req: NextRequest) {
         { error: 'Le nom, l email et le mot de passe sont obligatoires' },
         { status: 400 }
       );
+    }
+
+    if (!validNewPassword(password)) {
+      return NextResponse.json({ error: 'Utilisez un mot de passe de 12 caractères minimum.' }, { status: 400 });
     }
 
     const existing = await prisma.user.findUnique({
@@ -49,10 +60,11 @@ export async function POST(req: NextRequest) {
     }
 
     const newUser = await prisma.user.create({
+      select: userFields,
       data: {
         name: name.trim(),
         email: email.trim().toLowerCase(),
-        passwordHash: password.trim(), // plain/hash for SaaS
+        passwordHash: await hashPassword(password.trim()),
         role: role || 'CALL_AGENT',
         phone: phone || null,
         commissionFee: commissionFee ? parseFloat(commissionFee) : 10.0,
@@ -62,7 +74,7 @@ export async function POST(req: NextRequest) {
     });
 
     await logActivity({
-      userName: body.adminName || 'Admin',
+      userName: admin.name,
       userRole: 'ADMIN',
       action: 'USER_CREATE',
       entity: 'USER',

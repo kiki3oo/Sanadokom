@@ -1,3 +1,4 @@
+import { runtimeDataPath } from './runtimeData';
 import fs from 'fs';
 import path from 'path';
 import { prisma } from '@/lib/prisma';
@@ -54,7 +55,7 @@ interface SuppliersData {
   payments: SupplierPayment[];
 }
 
-const DATA_FILE = path.join(process.cwd(), 'prisma', 'suppliers-data.json');
+const DATA_FILE = runtimeDataPath('suppliers-data.json');
 
 const INITIAL_SUPPLIERS: Supplier[] = [
   {

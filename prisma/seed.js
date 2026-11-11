@@ -1,48 +1,25 @@
 const { PrismaClient } = require('@prisma/client');
+const { hashPassword, validNewPassword } = require('../src/lib/passwords');
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding COD SaaS Database...');
 
-  // 1. Create Default Users (Admin & Call Agents)
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@codsaas.com' },
-    update: {
-      name: 'Younes OUAKRIM',
-      passwordHash: 'admin123',
-    },
-    create: {
-      name: 'Younes OUAKRIM',
-      email: 'admin@codsaas.com',
-      passwordHash: 'admin123',
-      role: 'ADMIN',
-      active: true,
-    },
-  });
-
-  const agent1 = await prisma.user.upsert({
-    where: { email: 'agent.salma@codsaas.com' },
-    update: {},
-    create: {
-      name: 'Salma Benali',
-      email: 'agent.salma@codsaas.com',
-      passwordHash: 'agent123',
-      role: 'CALL_AGENT',
-      active: true,
-    },
-  });
-
-  const agent2 = await prisma.user.upsert({
-    where: { email: 'agent.omar@codsaas.com' },
-    update: {},
-    create: {
-      name: 'Omar Tazi',
-      email: 'agent.omar@codsaas.com',
-      passwordHash: 'agent123',
-      role: 'CALL_AGENT',
-      active: true,
-    },
-  });
+  // Create the initial administrator only when a setup password is provided.
+  const adminEmail = 'admin@codsaas.com';
+  const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail }, select: { id: true } });
+  if (!existingAdmin) {
+    const password = process.env.SEED_ADMIN_PASSWORD;
+    if (!validNewPassword(password)) throw new Error('Set SEED_ADMIN_PASSWORD (at least 12 characters) before initial seeding.');
+    await prisma.user.create({
+      data: {
+        name: 'Administrateur',
+        email: adminEmail,
+        passwordHash: await hashPassword(password.trim()),
+        role: 'ADMIN',
+      },
+    });
+  }
 
   // 2. Create Stores
   const storeRovanxMaroc = await prisma.store.upsert({

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
+import { hashPassword, validNewPassword } from '@/lib/passwords';
+import { getActiveAdmin, userFields } from '../access';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,13 +11,20 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const admin = await getActiveAdmin(req);
+    if (!admin) return NextResponse.json({ error: 'Accès réservé aux administrateurs.' }, { status: 403 });
     const body = await req.json();
     const { name, email, password, role, phone, commissionFee, active, permissions } = body;
 
     const updateData: any = {};
     if (name !== undefined) updateData.name = name.trim();
     if (email !== undefined) updateData.email = email.trim().toLowerCase();
-    if (password !== undefined && password.trim()) updateData.passwordHash = password.trim();
+    if (password !== undefined && password !== '') {
+      if (!validNewPassword(password)) {
+        return NextResponse.json({ error: 'Utilisez un mot de passe de 12 caractères minimum.' }, { status: 400 });
+      }
+      updateData.passwordHash = await hashPassword(password.trim());
+    }
     if (role !== undefined) updateData.role = role;
     if (phone !== undefined) updateData.phone = phone;
     if (commissionFee !== undefined) updateData.commissionFee = parseFloat(commissionFee);
@@ -27,6 +36,7 @@ export async function PATCH(
     const updatedUser = await prisma.user.update({
       where: { id: params.id },
       data: updateData,
+      select: userFields,
     });
 
     // Transfer orders if requested (e.g. agent leave or departure)
@@ -49,7 +59,7 @@ export async function PATCH(
       });
 
       await logActivity({
-        userName: body.adminName || 'Admin',
+        userName: admin.name,
         userRole: 'ADMIN',
         action: 'STATUS_CHANGE',
         entity: 'ORDER',
@@ -58,7 +68,7 @@ export async function PATCH(
     }
 
     await logActivity({
-      userName: body.adminName || 'Admin',
+      userName: admin.name,
       userRole: 'ADMIN',
       action: 'USER_EDIT',
       entity: 'USER',
@@ -78,9 +88,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { searchParams } = new URL(req.url);
-    const adminName = searchParams.get('adminName') || 'Admin';
-
+    const admin = await getActiveAdmin(req);
+    if (!admin) return NextResponse.json({ error: 'Accès réservé aux administrateurs.' }, { status: 403 });
     const userToDelete = await prisma.user.findUnique({ where: { id: params.id } });
 
     // Unassign orders before deleting
@@ -99,7 +108,7 @@ export async function DELETE(
 
     if (userToDelete) {
       await logActivity({
-        userName: adminName,
+        userName: admin.name,
         userRole: 'ADMIN',
         action: 'USER_EDIT',
         entity: 'USER',

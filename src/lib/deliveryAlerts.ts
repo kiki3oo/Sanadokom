@@ -1,3 +1,4 @@
+import { runtimeDataPath } from './runtimeData';
 import fs from 'fs';
 import path from 'path';
 
@@ -27,7 +28,7 @@ export interface DeliveryAlert {
   resolvedAction?: string | null;
 }
 
-const ALERTS_FILE_PATH = path.join(process.cwd(), 'prisma', 'delivery-alerts.json');
+const ALERTS_FILE_PATH = runtimeDataPath('delivery-alerts.json');
 
 let memoryAlerts: DeliveryAlert[] | null = null;
 

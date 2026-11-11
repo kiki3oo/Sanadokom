@@ -1,3 +1,4 @@
+import { runtimeDataPath } from './runtimeData';
 import fs from 'fs';
 import path from 'path';
 
@@ -49,7 +50,7 @@ export interface ReclamationTicket {
   resolvedAt?: string | null;
 }
 
-const RECLAMATIONS_FILE_PATH = path.join(process.cwd(), 'prisma', 'reclamations.json');
+const RECLAMATIONS_FILE_PATH = runtimeDataPath('reclamations.json');
 
 let memoryTickets: ReclamationTicket[] | null = null;
 
