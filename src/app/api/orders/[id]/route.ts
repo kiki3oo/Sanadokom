@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
 import { addDeliveryAlert, resolveDeliveryAlert } from '@/lib/deliveryAlerts';
 import { dispatchOutgoingWebhook } from '@/lib/outgoingWebhooks';
+import { notifyWhatsAppDelivery } from '@/lib/whatsappDeliveryWebhook';
 
 export async function GET(
   req: NextRequest,
@@ -320,6 +321,10 @@ export async function PATCH(
         details: `Commande #${currentOrder.orderNumber} modifiée : ${changes.join(' | ')}`,
       });
     }
+
+    await notifyWhatsAppDelivery(updatedOrder, currentOrder).catch((error) =>
+      console.error('WhatsApp delivery status webhook failed:', error instanceof Error ? error.message : 'Unknown error')
+    );
 
     // Trigger Outgoing Webhook on status changes
     if (status && status !== currentOrder.status) {
