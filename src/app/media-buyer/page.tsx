@@ -20,7 +20,17 @@ import {
   Trash2,
   Scan,
   Factory,
+  PackagePlus,
+  Layers,
+  Copy,
+  Check,
+  TrendingUp,
+  AlertTriangle,
+  XCircle,
+  ArrowUpRight,
+  Zap,
 } from 'lucide-react';
+import Link from 'next/link';
 import type { CampaignPeriod, getLiveCampaignAudits } from '@/lib/campaignSummary';
 import { calculateCod, codFees, validCodInputs } from '@/lib/codEconomics';
 import { MarketResearch } from './MarketResearch';
@@ -221,6 +231,40 @@ export default function MediaBuyerPage() {
     estDeliveryRate: Math.max(0, codInput.estDeliveryRate - 10),
     adCostPerLead: economics.assumedCpa,
   });
+
+  // --- Bundle Economics Simulator (Pack 1 vs Pack 2 vs Pack 3) ---
+  const [pack2PriceInput, setPack2PriceInput] = useState<number | undefined>(undefined);
+  const [pack3PriceInput, setPack3PriceInput] = useState<number | undefined>(undefined);
+  const effectivePack2Price = pack2PriceInput ?? (analysisInput.retailPrice > 0 ? Math.round(analysisInput.retailPrice * 1.6) : 0);
+  const effectivePack3Price = pack3PriceInput ?? (analysisInput.retailPrice > 0 ? Math.round(analysisInput.retailPrice * 2.2) : 0);
+
+  const pack2Input = {
+    ...codInput,
+    retailPrice: effectivePack2Price,
+    wholesalePrice: analysisInput.wholesalePrice * 2,
+    // shipping stays 1 parcel for COD!
+  };
+  const economicsPack2 = validCodInputs(pack2Input) ? calculateCod(pack2Input) : null;
+
+  const pack3Input = {
+    ...codInput,
+    retailPrice: effectivePack3Price,
+    wholesalePrice: analysisInput.wholesalePrice * 3,
+    // shipping stays 1 parcel for COD!
+  };
+  const economicsPack3 = validCodInputs(pack3Input) ? calculateCod(pack3Input) : null;
+
+  // Push to Stock State from Validator
+  const [pushingValidatorStock, setPushingValidatorStock] = useState(false);
+  const [pushedValidatorStock, setPushedValidatorStock] = useState(false);
+  const [pushValidatorStockError, setPushValidatorStockError] = useState('');
+
+  // Storyboard State
+  const [storyboardCopied, setStoryboardCopied] = useState(false);
+
+  // Copilot Decision Filter
+  const [copilotFilter, setCopilotFilter] = useState<'ALL' | 'SCALE' | 'KILL' | 'ALERT'>('ALL');
+
   const countryNames: Record<string, string> = {
     MA: 'Maroc', GCC: 'Arabie saoudite', SN: 'Sénégal', US: 'États-Unis',
     FR: 'France', UK: 'Royaume-Uni', CA: 'Canada',
@@ -366,6 +410,94 @@ export default function MediaBuyerPage() {
       imageUrl: '',
     });
     setActiveTab('PRODUCT_VALIDATOR');
+  };
+
+  const handlePushValidatorToStock = async () => {
+    if (pushingValidatorStock || pushedValidatorStock) return;
+    if (!analysisInput.title.trim()) return;
+    setPushingValidatorStock(true);
+    setPushValidatorStockError('');
+
+    try {
+      const generatedSku = ('VAL-' + (analysisInput.niche || 'COD').slice(0, 3) + '-' + Date.now().toString(36).slice(-4)).toUpperCase();
+      const targetStore = selectedStoreId !== 'ALL' && selectedStoreId ? selectedStoreId : (stockItems[0]?.storeId || 'ALL');
+
+      const res = await fetch('/api/stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'CREATE',
+          storeId: targetStore,
+          sku: generatedSku,
+          name: analysisInput.title.trim(),
+          description: analysisInput.ingredientsOrDetails || analysisInput.description || 'Produit validé sur Media Buyer Copilot',
+          costPrice: analysisInput.wholesalePrice || 0,
+          sellingPrice: analysisInput.retailPrice || 0,
+          stockQuantity: 50,
+          alertThreshold: 10,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPushedValidatorStock(true);
+        fetchStock();
+      } else {
+        setPushValidatorStockError(data.error || (isAr ? 'تعذر الحفظ في المخزون' : 'Erreur lors de la création'));
+      }
+    } catch {
+      setPushValidatorStockError(isAr ? 'خطأ في الاتصال' : 'Erreur de communication');
+    } finally {
+      setPushingValidatorStock(false);
+    }
+  };
+
+  const handleCopyStoryboard = async () => {
+    const title = analysisInput.title.trim() || (isAr ? 'المنتج الرابح' : 'Produit Gagnant');
+    const curr = getCurrencySymbol();
+    const p2 = effectivePack2Price;
+
+    const storyboardText = `🎬 STYORYBOARD UGC & VIDÉO PUBLICITAIRE 🎬
+📦 Produit: ${title}
+🎯 Marché: ${countryNames[analysisInput.targetCountry] || analysisInput.targetCountry}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏱️ SCÈNE 1 (0-3s) : LE HOOK (الخطاف البصري)
+🎬 Visuel / B-Roll: لقطة مقربة (Close-up) سريعة تظهر المشكل الحقيقي بوضوح صادم يجذب الانتباه قبل التمرير.
+🎙️ Voix-off (الدارجة): "واش حتى نتا عيتي من مشكل ${title}؟ ها الحل السحري اللي قلب السوق اليوم!"
+📝 Texte à l'écran: "عيتي من هاد المشكل؟ 🛑 الحل وصل!"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏱️ SCÈNE 2 (3-8s) : AGITATION DU PROBLÈME (إبراز المعاناة)
+🎬 Visuel: شخص كيجرب طرق تقليدية قديمة وما كتنفعش، تعبير وجه فيه قلق أو إرهاق.
+🎙️ Voix-off (الدارجة): "جربتي شحال من حاجة وما عطات حتى نتيجة وضيعتي فلوسك على والو؟"
+📝 Texte à l'écran: "الحلول القديمة = مضيعة د الفلوس 💸"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏱️ SCÈNE 3 (8-18s) : DÉMONSTRATION DU PRODUIT (الحل السحري)
+🎬 Visuel: فتح المنتج واستعماله فورياً، لقطة قبل وبعد (Before & After) توضح الفارق الجذري والسهولة في الاستخدام.
+🎙️ Voix-off (الدارجة): "مع ${title} النتيجة كتبان من أول استعمال! جودة عالية وتصميم مبتكر كيحل المشكل فثواني معدودة."
+📝 Texte à l'écran: "النتيجة فورية ⚡ سهولة وسرعة فائقة"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏱️ SCÈNE 4 (18-24s) : PREUVE SOCIALE & GARANTIE (المصداقية والضمان)
+🎬 Visuel: لقطات سريعة لزبناء فرحانين، تقييمات 5 نجوم وفتح الباكيج الأصلي مع الضمان.
+🎙️ Voix-off (الدارجة): "أكثر من 2,400 زبون جربوه وشكرونا عليه، والضمانة حتى تقلب سلعتك عاد تخلص!"
+📝 Texte à l'écran: "⭐⭐⭐⭐⭐ ثقة آلاف الزبناء مع ضمان الرضا"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏱️ SCÈNE 5 (24-30s) : OFFRE COD & CALL TO ACTION (عرض الدفع عند الاستلام)
+🎬 Visuel: إظهار باقة 2 قطع مع هدية أو شحن مجاني، وتوضيح سهولة ملء الاستمارة والدفع عند الباب.
+🎙️ Voix-off (الدارجة): "استفد دابا من عرض باقة 2 قطع بـ ${p2} ${curr} فقط، والتوصيل مجاني لجميع المدن حتى لباب دارك! الدفع عند الاستلام. اضغط لتحت واطلب دابا!"
+📝 Texte à l'écran: "🚚 توصيل فابور + الدفع عند الاستلام 📦 اضغط هنا للطلب"`;
+
+    try {
+      await navigator.clipboard.writeText(storyboardText);
+      setStoryboardCopied(true);
+      setTimeout(() => setStoryboardCopied(false), 3500);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   // Image Upload & Visual AI Scanner Handlers
@@ -543,13 +675,13 @@ export default function MediaBuyerPage() {
                 </div>
               </div>
 
-              {/* Quick Select from existing Sanadokom Stock */}
-              {stockItems.length > 0 && (
-                <div className="w-full sm:w-auto shrink-0">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0">
+                {/* Quick Select from existing Sanadokom Stock */}
+                {stockItems.length > 0 && (
                   <select
                     value={selectedStockId}
                     onChange={(e) => handleStockSelect(e.target.value)}
-                    className="w-full sm:w-64 text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-800 cursor-pointer focus:bg-white shadow-2xs"
+                    className="w-full sm:w-60 text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 font-bold text-slate-800 cursor-pointer focus:bg-white shadow-2xs"
                   >
                     <option value="">{t.valChooseStock}</option>
                     {stockItems.map((item) => (
@@ -558,9 +690,42 @@ export default function MediaBuyerPage() {
                       </option>
                     ))}
                   </select>
-                </div>
-              )}
+                )}
+
+                {/* 1-Click Push to Stock Button */}
+                {pushedValidatorStock ? (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300">
+                    <Check className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>{isAr ? 'تم الحفظ بالمخزون !' : 'Ajouté au stock !'}</span>
+                    <Link href="/stock" className="underline ml-1 font-black">
+                      {isAr ? 'عرض' : 'Voir'}
+                    </Link>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={pushingValidatorStock || !analysisInput.title.trim()}
+                    onClick={handlePushValidatorToStock}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2.5 text-xs font-bold transition-all disabled:opacity-40 shadow-xs cursor-pointer"
+                  >
+                    {pushingValidatorStock ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>{isAr ? 'جارٍ الحفظ…' : 'Enregistrement…'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <PackagePlus className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{isAr ? '📦 حفظ فالمخزون (1-Clic)' : '📦 Enregistrer au stock'}</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
+            {pushValidatorStockError && (
+              <p className="text-xs text-rose-600 font-bold -mt-3">{pushValidatorStockError}</p>
+            )}
 
             {/* Visual Image Scanner & Reverse Image Search Zone */}
             <div
@@ -989,6 +1154,336 @@ export default function MediaBuyerPage() {
             )}
           </section>
 
+          {/* ========================================================================= */}
+          {/* BUNDLE & OFFER MARGIN SIMULATOR (Pack 1 vs Pack 2 vs Pack 3)              */}
+          {/* ========================================================================= */}
+          <section className="rounded-3xl border border-indigo-200 bg-white p-6 shadow-sm space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-black">
+                  <Layers className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>{isAr ? 'سر أرباح الـ COD الحقيقية' : 'Secret de rentabilité COD'}</span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900">
+                  {isAr ? 'محاكي أرباح الباقات والأوفر (Bundle & Offer Simulator)' : 'Simulateur d’offres et packs (Bundles COD)'}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {isAr
+                    ? 'في التجارة الإلكترونية بالدفع عند الاستلام، أكثر من 65% من أرباحك الصافية كتجي من بيع 2 قطع (باك Best Seller) لأن مصاريف الشحن والتأكيد كتبقى نفسها!'
+                    : 'En e-commerce COD, plus de 65% de votre marge nette provient du pack duo : vos frais de livraison et confirmation restent identiques pour un colis unique !'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* PACK 1 */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 space-y-3 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700">
+                      {isAr ? 'باك 1 (قطعة واحدة)' : 'Pack 1 (1 Unité)'}
+                    </span>
+                    <span className="text-xs font-bold text-slate-500">1x Produit</span>
+                  </div>
+                  <div className="text-2xl font-black text-slate-900">
+                    {analysisInput.retailPrice} {getCurrencySymbol()}
+                  </div>
+                  <p className="text-xs text-slate-600">
+                    {isAr ? 'سعر الجملة:' : 'Coût d’achat :'} <strong>{analysisInput.wholesalePrice} {getCurrencySymbol()}</strong> + {isAr ? 'شحن:' : 'Livraison :'} <strong>{analysisInput.shippingFee} {getCurrencySymbol()}</strong>
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-slate-200/80 space-y-2 text-xs">
+                  <div className="flex justify-between font-medium">
+                    <span className="text-slate-600">{isAr ? 'الربح الصافي / طلب مستلم:' : 'Bénéfice net / livré :'}</span>
+                    <span className="font-black text-slate-900">{economics?.netProfitPerDelivered ?? '—'} {getCurrencySymbol()}</span>
+                  </div>
+                  <div className="flex justify-between font-medium">
+                    <span className="text-slate-600">{isAr ? 'أقصى CPA مسموح (Break-even):' : 'CPA max (Break-even) :'}</span>
+                    <span className="font-black text-indigo-700">{economics?.breakEvenCpa ?? '—'} {getCurrencySymbol()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* PACK 2 - BEST SELLER */}
+              <div className="rounded-2xl border-2 border-indigo-500 bg-gradient-to-b from-indigo-50/70 to-white p-5 space-y-3 flex flex-col justify-between shadow-md relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+                  ⭐ {isAr ? 'الأكثر مبيعاً وربحاً' : 'Best Seller COD'}
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-indigo-600 text-white">
+                      {isAr ? 'باك 2 (قطعتين - Duo)' : 'Pack 2 (2 Unités)'}
+                    </span>
+                    <span className="text-xs font-bold text-indigo-700">2x Produits</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-indigo-900 block">
+                      {isAr ? 'سعر بيع الباقة المقترح (قابل للتعديل):' : 'Prix de vente du pack :'}
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        value={effectivePack2Price}
+                        onChange={(e) => setPack2PriceInput(Number(e.target.value))}
+                        className="text-xl font-black text-indigo-700 bg-white border border-indigo-300 rounded-xl px-3 py-1.5 w-36 focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <span className="text-sm font-black text-indigo-700">{getCurrencySymbol()}</span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-600">
+                    {isAr ? 'سعر الجملة:' : 'Coût d’achat :'} <strong>{analysisInput.wholesalePrice * 2} {getCurrencySymbol()}</strong> + {isAr ? 'نفس شحنة الإرسال:' : 'Même frais de port :'} <strong>{analysisInput.shippingFee} {getCurrencySymbol()}</strong>
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-indigo-100 space-y-2 text-xs">
+                  <div className="flex justify-between font-bold">
+                    <span className="text-slate-700">{isAr ? 'الربح الصافي / طلب مستلم:' : 'Bénéfice net / livré :'}</span>
+                    <span className="font-black text-emerald-600 text-sm">{economicsPack2?.netProfitPerDelivered ?? '—'} {getCurrencySymbol()}</span>
+                  </div>
+                  <div className="flex justify-between font-bold">
+                    <span className="text-slate-700">{isAr ? 'أقصى CPA مسموح (Break-even):' : 'CPA max (Break-even) :'}</span>
+                    <span className="font-black text-indigo-700 text-sm">{economicsPack2?.breakEvenCpa ?? '—'} {getCurrencySymbol()}</span>
+                  </div>
+                  {economics && economicsPack2 && economicsPack2.netProfitPerDelivered !== null && economics.netProfitPerDelivered !== null && (
+                    <div className="p-2 rounded-xl bg-emerald-100/80 border border-emerald-300 text-emerald-900 text-[11px] font-black flex items-center gap-1.5">
+                      <TrendingUp className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                      <span>
+                        {isAr
+                          ? `+${Math.round(economicsPack2.netProfitPerDelivered - economics.netProfitPerDelivered)} ${getCurrencySymbol()} أرباح إضافية لكل زبون (+${Math.round(((economicsPack2.netProfitPerDelivered - economics.netProfitPerDelivered) / Math.max(1, economics.netProfitPerDelivered)) * 100)}%)`
+                          : `+${Math.round(economicsPack2.netProfitPerDelivered - economics.netProfitPerDelivered)} ${getCurrencySymbol()} de marge nette supplémentaire (+${Math.round(((economicsPack2.netProfitPerDelivered - economics.netProfitPerDelivered) / Math.max(1, economics.netProfitPerDelivered)) * 100)}%)`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* PACK 3 - FAMILY / VIP */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 space-y-3 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-purple-100 text-purple-800">
+                      {isAr ? 'باك 3 (3 قطع - VIP)' : 'Pack 3 (3 Unités)'}
+                    </span>
+                    <span className="text-xs font-bold text-slate-500">3x Produits</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 block">
+                      {isAr ? 'سعر بيع الباقة المقترح:' : 'Prix de vente du pack :'}
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        value={effectivePack3Price}
+                        onChange={(e) => setPack3PriceInput(Number(e.target.value))}
+                        className="text-xl font-black text-slate-800 bg-white border border-slate-300 rounded-xl px-3 py-1.5 w-36 focus:ring-2 focus:ring-purple-500"
+                      />
+                      <span className="text-sm font-black text-slate-800">{getCurrencySymbol()}</span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-600">
+                    {isAr ? 'سعر الجملة:' : 'Coût d’achat :'} <strong>{analysisInput.wholesalePrice * 3} {getCurrencySymbol()}</strong> + {isAr ? 'نفس شحنة الإرسال:' : 'Même frais de port :'} <strong>{analysisInput.shippingFee} {getCurrencySymbol()}</strong>
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-slate-200/80 space-y-2 text-xs">
+                  <div className="flex justify-between font-medium">
+                    <span className="text-slate-600">{isAr ? 'الربح الصافي / طلب مستلم:' : 'Bénéfice net / livré :'}</span>
+                    <span className="font-black text-slate-900">{economicsPack3?.netProfitPerDelivered ?? '—'} {getCurrencySymbol()}</span>
+                  </div>
+                  <div className="flex justify-between font-medium">
+                    <span className="text-slate-600">{isAr ? 'أقصى CPA مسموح (Break-even):' : 'CPA max (Break-even) :'}</span>
+                    <span className="font-black text-purple-700">{economicsPack3?.breakEvenCpa ?? '—'} {getCurrencySymbol()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-950 font-medium leading-relaxed">
+              <strong>💡 {isAr ? 'توصية استراتيجية للميديا باير:' : 'Recommandation Media Buyer :'}</strong>{' '}
+              {isAr
+                ? 'اجعل "باك 2" هو الخيار الافتراضي المحدد مسبقاً (Pre-selected) في صفحة الهبوط أو استمارة الطلب، وقدم معه توصيل مجاني. هذا يرفع معدل متوسط السلة (AOV) ويمنحك هامشاً أعلى للتفوق على المنافسين في مزاد الإعلانات!'
+                : 'Définissez le Pack 2 comme option pré-sélectionnée par défaut sur votre page de vente avec livraison offerte. Cela booste votre panier moyen (AOV) et vous permet d’enchérir plus agressivement que vos concurrents.'}
+            </div>
+          </section>
+
+          {/* ========================================================================= */}
+          {/* STORYBOARD VISUAL STUDIO FOR UGC & VIDEO ADS                              */}
+          {/* ========================================================================= */}
+          <section className="rounded-3xl border border-indigo-200 bg-white p-6 shadow-sm space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 border border-purple-200 text-purple-700 text-xs font-black">
+                  <Play className="w-3.5 h-3.5 fill-purple-600 text-purple-600" />
+                  <span>{isAr ? 'استوديو الإعلانات و UGC' : 'Studio Créatif & Scripts UGC'}</span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900">
+                  {isAr ? 'ستوريبورد إعلاني موجه للمونتور والمصور (Storyboard 30s)' : 'Storyboard vidéo 30s pour monteur et créateur UGC'}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {isAr
+                    ? 'توجيه بصري وتقني مشهد بمشهد مع اللقطات المقترحة، الصوت بالدارجة، والنصوص الترويجية للشاشة، جاهزة للإرسال في واتساب.'
+                    : 'Directives scène par scène (B-roll, voix-off et textes écran) prêtes à transmettre à votre monteur vidéo ou créateur UGC.'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCopyStoryboard}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
+              >
+                {storyboardCopied ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span>{isAr ? 'تم النسخ بنجاح !' : 'Copié !'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 text-amber-400" />
+                    <span>{isAr ? '📋 نسخ الستوريبورد للواتساب' : '📋 Copier pour WhatsApp'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {/* Scene 1 */}
+              <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-indigo-600 text-white">0-3s</span>
+                  <span className="text-xs font-black text-indigo-900">{isAr ? 'المشهد 1: الـ Hook' : 'Scène 1 : Hook'}</span>
+                </div>
+                <div className="space-y-1.5 text-xs">
+                  <div>
+                    <span className="font-bold text-slate-700">🎬 {isAr ? 'اللقطة (B-Roll):' : 'Visuel :'}</span>
+                    <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
+                      {isAr ? 'لقطة قريبة سريعة تظهر المشكل الحقيقي بوضوح صادم يجذب العين قبل التمرير.' : 'Plan serré choc montrant le problème de manière captivante.'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-700">🎙️ {isAr ? 'الصوت (Voiceover):' : 'Voix-off :'}</span>
+                    <p className="text-indigo-950 font-bold text-[11px] mt-0.5 leading-relaxed bg-white/80 p-2 rounded-lg border border-indigo-100">
+                      "{isAr ? `واش حتى نتا عيتي من مشكل ${analysisInput.title || 'هاد المنتج'}؟ الحل وصل اليوم!` : `Marre de ce problème ? Voici la solution idéale !`}"
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-700">📝 {isAr ? 'النص فالشاشة:' : 'Texte écran :'}</span>
+                    <p className="text-amber-800 font-extrabold text-[10px] mt-0.5">{isAr ? 'عيتي من هاد المشكل؟ 🛑 الحل وصل!' : 'Marre de ce problème ? 🛑'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scene 2 */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-slate-800 text-white">3-8s</span>
+                  <span className="text-xs font-black text-slate-900">{isAr ? 'المشهد 2: المعاناة' : 'Scène 2 : Douleur'}</span>
+                </div>
+                <div className="space-y-1.5 text-xs">
+                  <div>
+                    <span className="font-bold text-slate-700">🎬 {isAr ? 'اللقطة (B-Roll):' : 'Visuel :'}</span>
+                    <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
+                      {isAr ? 'شخص كيجرب حلول تقليدية فاشلة، تعبير وجه فيه إحباط وضياع للوقت والمال.' : 'Essai infructueux de méthodes traditionnelles avec frustration.'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-700">🎙️ {isAr ? 'الصوت (Voiceover):' : 'Voix-off :'}</span>
+                    <p className="text-slate-900 font-bold text-[11px] mt-0.5 leading-relaxed bg-white p-2 rounded-lg border border-slate-200">
+                      "{isAr ? 'جربتي شحال من حاجة وما عطات حتى نتيجة وضيعتي فلوسك؟' : 'Vous avez tout essayé sans aucun résultat durable ?'}"
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-700">📝 {isAr ? 'النص فالشاشة:' : 'Texte écran :'}</span>
+                    <p className="text-rose-700 font-extrabold text-[10px] mt-0.5">{isAr ? 'الحلول القديمة = مضيعة د الفلوس 💸' : 'Méthodes classiques = perte d’argent'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scene 3 */}
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-600 text-white">8-18s</span>
+                  <span className="text-xs font-black text-emerald-900">{isAr ? 'المشهد 3: الحل والنتيجة' : 'Scène 3 : Démo'}</span>
+                </div>
+                <div className="space-y-1.5 text-xs">
+                  <div>
+                    <span className="font-bold text-slate-700">🎬 {isAr ? 'اللقطة (B-Roll):' : 'Visuel :'}</span>
+                    <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
+                      {isAr ? 'استعمال مباشر للمنتج، لقطة قبل وبعد (Before & After) توضح النتيجة الفورية وسهولة الاستخدام.' : 'Démonstration produit en direct, avant/après percutant et rapide.'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-700">🎙️ {isAr ? 'الصوت (Voiceover):' : 'Voix-off :'}</span>
+                    <p className="text-emerald-950 font-bold text-[11px] mt-0.5 leading-relaxed bg-white/80 p-2 rounded-lg border border-emerald-200">
+                      "{isAr ? `مع هاد المنتج النتيجة كتبان من أول استعمال، جودة وسرعة كتحل المشكل فثواني!` : `Résultat immédiat dès la première utilisation en quelques secondes !`}"
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-700">📝 {isAr ? 'النص فالشاشة:' : 'Texte écran :'}</span>
+                    <p className="text-emerald-700 font-extrabold text-[10px] mt-0.5">{isAr ? 'النتيجة فورية ⚡ سهولة وسرعة' : 'Résultat instantané ⚡'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scene 4 */}
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-4 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-600 text-white">18-24s</span>
+                  <span className="text-xs font-black text-amber-900">{isAr ? 'المشهد 4: المصداقية' : 'Scène 4 : Preuve'}</span>
+                </div>
+                <div className="space-y-1.5 text-xs">
+                  <div>
+                    <span className="font-bold text-slate-700">🎬 {isAr ? 'اللقطة (B-Roll):' : 'Visuel :'}</span>
+                    <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
+                      {isAr ? 'فتح العلبة (Unboxing)، تقييمات 5 نجوم لزبناء راضين مع إبراز الضمان.' : 'Unboxing, avis clients 5 étoiles et mise en avant de la garantie.'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-700">🎙️ {isAr ? 'الصوت (Voiceover):' : 'Voix-off :'}</span>
+                    <p className="text-amber-950 font-bold text-[11px] mt-0.5 leading-relaxed bg-white/80 p-2 rounded-lg border border-amber-200">
+                      "{isAr ? 'أكثر من 2,400 زبون جربوه وشكرونا عليه، والضمانة حتى تقلب سلعتك عاد تخلص!' : 'Plus de 2 400 clients conquis avec garantie satisfaction totale !'}"
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-700">📝 {isAr ? 'النص فالشاشة:' : 'Texte écran :'}</span>
+                    <p className="text-amber-700 font-extrabold text-[10px] mt-0.5">{isAr ? '⭐⭐⭐⭐⭐ ثقة آلاف الزبناء' : '⭐⭐⭐⭐⭐ Avis vérifiés'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scene 5 */}
+              <div className="rounded-2xl border border-indigo-200 bg-gradient-to-b from-indigo-50/50 to-white p-4 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-indigo-700 text-white">24-30s</span>
+                  <span className="text-xs font-black text-indigo-900">{isAr ? 'المشهد 5: الأوفر والـ CTA' : 'Scène 5 : Offre COD'}</span>
+                </div>
+                <div className="space-y-1.5 text-xs">
+                  <div>
+                    <span className="font-bold text-slate-700">🎬 {isAr ? 'اللقطة (B-Roll):' : 'Visuel :'}</span>
+                    <p className="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
+                      {isAr ? 'إبراز باقة قطعتين والشحن المجاني، مع إشارة للضغط على الزر أسفل الفيديو للطلب.' : 'Affichage du pack duo avec livraison gratuite et flèche vers le formulaire.'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-700">🎙️ {isAr ? 'الصوت (Voiceover):' : 'Voix-off :'}</span>
+                    <p className="text-indigo-950 font-bold text-[11px] mt-0.5 leading-relaxed bg-white/80 p-2 rounded-lg border border-indigo-200">
+                      "{isAr ? `استفد دابا من عرض باقة 2 قطع بخصم خاص والتوصيل مجاني حتى للدار والدفع عند الاستلام. اطلب دابا!` : `Profitez de l’offre pack duo avec livraison offerte et paiement à la réception !`}"
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-700">📝 {isAr ? 'النص فالشاشة:' : 'Texte écran :'}</span>
+                    <p className="text-indigo-700 font-extrabold text-[10px] mt-0.5">{isAr ? '🚚 توصيل بالمجان + الدفع عند الاستلام' : '🚚 Livraison offerte + COD'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <MarketResearch mode="audit" isAr={isAr} key={auditMarket || analysisInput.targetCountry}
             defaultTarget={auditMarket || countryNames[analysisInput.targetCountry]}
             product={analysisInput.title.trim()
@@ -1049,47 +1544,206 @@ export default function MediaBuyerPage() {
                 ))}
               </dl>
 
-              <p className="text-sm text-slate-700">
-                <strong>{isAr ? 'نسبة التسليم للشحنات اللي تسالات' : 'Taux de livraison des expéditions clôturées'}</strong>{' '}
-                {campaignData.kpis.completedDeliveryRate === null ? '—' : `${campaignData.kpis.completedDeliveryRate} %`}
-                {' · '}{isAr ? 'المسلّمة ÷ (المسلّمة + المرتجعة)' : 'Livrées ÷ (livrées + retournées)'}
-              </p>
+              {/* Media Buyer Copilot Diagnostic & Decisions */}
+              {(() => {
+                const evaluated = campaignData.campaigns.map((row) => {
+                  const confRate = row.totalOrders > 0 ? Math.round((row.totalConfirmedOrders / row.totalOrders) * 100) : 0;
+                  const delivRate = row.completedDeliveryRate ?? (row.totalDeliveredOrders + row.totalReturnedOrders > 0 ? Math.round((row.totalDeliveredOrders / (row.totalDeliveredOrders + row.totalReturnedOrders)) * 100) : null);
 
-              <h3 className="font-bold text-slate-900">{isAr ? 'النتائج حسب الحملة والمصدر' : 'Résultats par campagne et source'}</h3>
-              {campaignData.campaigns.length ? (
-                <div className="overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="min-w-max w-full text-start text-sm">
-                    <thead className="bg-slate-100 text-slate-700">
-                      <tr>
-                        {(isAr
-                          ? ['الحملة', 'المصدر', 'واردة', 'مؤكدة', 'فالطريق', 'مسلّمة', 'مرتجعة', 'نسبة التسليم بعد الإغلاق']
-                          : ['Campagne', 'Source', 'Reçues', 'Confirmées', 'En cours', 'Livrées', 'Retournées', 'Livraison après clôture']
-                        ).map(label => <th key={label} scope="col" className="px-3 py-2.5 text-start font-semibold">{label}</th>)}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 tabular-nums">
-                      {campaignData.campaigns.map(row => (
-                        <tr key={JSON.stringify([row.campaign, row.source])}>
-                          <th scope="row" className="max-w-64 break-words px-3 py-2.5 text-start font-semibold">
-                            <bdi>{row.campaign ?? (isAr ? 'حملة غير مسجّلة' : 'Campagne non renseignée')}</bdi>
-                          </th>
-                          <td className="max-w-44 break-words px-3 py-2.5"><bdi>{row.source ?? (isAr ? 'مصدر غير مسجّل' : 'Source non renseignée')}</bdi></td>
-                          <td className="px-3 py-2.5">{row.totalOrders}</td>
-                          <td className="px-3 py-2.5">{row.totalConfirmedOrders}</td>
-                          <td className="px-3 py-2.5">{row.totalInTransitOrders}</td>
-                          <td className="px-3 py-2.5">{row.totalDeliveredOrders}</td>
-                          <td className="px-3 py-2.5">{row.totalReturnedOrders}</td>
-                          <td className="px-3 py-2.5">{row.completedDeliveryRate === null ? '—' : `${row.completedDeliveryRate} %`}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                  {isAr ? 'ما كايناش طلبيات فهاد الفترة للمتاجر المختارة.' : 'Aucune commande sur cette période pour les boutiques sélectionnées.'}
-                </p>
-              )}
+                  let decision: 'SCALE' | 'KILL' | 'OPTIMIZE_CONFIRM' | 'IN_TRANSIT_WATCH' | 'TESTING' = 'TESTING';
+                  let badgeLabel = isAr ? 'قيد الاختبار' : 'En test';
+                  let badgeClass = 'bg-slate-100 text-slate-700 border-slate-300';
+                  let reason = isAr ? 'الحملة ما زالت تجمع داتا (أقل من 6 طلبات).' : 'Données encore limitées (moins de 6 commandes).';
+
+                  if (delivRate !== null && delivRate >= 65 && row.totalConfirmedOrders >= 8) {
+                    decision = 'SCALE';
+                    badgeLabel = isAr ? '🚀 توسيع +20% (Scale)' : '🚀 Scaler (+20%)';
+                    badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300 font-black';
+                    reason = isAr ? 'أداء ممتاز! نسبة التوصيل فوق 65% مع حجم تأكيد قوي. ارفع ميزانية الـ AdSet بـ 20% كل 48 ساعة.' : 'Excellente rentabilité! Livraison > 65%. Augmentez le budget de 20% toutes les 48h.';
+                  } else if ((delivRate !== null && delivRate < 45 && row.totalReturnedOrders >= 3) || (row.totalOrders >= 8 && row.totalConfirmedOrders === 0)) {
+                    decision = 'KILL';
+                    badgeLabel = isAr ? '🛑 إيقاف فوري (Kill)' : '🛑 Couper (Kill)';
+                    badgeClass = 'bg-rose-100 text-rose-800 border-rose-300 font-black';
+                    reason = isAr ? 'حملة تحرق الميزانية! نسبة التوصيل كارثية (< 45%) أو الروتور مرتفع. أوقف الإعلان فوراً لحماية أرباحك.' : 'Campagne déficitaire! Livraison critique (< 45%) ou retours élevés. Coupez immédiatement.';
+                  } else if (confRate < 50 && row.totalOrders >= 6) {
+                    decision = 'OPTIMIZE_CONFIRM';
+                    badgeLabel = isAr ? '⚠️ مشكل تأكيد (Leads)' : '⚠️ Optimiser confirmation';
+                    badgeClass = 'bg-amber-100 text-amber-800 border-amber-300 font-bold';
+                    reason = isAr ? 'التأكيد أقل من 50%. ليدز باردة أو استمارة غير واضحة. تحقق من أرقام الزبناء وفعل التأكيد عبر واتساب.' : 'Taux de confirmation < 50%. Leads froids ou formulaire à revoir. Activez la relance WhatsApp.';
+                  } else if (row.totalInTransitOrders > row.totalDeliveredOrders && row.totalInTransitOrders >= 5) {
+                    decision = 'IN_TRANSIT_WATCH';
+                    badgeLabel = isAr ? '🚚 متابعة التوزيع' : '🚚 Alerte transit';
+                    badgeClass = 'bg-blue-100 text-blue-800 border-blue-300 font-bold';
+                    reason = isAr ? 'شحنات كثيرة عالقة في الطريق. تواصل مع الموزعين ومراكز الإرسال لتسليمها قبل تحولها لمرتجعات.' : 'Volume important en cours. Relancez les livreurs pour sécuriser l’encaissement.';
+                  }
+
+                  return {
+                    ...row,
+                    confRate,
+                    delivRate,
+                    decision,
+                    badgeLabel,
+                    badgeClass,
+                    reason,
+                  };
+                });
+
+                const scaleCount = evaluated.filter((c) => c.decision === 'SCALE').length;
+                const killCount = evaluated.filter((c) => c.decision === 'KILL').length;
+                const alertCount = evaluated.filter((c) => c.decision === 'OPTIMIZE_CONFIRM' || c.decision === 'IN_TRANSIT_WATCH').length;
+
+                const filtered = evaluated.filter((c) => {
+                  if (copilotFilter === 'SCALE') return c.decision === 'SCALE';
+                  if (copilotFilter === 'KILL') return c.decision === 'KILL';
+                  if (copilotFilter === 'ALERT') return c.decision === 'OPTIMIZE_CONFIRM' || c.decision === 'IN_TRANSIT_WATCH';
+                  return true;
+                });
+
+                return (
+                  <div className="space-y-4">
+                    {/* Diagnostic Summary Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold text-emerald-800">{isAr ? 'حملات جاهزة للتوسيع' : 'Campagnes prêtes à scaler'}</p>
+                          <p className="text-2xl font-black text-emerald-950 mt-1">{scaleCount}</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg">
+                          🚀
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold text-rose-800">{isAr ? 'حملات خاسرة (يجب إيقافها)' : 'Campagnes à couper d’urgence'}</p>
+                          <p className="text-2xl font-black text-rose-950 mt-1">{killCount}</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-lg">
+                          🛑
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold text-amber-800">{isAr ? 'حملات تحتاج تدخل وتعديل' : 'Alertes confirmation / transit'}</p>
+                          <p className="text-2xl font-black text-amber-950 mt-1">{alertCount}</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold text-lg">
+                          ⚠️
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-slate-900">{isAr ? 'النتائج حسب الحملة وتوصيات القرارات' : 'Résultats et décisions par campagne'}</h3>
+                        <span className="text-xs text-slate-500">
+                          ({filtered.length} {isAr ? 'حملة' : 'campagnes'})
+                        </span>
+                      </div>
+
+                      {/* Filter Chips */}
+                      <div className="flex flex-wrap gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => setCopilotFilter('ALL')}
+                          className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                            copilotFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          {isAr ? 'الكل' : 'Tous'} ({evaluated.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCopilotFilter('SCALE')}
+                          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 ${
+                            copilotFilter === 'SCALE' ? 'bg-emerald-600 text-white shadow-xs' : 'text-emerald-700 hover:bg-emerald-50'
+                          }`}
+                        >
+                          <span>🚀 {isAr ? 'توسيع' : 'Scale'}</span>
+                          <span>({scaleCount})</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCopilotFilter('KILL')}
+                          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 ${
+                            copilotFilter === 'KILL' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-700 hover:bg-rose-50'
+                          }`}
+                        >
+                          <span>🛑 {isAr ? 'إيقاف' : 'Kill'}</span>
+                          <span>({killCount})</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCopilotFilter('ALERT')}
+                          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 ${
+                            copilotFilter === 'ALERT' ? 'bg-amber-600 text-white shadow-xs' : 'text-amber-700 hover:bg-amber-50'
+                          }`}
+                        >
+                          <span>⚠️ {isAr ? 'تنبيهات' : 'Alertes'}</span>
+                          <span>({alertCount})</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {filtered.length ? (
+                      <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs">
+                        <table className="min-w-max w-full text-start text-xs sm:text-sm">
+                          <thead className="bg-slate-100 text-slate-700">
+                            <tr>
+                              {(isAr
+                                ? ['الحملة', 'المصدر', 'واردة', 'مؤكدة', 'فالطريق', 'مسلّمة', 'مرتجعة', 'نسبة التسليم', 'قرار الخبير الإعلاني']
+                                : ['Campagne', 'Source', 'Reçues', 'Confirmées', 'En cours', 'Livrées', 'Retournées', 'Livraison', 'Décision Media Buyer']
+                              ).map((label) => (
+                                <th key={label} scope="col" className="px-3 py-3 text-start font-bold">
+                                  {label}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200 tabular-nums">
+                            {filtered.map((row) => (
+                              <tr key={JSON.stringify([row.campaign, row.source])} className="hover:bg-slate-50/80 transition-colors">
+                                <th scope="row" className="max-w-60 break-words px-3 py-3 text-start font-bold text-slate-900">
+                                  <bdi>{row.campaign ?? (isAr ? 'حملة غير مسجّلة' : 'Campagne non renseignée')}</bdi>
+                                </th>
+                                <td className="max-w-36 break-words px-3 py-3 font-medium text-slate-600">
+                                  <bdi>{row.source ?? (isAr ? 'مصدر غير مسجّل' : 'Source non renseignée')}</bdi>
+                                </td>
+                                <td className="px-3 py-3 font-bold">{row.totalOrders}</td>
+                                <td className="px-3 py-3">
+                                  <span className="font-bold text-slate-800">{row.totalConfirmedOrders}</span>
+                                  <span className="text-[11px] text-slate-500 ml-1">({row.confRate}%)</span>
+                                </td>
+                                <td className="px-3 py-3 text-blue-600 font-medium">{row.totalInTransitOrders}</td>
+                                <td className="px-3 py-3 text-emerald-700 font-bold">{row.totalDeliveredOrders}</td>
+                                <td className="px-3 py-3 text-rose-600 font-medium">{row.totalReturnedOrders}</td>
+                                <td className="px-3 py-3 font-black">
+                                  {row.delivRate === null ? '—' : `${row.delivRate} %`}
+                                </td>
+                                <td className="px-3 py-3">
+                                  <div className="space-y-1">
+                                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs border ${row.badgeClass}`}>
+                                      {row.badgeLabel}
+                                    </span>
+                                    <p className="text-[10px] text-slate-500 max-w-64 leading-tight">
+                                      {row.reason}
+                                    </p>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                        {isAr ? 'لا توجد حملات تطابق هذا الفلتر.' : 'Aucune campagne ne correspond à ce filtre.'}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             </>
           )}
 

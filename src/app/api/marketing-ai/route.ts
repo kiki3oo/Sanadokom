@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
         typeof source !== 'string' || source.length > 180 ||
         typeof product !== 'string' || product.length > 1600 ||
         (mode === 'audit' && !product.trim()) ||
-        (category !== undefined && !['COSMETICS', 'SUPPLEMENTS', 'BOTH'].includes(category))
+        (category !== undefined && !['COSMETICS', 'SUPPLEMENTS', 'KITCHEN', 'CAR', 'WELLNESS', 'HOME', 'BOTH', 'ALL'].includes(category))
       ) {
         return NextResponse.json({ success: false, error: 'MARKET_RESEARCH_INPUT' }, { status: 400 });
       }

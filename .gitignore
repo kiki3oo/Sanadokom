@@ -29,3 +29,4 @@ yarn-error.log*
 scratch/
 scratch*
 cookies.txt
+prisma/*-data.json
