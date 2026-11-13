@@ -38,7 +38,7 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '' }:
       if (data.error === 'MARKET_RESEARCH_UNCONFIGURED') {
         setError(label('La recherche web nécessite OPENAI_API_KEY dans EasyPanel.', 'البحث على الويب يحتاج إلى إعداد OPENAI_API_KEY في EasyPanel.'));
       } else if (!res.ok || !data.report) {
-        throw new Error('Research unavailable');
+        setError(data.error || label('Recherche indisponible. Réessayez dans un instant.', 'البحث غير متاح حالياً. أعد المحاولة بعد قليل.'));
       } else {
         setReport(data.report);
       }
