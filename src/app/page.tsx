@@ -1080,36 +1080,42 @@ export default function DashboardPage() {
             </div>
             <div>
               <h3 className="font-black text-sm text-slate-900 flex items-center gap-2">
-                <span>Attribution Marketing & Rentabilité des Canaux (Delivered ROI)</span>
+                <span>{isAr ? 'تتبع مصادر الإعلانات والربح المحصل (Delivered ROI)' : 'Attribution Marketing & Rentabilité des Canaux (Delivered ROI)'}</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
-                  Lead2Door Engine
+                  {isAr ? 'سندكم Attribution' : 'Sanadokom Engine'}
                 </span>
               </h3>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Découvrez quelles plateformes génèrent du VRAI chiffre d'affaires encaissé (commandes livrées), et pas seulement des clics.
+                {isAr
+                  ? 'اكتشف المنصات الإعلانية التي تحقق أرباحاً حقيقية مستلمة نقداً، وليس مجرد نقرات وليدز وهمية.'
+                  : "Découvrez quelles plateformes génèrent du VRAI chiffre d'affaires encaissé (commandes livrées), et pas seulement des clics."}
               </p>
             </div>
           </div>
           <span className="text-[11px] text-slate-400 font-semibold">
-            Basé sur {metrics.totalOrders || 0} commandes analysées
+            {isAr
+              ? `بناءً على ${metrics.totalOrders || 0} طلب تم تحليله`
+              : `Basé sur ${metrics.totalOrders || 0} commandes analysées`}
           </span>
         </div>
 
         {adAttribution.length === 0 ? (
           <div className="text-center py-8 text-slate-400 text-xs">
-            Aucune donnée de campagne ou source publicitaire pour cette période.
+            {isAr
+              ? 'لا توجد بيانات حملات أو مصادر إعلانية لهذه الفترة.'
+              : 'Aucune donnée de campagne ou source publicitaire pour cette période.'}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                 <tr>
-                  <th className="py-3 px-4">Canal d'Acquisition</th>
-                  <th className="py-3 px-4 text-center">Leads Reçus</th>
-                  <th className="py-3 px-4 text-center">Confirmées (%)</th>
-                  <th className="py-3 px-4 text-center">Livrées (%)</th>
-                  <th className="py-3 px-4">CA Livré Encaissé</th>
-                  <th className="py-3 px-4 text-center">Rentabilité Réelle</th>
+                  <th className="py-3 px-4">{isAr ? 'قناة الاستقطاب' : "Canal d'Acquisition"}</th>
+                  <th className="py-3 px-4 text-center">{isAr ? 'الطلبات الواردة' : 'Leads Reçus'}</th>
+                  <th className="py-3 px-4 text-center">{isAr ? 'المؤكدة (%)' : 'Confirmées (%)'}</th>
+                  <th className="py-3 px-4 text-center">{isAr ? 'المسلمة (%)' : 'Livrées (%)'}</th>
+                  <th className="py-3 px-4">{isAr ? 'المدخول المحصل' : 'CA Livré Encaissé'}</th>
+                  <th className="py-3 px-4 text-center">{isAr ? 'الربحية الحقيقية' : 'Rentabilité Réelle'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -1130,7 +1136,7 @@ export default function DashboardPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-center font-bold text-slate-800">
-                        {attr.leads} leads
+                        {attr.leads} {isAr ? 'طلب' : 'leads'}
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-extrabold text-[11px] border border-emerald-200">
@@ -1148,15 +1154,15 @@ export default function DashboardPage() {
                       <td className="py-3 px-4 text-center">
                         {Number(attr.deliveryRate) >= 70 ? (
                           <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-black text-[10px]">
-                            🔥 Très Rentable
+                            {isAr ? '🔥 أرباح ممتازة' : '🔥 Très Rentable'}
                           </span>
                         ) : Number(attr.deliveryRate) >= 50 ? (
                           <span className="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 font-bold text-[10px]">
-                            ✅ Rentable
+                            {isAr ? '✅ رابحة' : '✅ Rentable'}
                           </span>
                         ) : (
                           <span className="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 font-bold text-[10px]">
-                            ⚠️ À optimiser
+                            {isAr ? '⚠️ تحتاج تحسين' : '⚠️ À optimiser'}
                           </span>
                         )}
                       </td>
