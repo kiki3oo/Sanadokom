@@ -29,12 +29,14 @@ import {
   XCircle,
   ArrowUpRight,
   Zap,
+  Compass,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { CampaignPeriod, getLiveCampaignAudits } from '@/lib/campaignSummary';
 import { calculateCod, codFees, validCodInputs } from '@/lib/codEconomics';
 import { MarketResearch } from './MarketResearch';
 import { ImportRadar } from './ImportRadar';
+import { CrossBorderSpyHub } from './CrossBorderSpyHub';
 import type { RadarProduct } from '@/lib/radarProducts';
 import { mediaBuyerTranslations } from '@/lib/mediaBuyerTranslations';
 
@@ -45,8 +47,8 @@ export default function MediaBuyerPage() {
   const isRtl = isAr;
   const t = mediaBuyerTranslations[language === 'ar' ? 'ar' : 'fr'] || mediaBuyerTranslations.fr;
 
-  // Navigation Tabs: 'WINNING_PRODUCTS' | 'PRODUCT_VALIDATOR' | 'MEDIA_BUYER_COPILOT'
-  const [activeTab, setActiveTab] = useState<'WINNING_PRODUCTS' | 'PRODUCT_VALIDATOR' | 'MEDIA_BUYER_COPILOT'>(
+  // Navigation Tabs: 'WINNING_PRODUCTS' | 'SPY_TRENDS_HUB' | 'PRODUCT_VALIDATOR' | 'MEDIA_BUYER_COPILOT'
+  const [activeTab, setActiveTab] = useState<'WINNING_PRODUCTS' | 'SPY_TRENDS_HUB' | 'PRODUCT_VALIDATOR' | 'MEDIA_BUYER_COPILOT'>(
     'WINNING_PRODUCTS'
   );
 
@@ -619,6 +621,18 @@ export default function MediaBuyerPage() {
             </button>
 
             <button
+              onClick={() => setActiveTab('SPY_TRENDS_HUB')}
+              className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                activeTab === 'SPY_TRENDS_HUB'
+                  ? 'bg-white text-slate-900 shadow-sm font-black border border-slate-200/60'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <Compass className="w-4 h-4 text-indigo-600" />
+              <span>{isAr ? 'رادار التجسس وترندات الإعلانات' : 'Ad Spy & Trends Hub'}</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('PRODUCT_VALIDATOR')}
               className={`px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
                 activeTab === 'PRODUCT_VALIDATOR'
@@ -648,6 +662,23 @@ export default function MediaBuyerPage() {
       <div hidden={activeTab !== 'WINNING_PRODUCTS'}>
         <ImportRadar key={selectedCountry} isAr={isAr}
           defaultTarget={countryNames[selectedCountry] || 'Maroc'} onAudit={openRadarProduct} />
+      </div>
+
+      <div hidden={activeTab !== 'SPY_TRENDS_HUB'}>
+        <CrossBorderSpyHub
+          isAr={isAr}
+          onAuditProduct={(p) => {
+            setAnalysisInput((prev) => ({
+              ...prev,
+              title: p.title,
+              targetCountry: p.targetCountry || prev.targetCountry,
+              wholesalePrice: p.wholesalePrice || prev.wholesalePrice,
+              retailPrice: p.retailPrice || prev.retailPrice,
+              description: p.description || prev.description,
+            }));
+            setActiveTab('PRODUCT_VALIDATOR');
+          }}
+        />
       </div>
 
       {/* ========================================================================= */}
