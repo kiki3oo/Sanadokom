@@ -641,7 +641,7 @@ export default function MediaBuyerPage() {
               }`}
             >
               <Target className="w-4 h-4 text-indigo-600" />
-              <span>{t.tabValidator}</span>
+              <span>{isAr ? '🎯 فحص واستشارة أي منتج (واش غيخدم؟)' : t.tabValidator}</span>
             </button>
 
             <button
@@ -1022,6 +1022,36 @@ export default function MediaBuyerPage() {
                     <option value="PETS">{t.nichePets}</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Direct AI Consultation Banner */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-emerald-500/10 border border-indigo-200 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-lg shrink-0 shadow-xs">
+                    🤖
+                  </div>
+                  <div>
+                    <div className="text-xs md:text-sm font-black text-slate-900">
+                      {isAr ? 'استشارة ميديا باير سندكم المباشرة : واش هاد المنتج غينجح فهاد السوق؟' : 'Audit IA Marché : Ce produit va-t-il cartonner sur ce marché ?'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-medium">
+                      {isAr
+                        ? 'فحص الطلب التقديري، المنافسة المحلية، المنصة الإعلانية الرابحة (TikTok vs Meta)، وسكريبتات الفيديو بالدارجة.'
+                        : 'Analyse de la demande, forces concurrentielles, plateforme gagnante et scripts UGC adaptés.'}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const el = document.getElementById('market-research-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs shrink-0"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>{isAr ? 'طلب استشارة الخبير وتوليد التقرير 🎯' : 'Consulter l’Expert 🎯'}</span>
+                </button>
               </div>
 
               {/* Row 2: Financials & COD Economics */}
@@ -1515,11 +1545,13 @@ export default function MediaBuyerPage() {
             </div>
           </section>
 
-          <MarketResearch mode="audit" isAr={isAr} key={auditMarket || analysisInput.targetCountry}
-            defaultTarget={auditMarket || countryNames[analysisInput.targetCountry]}
-            product={analysisInput.title.trim()
-              ? [analysisInput.title, analysisInput.ingredientsOrDetails || analysisInput.description, analysisInput.productUrl].filter(Boolean).join('\n').slice(0, 1600)
-              : ''} />
+          <div id="market-research-section" className="scroll-mt-6">
+            <MarketResearch mode="audit" isAr={isAr} key={auditMarket || analysisInput.targetCountry}
+              defaultTarget={auditMarket || countryNames[analysisInput.targetCountry]}
+              product={analysisInput.title.trim()
+                ? [analysisInput.title, analysisInput.ingredientsOrDetails || analysisInput.description, analysisInput.productUrl].filter(Boolean).join('\n').slice(0, 1600)
+                : ''} />
+          </div>
         </div>
       )}
 
