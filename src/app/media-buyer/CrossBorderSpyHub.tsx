@@ -25,6 +25,11 @@ import {
   Compass,
   AlertCircle,
   Target,
+  Filter,
+  Tag,
+  Zap,
+  Gift,
+  Clock,
 } from 'lucide-react';
 import { useStore } from '@/context/StoreContext';
 
@@ -35,9 +40,9 @@ interface SourceCountry {
   flag: string;
   currency: string;
   symbol: string;
-  fxToMad: number; // 1 unit in MAD
-  fxToXof: number; // 1 unit in XOF
-  fxToSar: number; // 1 unit in SAR
+  fxToMad: number;
+  fxToXof: number;
+  fxToSar: number;
 }
 
 interface TargetMarket {
@@ -57,6 +62,17 @@ interface TargetMarket {
 }
 
 const SOURCE_COUNTRIES: SourceCountry[] = [
+  {
+    code: 'ALL',
+    nameAr: 'العالم كامل (Global)',
+    nameFr: 'Tous les pays (Global)',
+    flag: '🌍',
+    currency: 'USD',
+    symbol: '$',
+    fxToMad: 10.0,
+    fxToXof: 615,
+    fxToSar: 3.75,
+  },
   {
     code: 'US',
     nameAr: 'الولايات المتحدة الأمريكية',
@@ -113,6 +129,17 @@ const SOURCE_COUNTRIES: SourceCountry[] = [
     fxToSar: 4.75,
   },
   {
+    code: 'ES',
+    nameAr: 'إسبانيا',
+    nameFr: 'Espagne',
+    flag: '🇪🇸',
+    currency: 'EUR',
+    symbol: '€',
+    fxToMad: 10.8,
+    fxToXof: 655.957,
+    fxToSar: 4.05,
+  },
+  {
     code: 'CN',
     nameAr: 'الصين (1688 / المصانع)',
     nameFr: 'Chine (1688 / Usines)',
@@ -153,7 +180,7 @@ const TARGET_MARKETS: TargetMarket[] = [
     defaultWholesale: 3500,
     confirmationRate: 86,
     deliveryRate: 82,
-    localeNotesAr: 'سوق سريع النمو جداً في غرب أفريقيا. كازامانس ودكار هما القلب النابض، السكريبتات بالفرنسية أو الولوف.',
+    localeNotesAr: 'سوق سريع النمو جداً في غرب أفريقيا. دكار تستقبل أكثر من 70% من الطلبيات، السكريبتات بالفرنسية أو الولوف.',
     localeNotesFr: 'Marché COD en plein essor en Afrique de l’Ouest. Dakar absorbe 70%+ des volumes.',
   },
   {
@@ -168,7 +195,7 @@ const TARGET_MARKETS: TargetMarket[] = [
     defaultWholesale: 3800,
     confirmationRate: 83,
     deliveryRate: 78,
-    localeNotesAr: 'أبيدجان وسوق الإكواس، طلب قوي على منتجات التجميل وحلول المنزل، الدفع نقداً أو عبر Wave/Orange Money.',
+    localeNotesAr: 'أبيدجان وسوق الإكواس، طلب قوي على منتجات التجميل والمكملات والمنزل، الدفع نقداً أو عبر Wave.',
     localeNotesFr: 'Hub commercial ouest-africain. Abidjan très réceptif aux formats démo TikTok/Meta.',
   },
   {
@@ -188,11 +215,53 @@ const TARGET_MARKETS: TargetMarket[] = [
   },
 ];
 
+export type NicheId = 'ALL' | 'SUPPLEMENTS' | 'COSMETICS' | 'WELLNESS' | 'KITCHEN' | 'CAR' | 'HOME' | 'MINCEUR';
+
+interface NicheChip {
+  id: NicheId;
+  nameAr: string;
+  nameFr: string;
+  icon: string;
+  color: string;
+}
+
+const NICHE_CHIPS: NicheChip[] = [
+  { id: 'ALL', nameAr: '✨ جميع الفئات (الكل)', nameFr: '✨ Toutes les niches (Tout)', icon: '🌟', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  { id: 'SUPPLEMENTS', nameAr: '💊 المكملات الغذائية والصحة', nameFr: '💊 Compléments & Suppléments', icon: '💊', color: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+  { id: 'COSMETICS', nameAr: '💄 مستحضرات التجميل والعناية', nameFr: '💄 Cosmétiques & Skincare', icon: '💄', color: 'bg-pink-50 text-pink-700 border-pink-200' },
+  { id: 'WELLNESS', nameAr: '🧘 آلام الظهر والمفاصل', nameFr: '🧘 Soulagement & Douleurs', icon: '🧘', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  { id: 'KITCHEN', nameAr: '🍳 أدوات المطبخ والمنزل', nameFr: '🍳 Cuisine & Maison', icon: '🍳', color: 'bg-amber-50 text-amber-800 border-amber-200' },
+  { id: 'CAR', nameAr: '🚗 إكسسوارات السيارات', nameFr: '🚗 Auto & Accessoires', icon: '🚗', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  { id: 'HOME', nameAr: '🏠 التنظيف الذكي وحلول البيت', nameFr: '🏠 Nettoyage & Gadgets', icon: '🏠', color: 'bg-teal-50 text-teal-800 border-teal-200' },
+  { id: 'MINCEUR', nameAr: '🏃 التنحيف والرشاقة', nameFr: '🏃 Minceur & Silhouette', icon: '🏃', color: 'bg-rose-50 text-rose-800 border-rose-200' },
+];
+
+export type AdTriggerType = 'NONE' | 'COD' | 'OFFER' | 'DISCOUNT' | 'VIRAL';
+
+interface AdTrigger {
+  id: AdTriggerType;
+  labelAr: string;
+  labelFr: string;
+  queryFr: string;
+  queryAr: string;
+  queryEn: string;
+  icon: string;
+}
+
+const AD_TRIGGERS: AdTrigger[] = [
+  { id: 'NONE', labelAr: 'بدون فلتر خاص', labelFr: 'Sans déclencheur', queryFr: '', queryAr: '', queryEn: '', icon: '🔍' },
+  { id: 'COD', labelAr: 'الدفع عند الاستلام فقط', labelFr: 'Paiement à la livraison (COD)', queryFr: '"paiement à la livraison"', queryAr: '"الدفع عند الاستلام"', queryEn: '"cash on delivery"', icon: '🚚' },
+  { id: 'OFFER', labelAr: 'عروض 1 مجاناً (BOGO)', labelFr: '1 Acheté = 1 Offert / BOGO', queryFr: '"acheté" "offert"', queryAr: '"احصل على الثاني مجانا"', queryEn: '"buy 1 get 1"', icon: '🎁' },
+  { id: 'DISCOUNT', labelAr: 'تخفيض 50% فما فوق', labelFr: 'Remise 50% OFF', queryFr: '"-50%" OR "50% de réduction"', queryAr: '"خصم 50%"', queryEn: '"50% off"', icon: '🔥' },
+  { id: 'VIRAL', labelAr: 'إعلانات الـ UGC والتجارب', labelFr: 'UGC & Témoignages Clients', queryFr: '"mon avis" OR "testé"', queryAr: '"تجربتي" OR "نتائج"', queryEn: '"review" OR "honest review"', icon: '⭐' },
+];
+
 interface WinningPreset {
   id: string;
   nameAr: string;
   nameFr: string;
   keyword: string;
+  niche: NicheId;
   nicheAr: string;
   nicheFr: string;
   sourceWholesale: number; // in USD
@@ -205,11 +274,95 @@ interface WinningPreset {
 }
 
 const PRESET_WINNING_PRODUCTS: WinningPreset[] = [
+  // --- SUPPLEMENTS NICHE (HIGH MARGIN & RETENTION) ---
+  {
+    id: 'collagen-peptides',
+    nameAr: 'بودرة الكولاجين البحري وفيتامين سي لنضارة البشرة والمفاصل',
+    nameFr: 'Collagène Marin Hydrolysé & Vitamine C Pure',
+    keyword: 'Marine Collagen Peptides Powder Skin Joints',
+    niche: 'SUPPLEMENTS',
+    nicheAr: 'مكملات غذائية وتجميل',
+    nicheFr: 'Compléments & Beauté',
+    sourceWholesale: 4.5,
+    badge: '👑 Royal Winner COD',
+    trendVelocity: 96,
+    momentumLabelAr: 'طلب متفجر ومستمر من النساء 25-55 سنة',
+    momentumLabelFr: 'Forte récurrence d’achat auprès des femmes 25-55 ans',
+    whyWinningAr: 'أقوى مكمل مبيعاً، هامش ربح خيالي، الزبونة تعود للشراء شهرياً (Repeat Purchase)، عروض 2 علب ترفع السلة.',
+    whyWinningFr: 'Produit star à très forte récurrence mensuelle. Idéal pour des offres pack cure 2 ou 3 mois.',
+  },
+  {
+    id: 'ashwagandha-ksm66',
+    nameAr: 'كبسولات الأشواغاندا KSM-66 للنوم العميق والتوتر والطاقة',
+    nameFr: 'Ashwagandha KSM-66 Pure & Magnésium Anti-Stress',
+    keyword: 'Ashwagandha KSM 66 Stress Sleep Energy',
+    niche: 'SUPPLEMENTS',
+    nicheAr: 'مكملات صحة ونوم',
+    nicheFr: 'Compléments & Sommeil',
+    sourceWholesale: 3.2,
+    badge: '⚡ Viral TikTok Hit',
+    trendVelocity: 93,
+    momentumLabelAr: 'أكثر مكمل رائج على تيك توك فالعالم',
+    momentumLabelFr: 'Explosion sur TikTok et Meta dans le monde entier',
+    whyWinningAr: 'حل سريع للضغط النفسي ومشاكل النوم، زاوية إعلانية تناسب الموظفين والشباب، سعر جملة جد منخفض.',
+    whyWinningFr: 'Résout l’insomnie et le stress professionnel. Coût de fabrication très bas et marge nette > 65%.',
+  },
+  {
+    id: 'maca-black-ginseng',
+    nameAr: 'مكمل الماكا السوداء والجنسنج الأحمر للنشاط البدني والحيوية',
+    nameFr: 'Maca Noire du Pérou & Ginseng Rouge Vitalité Homme',
+    keyword: 'Black Maca Root Extract Red Ginseng Vitality',
+    niche: 'SUPPLEMENTS',
+    nicheAr: 'طاقة ومكملات حيوية',
+    nicheFr: 'Énergie & Vitalité Homme',
+    sourceWholesale: 2.8,
+    badge: '💰 High Volume Men Niche',
+    trendVelocity: 92,
+    momentumLabelAr: 'حجم مبيعات كاش خيالي فالمغرب والسنغال',
+    momentumLabelFr: 'Volumes COD massifs au Maroc et en Afrique de l’Ouest',
+    whyWinningAr: 'طلب دائم لدى الرجال، سرية التوصيل ترفع نسبة التأكيد، هامش ربح يتجاوز 150 درهم فالمغرب و12,000 فرنك بالسنغال.',
+    whyWinningFr: 'Cible masculine captive, taux de confirmation élevé avec livraison discrète.',
+  },
+  {
+    id: 'acv-gummies-detox',
+    nameAr: 'حلويات خل التفاح (ACV Gummies) للتنحيف والهضم بدون طعم مر',
+    nameFr: 'Gummies Vinaigre de Cidre de Pomme Détox & Digestion',
+    keyword: 'Apple Cider Vinegar ACV Gummies Belly Bloat',
+    niche: 'SUPPLEMENTS',
+    nicheAr: 'مكملات هضم وتنحيف',
+    nicheFr: 'Gummies Détox & Minceur',
+    sourceWholesale: 2.2,
+    badge: '🍬 Impulse Buy Winner',
+    trendVelocity: 90,
+    momentumLabelAr: 'مبيعات فورية دون تردد بسبب المذاق اللذيذ',
+    momentumLabelFr: 'Achat d’impulsion immédiat grâce au format bonbon',
+    whyWinningAr: 'حل سهل لانتفاخ البطن وسوء الهضم، طعم حلو يقضي على حموضة الخل، الفيديوهات تحقق تفاعل استثنائي.',
+    whyWinningFr: 'Remplace le vinaigre liquide indigeste par des gummies savoureux. Forte viralité UGC.',
+  },
+  {
+    id: 'matcha-ceremonial-tea',
+    nameAr: 'شاي الماتشا الياباني الأخضر العضوي للتخسيس والتركيز الذهني',
+    nameFr: 'Thé Matcha Cérémonial Bio Brûleur de Graisses',
+    keyword: 'Ceremonial Organic Matcha Green Tea Powder Metabolism',
+    niche: 'SUPPLEMENTS',
+    nicheAr: 'شاي صحي وتخسيس',
+    nicheFr: 'Minceur & Bien-être',
+    sourceWholesale: 3.8,
+    badge: '🍵 Evergreen Lifestyle',
+    trendVelocity: 89,
+    momentumLabelAr: 'ترند الـ Lifestyle الصحي الصاعد بقوة',
+    momentumLabelFr: 'Tendance bien-être et énergie propre sans crash',
+    whyWinningAr: 'بديل صحي للقهوة، حرق الدهون، جمالية التحضير تعطي فيديوهات تيك توك ممتعة بنسبة نقر خيالية.',
+    whyWinningFr: 'Alternative saine au café, détox naturelle. Vidéos de préparation visuellement addictives.',
+  },
+
+  // --- HEALTH & WELLNESS ---
   {
     id: 'magne-steps',
     nameAr: 'فرشات MagneSteps المغناطيسية لآلام الظهر والمفاصل',
     nameFr: 'Semelles Magnétiques Acupression MagneSteps',
-    keyword: 'Magnetic Acupressure Insoles',
+    keyword: 'Magnetic Acupressure Insoles Pain Relief',
+    niche: 'WELLNESS',
     nicheAr: 'صحة وتخفيف آلام',
     nicheFr: 'Santé & Soulagement',
     sourceWholesale: 3.5,
@@ -221,10 +374,29 @@ const PRESET_WINNING_PRODUCTS: WinningPreset[] = [
     whyWinningFr: 'Résout une douleur aiguë (dos/pieds), très léger, marge brute > 70% en COD.',
   },
   {
+    id: 'shiatsu-massager',
+    nameAr: 'جهاز مساج الرقبة والكتفين الشياتسو مع تسخين حراري',
+    nameFr: 'Masseur Cervical Shiatsu Chauffant 3D',
+    keyword: 'Shiatsu Neck and Shoulder Massager Heated',
+    niche: 'WELLNESS',
+    nicheAr: 'صحة وعلاج طبيعي',
+    nicheFr: 'Santé & Bien-être',
+    sourceWholesale: 8.5,
+    badge: '⭐ Evergreen COD',
+    trendVelocity: 84,
+    momentumLabelAr: 'منتج مستمر طوال السنة لكبار السن والموظفين',
+    momentumLabelFr: 'Produit intemporel à forte audience adulte',
+    whyWinningAr: 'منتج غير موسمي (Evergreen)، زاوية إعلانية تناسب الموظفين وأصحاب الأعمال الشاقة وكبار السن.',
+    whyWinningFr: 'Produit stable toute l’année. Cible très large (employés de bureau, chauffeurs, personnes âgées).',
+  },
+
+  // --- HOME & CLEANING ---
+  {
     id: 'steam-cleaner',
     nameAr: 'ممسحة البخار اللاسلكية للتنظيف العميق للمنازل والسيارات',
     nameFr: 'Nettoyeur Vapeur Haute Pression Sans Fil',
     keyword: 'Portable High Pressure Steam Cleaner',
+    niche: 'HOME',
     nicheAr: 'المنزل والتنظيف الذكي',
     nicheFr: 'Maison & Nettoyage',
     sourceWholesale: 9.8,
@@ -236,25 +408,11 @@ const PRESET_WINNING_PRODUCTS: WinningPreset[] = [
     whyWinningFr: 'Effet visuel avant/après spectaculaire, idéal pour les vidéos TikTok à fort taux de clic.',
   },
   {
-    id: 'slimming-patches',
-    nameAr: 'لاصقات التنحيف العشبية للبطن وإزالة السموم',
-    nameFr: 'Patchs Minceur Détox Brûleur de Graisse',
-    keyword: 'Herbal Slimming Belly Detox Patches',
-    nicheAr: 'مستحضرات وتخسيس',
-    nicheFr: 'Minceur & Cosmétiques',
-    sourceWholesale: 1.8,
-    badge: '💰 Extreme Margin',
-    trendVelocity: 91,
-    momentumLabelAr: 'مبيعات يومية مستمرة في الخليج وأوروبا',
-    momentumLabelFr: 'Volume continu et récurrent dans le Golfe',
-    whyWinningAr: 'سعر جملة رخيص جداً، طلب موسمي دائم، إمكانية بيع باقات عروض (Pack 2 + 1 مجاناً).',
-    whyWinningFr: 'Coût unitaire infime, parfait pour des offres bundles (Pack 2 boîtes + 1 offerte).',
-  },
-  {
     id: 'solar-4g-cam',
     nameAr: 'كاميرا المراقبة الذكية بالطاقة الشمسية مع شريحة 4G',
     nameFr: 'Caméra de Sécurité 4G Solaire Extérieure',
     keyword: 'Solar 4G Outdoor Security Camera',
+    niche: 'HOME',
     nicheAr: 'إلكترونيات وحلول أمنية',
     nicheFr: 'Sécurité & High-Tech',
     sourceWholesale: 21.0,
@@ -265,26 +423,32 @@ const PRESET_WINNING_PRODUCTS: WinningPreset[] = [
     whyWinningAr: 'تعمل بدون كهرباء ولا واي فاي، منتج تذكرة مرتفعة (High Ticket) مع ربح صافي يتجاوز 150 درهم للطلبية.',
     whyWinningFr: 'Fonctionne sans wifi ni électricité filaire. Panier moyen élevé avec marge nette supérieure à 15€/commande.',
   },
+
+  // --- MINCEUR & SILHOUETTE ---
   {
-    id: 'shiatsu-massager',
-    nameAr: 'جهاز مساج الرقبة والكتفين الشياتسو مع تسخين حراري',
-    nameFr: 'Masseur Cervical Shiatsu Chauffant 3D',
-    keyword: 'Shiatsu Neck and Shoulder Massager Heated',
-    nicheAr: 'صحة وعلاج طبيعي',
-    nicheFr: 'Santé & Bien-être',
-    sourceWholesale: 8.5,
-    badge: '⭐ Evergreen COD',
-    trendVelocity: 84,
-    momentumLabelAr: 'منتج مستمر طوال السنة لكبار السن والموظفين',
-    momentumLabelFr: 'Produit intemporel à forte audience adulte',
-    whyWinningAr: 'منتج غير موسمي (Evergreen)، زاوية إعلانية تناسب الموظفين وأصحاب الأعمال الشاقة وكبار السن.',
-    whyWinningFr: 'Produit stable toute l’année. Cible très large (employés de bureau, chauffeurs, personnes âgées).',
+    id: 'slimming-patches',
+    nameAr: 'لاصقات التنحيف العشبية للبطن وإزالة السموم',
+    nameFr: 'Patchs Minceur Détox Brûleur de Graisse',
+    keyword: 'Herbal Slimming Belly Detox Patches',
+    niche: 'MINCEUR',
+    nicheAr: 'مستحضرات وتخسيس',
+    nicheFr: 'Minceur & Silhouette',
+    sourceWholesale: 1.8,
+    badge: '💰 Extreme Margin',
+    trendVelocity: 91,
+    momentumLabelAr: 'مبيعات يومية مستمرة في الخليج وأوروبا',
+    momentumLabelFr: 'Volume continu et récurrent dans le Golfe',
+    whyWinningAr: 'سعر جملة رخيص جداً، طلب موسمي دائم، إمكانية بيع باقات عروض (Pack 2 + 1 مجاناً).',
+    whyWinningFr: 'Coût unitaire infime, parfait pour des offres bundles (Pack 2 boîtes + 1 offerte).',
   },
+
+  // --- CAR ACCESSORIES ---
   {
     id: 'car-dent-repair',
     nameAr: 'طقم إزالة صدمات وانبعاجات السيارات بنفسك (Dent Repair)',
     nameFr: 'Kit Débosselage Carrosserie Sans Peinture',
     keyword: 'Paintless Car Dent Repair Kit Puller',
+    niche: 'CAR',
     nicheAr: 'إكسسوارات وحلول سيارات',
     nicheFr: 'Auto & Bricolage',
     sourceWholesale: 5.2,
@@ -317,15 +481,18 @@ export function CrossBorderSpyHub({
   const label = (fr: string, ar: string) => (isAr ? ar : fr);
 
   // Selections
-  const [sourceCode, setSourceCode] = useState('US');
-  const [targetCode, setTargetCode] = useState('MA');
-  const [keyword, setKeyword] = useState('Magnetic Acupressure Insoles');
-  const [customKeyword, setCustomKeyword] = useState('');
-  const [activePresetId, setActivePresetId] = useState<string>('magne-steps');
+  const [sourceCode, setSourceCode] = useState<string>('ALL'); // Default to ALL (Global) as user requested!
+  const [targetCode, setTargetCode] = useState<string>('MA');
+  const [selectedNiche, setSelectedNiche] = useState<NicheId>('ALL');
+  const [adTrigger, setAdTrigger] = useState<AdTriggerType>('NONE');
+
+  // Search keyword input
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const [activePresetId, setActivePresetId] = useState<string>('collagen-peptides');
 
   // Economics inputs for Arbitrage simulator
-  const [wholesalePriceSource, setWholesalePriceSource] = useState<number>(3.5);
-  const [intlCargoPerUnit, setIntlCargoPerUnit] = useState<number>(1.8); // USD or equiv
+  const [wholesalePriceSource, setWholesalePriceSource] = useState<number>(4.5);
+  const [intlCargoPerUnit, setIntlCargoPerUnit] = useState<number>(1.8);
   const [retailPriceTarget, setRetailPriceTarget] = useState<number>(249);
   const [localShippingTarget, setLocalShippingTarget] = useState<number>(35);
   const [confirmationRate, setConfirmationRate] = useState<number>(85);
@@ -344,11 +511,29 @@ export function CrossBorderSpyHub({
     [targetCode]
   );
 
+  // Filtered winning presets based on Niche and Search Keyword
+  const filteredPresets = useMemo(() => {
+    let list = PRESET_WINNING_PRODUCTS;
+    if (selectedNiche !== 'ALL') {
+      list = list.filter((p) => p.niche === selectedNiche);
+    }
+    if (searchKeyword.trim()) {
+      const q = searchKeyword.toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.nameAr.toLowerCase().includes(q) ||
+          p.nameFr.toLowerCase().includes(q) ||
+          p.keyword.toLowerCase().includes(q) ||
+          p.nicheAr.toLowerCase().includes(q) ||
+          p.nicheFr.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [selectedNiche, searchKeyword]);
+
   // Handle preset click
   const selectPreset = (preset: WinningPreset) => {
     setActivePresetId(preset.id);
-    setKeyword(preset.keyword);
-    setCustomKeyword('');
     setWholesalePriceSource(preset.sourceWholesale);
 
     // Adjust typical retail price for target market
@@ -376,8 +561,24 @@ export function CrossBorderSpyHub({
     }
   };
 
-  // Active query keyword
-  const effectiveKeyword = customKeyword.trim() || keyword;
+  // Active query keyword: either user search keyword or selected preset keyword
+  const effectiveBaseKeyword = useMemo(() => {
+    if (searchKeyword.trim()) return searchKeyword.trim();
+    const active = PRESET_WINNING_PRODUCTS.find((p) => p.id === activePresetId);
+    return active ? active.keyword : 'Collagen Peptides';
+  }, [searchKeyword, activePresetId]);
+
+  // Combine with Ad Trigger if active
+  const triggerData = useMemo(() => AD_TRIGGERS.find((t) => t.id === adTrigger) || AD_TRIGGERS[0], [adTrigger]);
+
+  const effectiveAdQuery = useMemo(() => {
+    if (adTrigger === 'NONE' || !triggerData.queryFr) {
+      return effectiveBaseKeyword;
+    }
+    // If French / Arab / English
+    const triggerWord = isAr ? triggerData.queryAr || triggerData.queryFr : triggerData.queryFr;
+    return `${effectiveBaseKeyword} ${triggerWord}`;
+  }, [effectiveBaseKeyword, adTrigger, triggerData, isAr]);
 
   // Conversion of wholesale into target currency
   const landedCostInTargetCurrency = useMemo(() => {
@@ -398,19 +599,15 @@ export function CrossBorderSpyHub({
     const cRate = Math.max(1, confirmationRate) / 100;
     const dRate = Math.max(1, deliveryRate) / 100;
 
-    // Delivery fee impact: non delivered packages also incur return shipping (approx 50% of shipping)
+    // Delivery fee impact: non delivered packages also incur return shipping (approx 40% of shipping)
     const effectiveDeliveryCost = localShippingTarget + (1 - dRate) * (localShippingTarget * 0.4);
 
     // Net cash collected per delivered order = Retail - Landed Product Cost - Effective Shipping
     const netProfitPerDelivered = retailPriceTarget - landedCostInTargetCurrency - effectiveDeliveryCost;
     const marginPercent = retailPriceTarget > 0 ? Math.round((netProfitPerDelivered / retailPriceTarget) * 100) : 0;
 
-    // Break-even CPA (Customer Acquisition Cost) on Ads
-    // If you spend maxCpa on Meta/TikTok, profit is 0.
-    // Confirmed order to delivered order factor = dRate
-    // So max CPA per Confirmed Lead = netProfitPerDelivered * dRate
     const breakEvenCpaPerLead = Math.max(0, Math.round(netProfitPerDelivered * dRate));
-    const targetCpaPerLead = Math.max(0, Math.round(breakEvenCpaPerLead * 0.6)); // For 40% margin buffer
+    const targetCpaPerLead = Math.max(0, Math.round(breakEvenCpaPerLead * 0.6));
 
     const breakEvenRoas =
       netProfitPerDelivered > 0 && breakEvenCpaPerLead > 0
@@ -435,44 +632,44 @@ export function CrossBorderSpyHub({
 
   // Deep-Link Generators
   const metaAdLibraryUrl = useMemo(() => {
-    const countryParam = selectedSource.code === 'CN' ? 'ALL' : selectedSource.code;
+    const countryParam = selectedSource.code; // 'ALL', 'US', 'FR', 'SA', etc.
     return `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${countryParam}&q=${encodeURIComponent(
-      effectiveKeyword
+      effectiveAdQuery
     )}&sort_data[direction]=desc&sort_data[mode]=relevancy_monthly_grouped`;
-  }, [selectedSource.code, effectiveKeyword]);
+  }, [selectedSource.code, effectiveAdQuery]);
 
   const tikTokCreativeCenterUrl = useMemo(() => {
-    const countryParam = selectedSource.code === 'CN' ? 'US' : selectedSource.code;
+    const countryParam = selectedSource.code === 'ALL' || selectedSource.code === 'CN' ? 'US' : selectedSource.code;
     return `https://ads.tiktok.com/business/creativecenter/inspiration/popular/pc/en?keyword=${encodeURIComponent(
-      effectiveKeyword
+      effectiveBaseKeyword
     )}&countryCode=${countryParam}`;
-  }, [selectedSource.code, effectiveKeyword]);
+  }, [selectedSource.code, effectiveBaseKeyword]);
 
   const tikTokViralSearchUrl = useMemo(() => {
-    return `https://www.tiktok.com/search?q=${encodeURIComponent(effectiveKeyword + ' viral')}`;
-  }, [effectiveKeyword]);
+    return `https://www.tiktok.com/search?q=${encodeURIComponent(effectiveBaseKeyword + ' viral')}`;
+  }, [effectiveBaseKeyword]);
 
   const googleTrendsCompareUrl = useMemo(() => {
-    const sourceGeo = selectedSource.code === 'CN' ? 'US' : selectedSource.code;
+    const sourceGeo = selectedSource.code === 'ALL' || selectedSource.code === 'CN' ? 'US' : selectedSource.code;
     const targetGeo = selectedTarget.code === 'GCC' ? 'SA' : selectedTarget.code;
     return `https://trends.google.com/trends/explore?q=${encodeURIComponent(
-      effectiveKeyword
+      effectiveBaseKeyword
     )}&geo=${sourceGeo}&compare=${targetGeo}`;
-  }, [selectedSource.code, selectedTarget.code, effectiveKeyword]);
+  }, [selectedSource.code, selectedTarget.code, effectiveBaseKeyword]);
 
   const aliExpressSourcingUrl = useMemo(() => {
-    return `https://www.aliexpress.com/wholesale?SearchText=${encodeURIComponent(effectiveKeyword)}`;
-  }, [effectiveKeyword]);
+    return `https://www.aliexpress.com/wholesale?SearchText=${encodeURIComponent(effectiveBaseKeyword)}`;
+  }, [effectiveBaseKeyword]);
 
   const s1688SourcingUrl = useMemo(() => {
-    return `https://s.1688.com/youyuan/index.htm?tab=all&keywords=${encodeURIComponent(effectiveKeyword)}`;
-  }, [effectiveKeyword]);
+    return `https://s.1688.com/youyuan/index.htm?tab=all&keywords=${encodeURIComponent(effectiveBaseKeyword)}`;
+  }, [effectiveBaseKeyword]);
 
   // Push to validator action
   const handlePushToValidator = () => {
     onAuditProduct({
-      title: effectiveKeyword,
-      niche: 'GENERAL',
+      title: effectiveBaseKeyword,
+      niche: selectedNiche === 'ALL' ? 'GENERAL' : selectedNiche,
       targetCountry: selectedTarget.code,
       wholesalePrice: landedCostInTargetCurrency,
       retailPrice: retailPriceTarget,
@@ -484,7 +681,7 @@ export function CrossBorderSpyHub({
   const handlePushStock = async () => {
     if (onPushToStock) {
       onPushToStock({
-        title: effectiveKeyword,
+        title: effectiveBaseKeyword,
         wholesalePrice: landedCostInTargetCurrency,
         retailPrice: retailPriceTarget,
       });
@@ -499,12 +696,12 @@ export function CrossBorderSpyHub({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'CREATE',
-          name: effectiveKeyword,
+          name: effectiveBaseKeyword,
           sku: `SPY-${selectedSource.code}-${selectedTarget.code}-${Date.now().toString().slice(-4)}`,
           quantity: 50,
           buyingPrice: landedCostInTargetCurrency,
           sellingPrice: retailPriceTarget,
-          category: 'CROSS_BORDER_WINNER',
+          category: selectedNiche === 'ALL' ? 'CROSS_BORDER_WINNER' : selectedNiche,
           storeId: selectedStoreId || undefined,
         }),
       });
@@ -535,14 +732,14 @@ export function CrossBorderSpyHub({
             </div>
             <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white font-heading">
               {label(
-                'Cross-Border Spy & Trends Hub : Meta, TikTok & Google Trends',
+                'Cross-Border Spy & Trends Hub : Meta, TikTok, Google Trends & Sourcing',
                 'مركز التجسس وترندات الإعلانات العالمية: Meta و TikTok و Google Trends'
               )}
             </h2>
             <p className="text-sm text-slate-300 leading-relaxed">
               {label(
-                'Repérez ce qui cartonne aux USA, en France ou dans le Golfe, analysez les créatives publicitaires actives et calculez vos marges réelles pour vendre au Maroc (MAD) ou au Sénégal (FCFA) en COD.',
-                'اكتشف المنتجات التي تحقق ملايين الدولارات فـ أمريكا وأوروبا والخليج، وتجسس على إعلانات فيسبوك وتيك توك النشطة، واحسب هامش ربحك الصافي للبيع فالمغرب أو السنغال نقداً عند الاستلام.'
+                'Explorez les niches rentables (Compléments & Suppléments, Skincare, Maison, Auto) dans le monde entier (Global 🌍) ou par pays, débusquez les pubs actives avec les déclencheurs COD et calculez votre marge nette au Maroc (MAD) ou au Sénégal (FCFA).',
+                'اكتشف النيتشات الأكثر ربحية (المكملات الغذائية، التجميل، الصحة، المنزل، السيارات) في العالم كاملاً (Global 🌍) أو باختيار بلد معين، وتجسس على إعلانات فيسبوك وتيك توك النشطة، واحسب ربحك الصافي نقداً عند الاستلام.'
               )}
             </p>
           </div>
@@ -584,11 +781,11 @@ export function CrossBorderSpyHub({
             <label className="flex items-center justify-between text-xs font-black uppercase tracking-wider text-slate-500">
               <span className="flex items-center gap-1.5">
                 <Globe className="w-4 h-4 text-indigo-600" />
-                {label('Marché Source à Espionner (D’où vient le Winner)', 'السوق المصدر للتجسس (من أين تستورد الفكرة)')}
+                {label('Marché Source à Espionner (Défaut : Global 🌍)', 'السوق المصدر للتجسس (الافتراضي : العالم كامل 🌍)')}
               </span>
               <span className="text-indigo-600 font-bold">{selectedSource.flag} {selectedSource.currency}</span>
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {SOURCE_COUNTRIES.map((src) => {
                 const active = src.code === sourceCode;
                 return (
@@ -596,13 +793,13 @@ export function CrossBorderSpyHub({
                     key={src.code}
                     type="button"
                     onClick={() => setSourceCode(src.code)}
-                    className={`p-3 rounded-2xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+                    className={`p-2.5 rounded-2xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
                       active
-                        ? 'border-indigo-600 bg-indigo-50/80 shadow-xs ring-2 ring-indigo-500/20'
+                        ? 'border-indigo-600 bg-indigo-50/90 shadow-xs ring-2 ring-indigo-500/20'
                         : 'border-slate-200 bg-white hover:bg-slate-50'
                     }`}
                   >
-                    <span className="text-2xl">{src.flag}</span>
+                    <span className="text-xl">{src.flag}</span>
                     <div className="min-w-0">
                       <div className="text-xs font-black text-slate-900 truncate">
                         {isAr ? src.nameAr : src.nameFr}
@@ -632,13 +829,13 @@ export function CrossBorderSpyHub({
                     key={tgt.code}
                     type="button"
                     onClick={() => handleTargetChange(tgt.code)}
-                    className={`p-3 rounded-2xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+                    className={`p-2.5 rounded-2xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
                       active
-                        ? 'border-emerald-600 bg-emerald-50/80 shadow-xs ring-2 ring-emerald-500/20'
+                        ? 'border-emerald-600 bg-emerald-50/90 shadow-xs ring-2 ring-emerald-500/20'
                         : 'border-slate-200 bg-white hover:bg-slate-50'
                     }`}
                   >
-                    <span className="text-2xl">{tgt.flag}</span>
+                    <span className="text-xl">{tgt.flag}</span>
                     <div className="min-w-0">
                       <div className="text-xs font-black text-slate-900 truncate">
                         {isAr ? tgt.nameAr : tgt.nameFr}
@@ -659,82 +856,171 @@ export function CrossBorderSpyHub({
         </div>
       </div>
 
-      {/* Preset Winners Quick Carousel & Search Keyword */}
+      {/* NICHE SEARCH & FILTER BAR */}
       <div className="rounded-3xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div>
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="space-y-1">
             <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
-              <Flame className="w-4 h-4 text-orange-500" />
-              <span>{label('Produits Gagnants Référents prêts à être espionnés', 'منتجات رابحة عالمية مختارة جاهزة للتجسس')}</span>
+              <Filter className="w-4 h-4 text-indigo-600" />
+              <span>{label('Recherche par Niche & Mots-Clés E-commerce', 'البحث حسب النيتش والكلمات المفتاحية')}</span>
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500">
               {label(
-                'Sélectionnez une référence ou tapez votre propre mot-clé pour lancer les outils d’espionnage.',
-                'اختر أحد المنتجات المقترحة أو اكتب اسم أي منتج ترغب في التجسس على إعلاناته ومورديه.'
+                'Tapez un produit ou une niche (ex: "Collagen", "Ashwagandha", "Nettoyeur vapeur", "Semelles").',
+                'اكتب اسم أي نيتش أو منتج ترغب في التجسس عليه (مثال: مكملات كولاجين، أشواغاندا، تنظيف، مفاصل).'
               )}
             </p>
           </div>
 
-          {/* Custom Search Input */}
-          <div className="relative w-full sm:w-72">
+          {/* Search Input Bar */}
+          <div className="relative w-full md:w-80">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              value={customKeyword}
-              onChange={(e) => {
-                setCustomKeyword(e.target.value);
-                setActivePresetId('');
-              }}
-              placeholder={label('Autre mot-clé (ex: Hair styler)...', 'اكتب كلمة بحث أخرى (مثال: بخاخ الأسنان)...')}
-              className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-slate-50"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              placeholder={label('Rechercher un produit ou niche...', 'ابحث عن أي منتج أو نيتش...')}
+              className="w-full pl-9 pr-3 py-2.5 text-xs font-bold rounded-2xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-slate-50"
             />
+            {searchKeyword && (
+              <button
+                type="button"
+                onClick={() => setSearchKeyword('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-600"
+              >
+                ✕
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Presets Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
-          {PRESET_WINNING_PRODUCTS.map((p) => {
-            const isSelected = activePresetId === p.id && !customKeyword;
-            return (
-              <div
-                key={p.id}
-                onClick={() => selectPreset(p)}
-                className={`p-4 rounded-2xl border transition-all cursor-pointer relative flex flex-col justify-between gap-3 ${
-                  isSelected
-                    ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-2 ring-indigo-500/20'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs'
-                }`}
-              >
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-200">
-                      {p.badge}
-                    </span>
-                    <span className="text-[11px] font-bold text-slate-400">
-                      {isAr ? p.nicheAr : p.nicheFr}
-                    </span>
-                  </div>
-                  <h4 className="text-xs font-black text-slate-900 line-clamp-2">
-                    {isAr ? p.nameAr : p.nameFr}
-                  </h4>
-                  <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                    {isAr ? p.whyWinningAr : p.whyWinningFr}
-                  </p>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                  <span className="text-emerald-700 font-black">
-                    {label('Achat Usine :', 'سعر المصنع :')} ${p.sourceWholesale}
-                  </span>
-                  <div className="flex items-center gap-1 font-black text-indigo-700">
-                    <TrendingUp className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>{p.trendVelocity}% {label('Momentum', 'قوة الترند')}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        {/* Niche Chips Carousel */}
+        <div className="space-y-2 pt-2">
+          <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
+            {label('Niches Fortes en COD (Rentabilité Prouvée) :', 'أقوى نيتشات الكاش أون ديليفري :')}
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {NICHE_CHIPS.map((niche) => {
+              const active = selectedNiche === niche.id;
+              return (
+                <button
+                  key={niche.id}
+                  type="button"
+                  onClick={() => setSelectedNiche(niche.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                    active
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                      : `${niche.color} hover:opacity-90`
+                  }`}
+                >
+                  <span>{niche.icon}</span>
+                  <span>{isAr ? niche.nameAr : niche.nameFr}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        {/* Ad Spy Trigger Chips */}
+        <div className="space-y-2 pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-amber-500" />
+              <span>{label('Filtres d’Espionnage Publicitaire (Déclencheurs COD & Offres) :', 'فلاتر التجسس الذكية (كلمات إعلانات التحويل والـ COD) :')}</span>
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {AD_TRIGGERS.map((trig) => {
+              const active = adTrigger === trig.id;
+              return (
+                <button
+                  key={trig.id}
+                  type="button"
+                  onClick={() => setAdTrigger(trig.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                    active
+                      ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-sm font-black'
+                      : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                  }`}
+                >
+                  <span>{trig.icon}</span>
+                  <span>{isAr ? trig.labelAr : trig.labelFr}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Preset Winners Grid (Dynamically filtered by Niche & Search) */}
+      <div className="rounded-3xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+            <Flame className="w-4 h-4 text-orange-500" />
+            <span>
+              {label(
+                `Produits Gagnants Référents (${filteredPresets.length} trouvés)`,
+                `المنتجات الرابحة المعتمدة (${filteredPresets.length} منتج متطابق)`
+              )}
+            </span>
+          </h3>
+          <span className="text-xs text-slate-400 font-semibold">
+            {label('Cliquez sur une fiche pour charger ses paramètres', 'اضغط على المنتج لتحميل إعداداته وأرباحه')}
+          </span>
+        </div>
+
+        {filteredPresets.length === 0 ? (
+          <div className="p-8 text-center text-slate-400 text-xs">
+            {label(
+              'Aucun produit prédéfini pour ce filtre, mais vous pouvez lancer l’espionnage direct avec votre mot-clé ci-dessus !',
+              'لا توجد منتجات مسجلة مسبقاً لهذا البحث، ولكن يمكنك التجسس المباشر على هذا النيتش عبر الأزرار أسفله!'
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            {filteredPresets.map((p) => {
+              const isSelected = activePresetId === p.id && !searchKeyword;
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => selectPreset(p)}
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer relative flex flex-col justify-between gap-3 ${
+                    isSelected
+                      ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-2 ring-indigo-500/20'
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs'
+                  }`}
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-200">
+                        {p.badge}
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-400">
+                        {isAr ? p.nicheAr : p.nicheFr}
+                      </span>
+                    </div>
+                    <h4 className="text-xs font-black text-slate-900 line-clamp-2">
+                      {isAr ? p.nameAr : p.nameFr}
+                    </h4>
+                    <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                      {isAr ? p.whyWinningAr : p.whyWinningFr}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                    <span className="text-emerald-700 font-black">
+                      {label('Achat Usine :', 'سعر المصنع :')} ${p.sourceWholesale}
+                    </span>
+                    <div className="flex items-center gap-1 font-black text-indigo-700">
+                      <TrendingUp className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>{p.trendVelocity}% {label('Momentum', 'قوة الترند')}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Main Action Hub: 4 Interactive Spy Panels */}
@@ -761,19 +1047,26 @@ export function CrossBorderSpyHub({
               </span>
             </div>
 
-            {/* Keyword tag */}
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-              <div className="text-xs">
-                <span className="text-slate-400 font-semibold">{label('Mot-clé analysé :', 'الكلمة المفتاحية :')}</span>{' '}
-                <strong className="text-indigo-900">{effectiveKeyword}</strong>
+            {/* Keyword tag and Ad trigger tag */}
+            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-xs">
+                  <span className="text-slate-400 font-semibold">{label('Requête analysée :', 'الكلمة المفتاحية :')}</span>{' '}
+                  <strong className="text-indigo-900">{effectiveAdQuery}</strong>
+                </div>
+                <button
+                  onClick={() => copyToClipboard(effectiveAdQuery, 'kw')}
+                  className="text-[11px] font-bold text-slate-500 hover:text-indigo-600 flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedLink === 'kw' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedLink === 'kw' ? label('Copié', 'تم النسخ') : label('Copier', 'نسخ')}</span>
+                </button>
               </div>
-              <button
-                onClick={() => copyToClipboard(effectiveKeyword, 'kw')}
-                className="text-[11px] font-bold text-slate-500 hover:text-indigo-600 flex items-center gap-1 cursor-pointer"
-              >
-                {copiedLink === 'kw' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                <span>{copiedLink === 'kw' ? label('Copié', 'تم النسخ') : label('Copier', 'نسخ')}</span>
-              </button>
+              {adTrigger !== 'NONE' && (
+                <div className="text-[11px] text-amber-800 font-bold bg-amber-50 px-2 py-0.5 rounded-md inline-block">
+                  ⚡ {label('Filtre actif :', 'الفلتر المفعل :')} {isAr ? triggerData.labelAr : triggerData.labelFr}
+                </div>
+              )}
             </div>
 
             {/* Direct Action Buttons */}
@@ -798,8 +1091,8 @@ export function CrossBorderSpyHub({
                     </div>
                     <div className="text-[11px] text-blue-700/80 font-normal">
                       {label(
-                        `Voir toutes les annonces actives en ${selectedSource.nameFr}`,
-                        `مشاهدة الإعلانات النشطة حالياً في ${selectedSource.nameAr}`
+                        `Voir toutes les annonces actives (${selectedSource.nameFr})`,
+                        `مشاهدة الإعلانات النشطة حالياً (${selectedSource.nameAr})`
                       )}
                     </div>
                   </div>
