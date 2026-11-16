@@ -62,6 +62,8 @@ model Product {
   reservedQuantity Int            @default(0) // Reserved Quantity
   quantitySold    Int             @default(0) // Quantity Sold
   alertThreshold  Int             @default(10) // Alerte rupture
+  landingPageUrl  String?         // URL de la Landing Page / صفحة الهبوط
+  agentNotes      String?         // Instructions et arguments pour les agents de confirmation
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 

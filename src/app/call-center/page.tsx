@@ -39,6 +39,7 @@ import {
   Truck,
   FileSpreadsheet,
   Settings,
+  Globe,
 } from 'lucide-react';
 import ManualOrderModal from '@/components/ManualOrderModal';
 import BulkImportOrdersModal from '@/components/BulkImportOrdersModal';
@@ -1884,34 +1885,63 @@ export default function CallCenterPage() {
                   return (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 text-xs"
+                      className="p-3 bg-white rounded-lg border border-slate-200 text-xs space-y-2"
                     >
-                      <div className="flex items-center gap-2">
-                        <Package className="w-4 h-4 text-slate-400" />
-                        <div>
-                          <span className="font-bold text-slate-900">{item.product?.name}</span>
-                          <span className="text-slate-400 block text-[11px]">SKU: {item.product?.sku}</span>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Package className="w-4 h-4 text-slate-400 shrink-0" />
+                          <div className="min-w-0">
+                            <span className="font-bold text-slate-900 truncate block">{item.product?.name}</span>
+                            <span className="text-slate-400 block text-[11px]">SKU: {item.product?.sku}</span>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div className="font-bold text-slate-900">
+                            {item.quantity} x {item.unitPrice} {selectedOrder?.store?.currency || 'MAD'} = {item.quantity * item.unitPrice} {selectedOrder?.store?.currency || 'MAD'}
+                          </div>
+                          <div className="flex items-center gap-1 justify-end mt-0.5">
+                            {stockOk ? (
+                              <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5">
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>{t('cc.inStock', 'En Stock')} ({item.product?.stockQuantity} disp.)</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-rose-600 font-bold flex items-center gap-0.5">
+                                <AlertCircle className="w-3 h-3" />
+                                <span>{t('cc.outOfStock', 'Rupture de Stock')} ({item.product?.stockQuantity} disp.)</span>
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="text-right">
-                        <div className="font-bold text-slate-900">
-                          {item.quantity} x {item.unitPrice} {selectedOrder?.store?.currency || 'MAD'} = {item.quantity * item.unitPrice} {selectedOrder?.store?.currency || 'MAD'}
-                        </div>
-                        <div className="flex items-center gap-1 justify-end mt-0.5">
-                          {stockOk ? (
-                            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5">
-                              <CheckCircle2 className="w-3 h-3" />
-                              <span>{t('cc.inStock', 'En Stock')} ({item.product?.stockQuantity} disp.)</span>
-                            </span>
+                      {/* Landing Page Link & Pitch for Agent */}
+                      {(item.product?.landingPageUrl || item.product?.agentNotes) && (
+                        <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-indigo-50/40 p-2 rounded-md">
+                          {item.product?.landingPageUrl ? (
+                            <a
+                              href={item.product.landingPageUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded text-[11px] transition shadow-2xs group shrink-0"
+                              title="Ouvrir la page de vente du produit dans un nouvel onglet"
+                            >
+                              <Globe className="w-3 h-3 text-indigo-200 group-hover:scale-110 transition-transform" />
+                              <span>Consulter Landing Page</span>
+                              <ExternalLink className="w-2.5 h-2.5 opacity-80" />
+                            </a>
                           ) : (
-                            <span className="text-[10px] text-rose-600 font-bold flex items-center gap-0.5">
-                              <AlertCircle className="w-3 h-3" />
-                              <span>{t('cc.outOfStock', 'Rupture de Stock')} ({item.product?.stockQuantity} disp.)</span>
-                            </span>
+                            <div />
+                          )}
+
+                          {item.product?.agentNotes && (
+                            <div className="text-[11px] text-amber-900 bg-amber-50 border border-amber-200/70 rounded px-2 py-0.5 max-w-full">
+                              <span className="font-bold text-amber-800">💡 Pitch :</span> {item.product.agentNotes}
+                            </div>
                           )}
                         </div>
-                      </div>
+                      )}
                     </div>
                   );
                 })}

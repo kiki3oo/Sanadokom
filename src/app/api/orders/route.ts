@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
         assignedAgent: { select: { id: true, name: true, email: true } },
         items: {
           include: {
-            product: { select: { id: true, name: true, sku: true, stockQuantity: true } },
+            product: { select: { id: true, name: true, sku: true, stockQuantity: true, landingPageUrl: true, agentNotes: true } },
           },
         },
         callLogs: {

@@ -18,6 +18,7 @@ import {
   Sparkles,
   CheckCircle2,
   X,
+  Globe,
 } from 'lucide-react';
 
 export default function SmartAlertHub() {
@@ -26,7 +27,7 @@ export default function SmartAlertHub() {
   const { t, isRtl } = useLanguage();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'STOCK' | 'AGENTS' | 'CALLBACKS' | 'SHIPMENTS'>('STOCK');
+  const [activeTab, setActiveTab] = useState<'NEW_PRODUCTS' | 'STOCK' | 'AGENTS' | 'CALLBACKS' | 'SHIPMENTS'>('STOCK');
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showMorningToast, setShowMorningToast] = useState(false);
@@ -89,6 +90,7 @@ export default function SmartAlertHub() {
   };
 
   const totalAlerts = data?.totalAlertsCount || 0;
+  const newProductsCount = data?.newProducts?.length || 0;
   const outOfStockCount = data?.outOfStockProducts?.length || 0;
   const lowStockCount = data?.lowStockProducts?.length || 0;
   const absentAgentsCount = data?.absentAgents?.length || 0;
@@ -133,6 +135,11 @@ export default function SmartAlertHub() {
                   {outOfStockCount > 0 && (
                     <span className="text-rose-300 font-bold block">
                       ⚠️ {outOfStockCount} {isCallAgent ? (isRtl ? 'منتجات مخصصة لك في حالة نفاد (Rupture)!' : 'produits de vos boutiques en rupture (0 pièce) !') : (isRtl ? 'منتجات في حالة نفاد كلي (Rupture)!' : 'produits en rupture de stock (0 pièce) !')}
+                    </span>
+                  )}
+                  {newProductsCount > 0 && (
+                    <span className="text-emerald-300 font-bold block">
+                      ✨ {newProductsCount} {isRtl ? 'منتجات جديدة تمت إضافتها للكتالوج مع صفحات الهبوط !' : 'nouveau(x) produit(s) avec landing page au catalogue !'}
                     </span>
                   )}
                   {!isCallAgent && absentAgentsCount > 0 && (
@@ -211,10 +218,24 @@ export default function SmartAlertHub() {
           </div>
 
           {/* Sub-Tabs */}
-          <div className="flex border-b border-slate-100 bg-slate-50 text-xs font-bold text-slate-600">
+          <div className="flex border-b border-slate-100 bg-slate-50 text-xs font-bold text-slate-600 overflow-x-auto">
+            {newProductsCount > 0 && (
+              <button
+                onClick={() => setActiveTab('NEW_PRODUCTS')}
+                className={`py-2.5 px-3 flex items-center justify-center gap-1.5 border-b-2 shrink-0 cursor-pointer ${
+                  activeTab === 'NEW_PRODUCTS'
+                    ? 'border-indigo-600 text-indigo-700 bg-white font-black'
+                    : 'border-transparent text-indigo-800 hover:text-indigo-950 bg-indigo-50/50'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
+                <span>{isRtl ? 'الجديد' : 'Nouveautés'} ({newProductsCount})</span>
+              </button>
+            )}
+
             <button
               onClick={() => setActiveTab('STOCK')}
-              className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
+              className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 border-b-2 shrink-0 cursor-pointer ${
                 activeTab === 'STOCK'
                   ? 'border-rose-600 text-rose-700 bg-white font-black'
                   : 'border-transparent hover:text-slate-900'
@@ -228,7 +249,7 @@ export default function SmartAlertHub() {
             {!isCallAgent && (isAdmin || isManager) && (
               <button
                 onClick={() => setActiveTab('AGENTS')}
-                className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
+                className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 border-b-2 shrink-0 cursor-pointer ${
                   activeTab === 'AGENTS'
                     ? 'border-amber-600 text-amber-700 bg-white font-black'
                     : 'border-transparent hover:text-slate-900'
@@ -241,7 +262,7 @@ export default function SmartAlertHub() {
 
             <button
               onClick={() => setActiveTab('CALLBACKS')}
-              className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
+              className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 border-b-2 shrink-0 cursor-pointer ${
                 activeTab === 'CALLBACKS'
                   ? 'border-blue-600 text-blue-700 bg-white font-black'
                   : 'border-transparent hover:text-slate-900'
@@ -253,7 +274,7 @@ export default function SmartAlertHub() {
 
             <button
               onClick={() => setActiveTab('SHIPMENTS')}
-              className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 border-b-2 cursor-pointer ${
+              className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 border-b-2 shrink-0 cursor-pointer ${
                 activeTab === 'SHIPMENTS'
                   ? 'border-purple-600 text-purple-700 bg-white font-black'
                   : 'border-transparent hover:text-slate-900'
@@ -266,6 +287,77 @@ export default function SmartAlertHub() {
 
           {/* Tab Contents */}
           <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 text-xs">
+            {/* TAB: NEW_PRODUCTS */}
+            {activeTab === 'NEW_PRODUCTS' && (
+              <div className="p-3 space-y-2.5">
+                {newProductsCount === 0 ? (
+                  <div className="py-6 text-center text-slate-400 flex flex-col items-center gap-2">
+                    <Sparkles className="w-6 h-6 text-slate-300" />
+                    <span>Aucun nouveau produit ajouté ces dernières 72h.</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-[11px] font-bold text-slate-600 mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Nouveautés en stock ({newProductsCount}) :</span>
+                      </span>
+                      <Link
+                        href="/stock"
+                        onClick={() => setIsOpen(false)}
+                        className="text-indigo-600 hover:underline font-semibold"
+                      >
+                        Voir tout le stock &rarr;
+                      </Link>
+                    </div>
+                    {data?.newProducts?.map((p: any) => (
+                      <div
+                        key={p.id}
+                        className="p-3 bg-gradient-to-r from-indigo-50/70 via-white to-indigo-50/30 rounded-xl border border-indigo-200 shadow-2xs space-y-2"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-black text-slate-900 text-xs truncate">{p.name}</span>
+                              <span className="px-1.5 py-0.2 bg-indigo-100 text-indigo-800 text-[9px] font-bold rounded">
+                                {p.sku}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-500 mt-0.5">
+                              Boutique: <strong className="text-slate-700">{p.store?.name}</strong> • Prix: <strong className="text-emerald-700">{p.sellingPrice} {p.store?.currency || 'MAD'}</strong>
+                            </div>
+                          </div>
+
+                          {p.landingPageUrl ? (
+                            <a
+                              href={p.landingPageUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-[10px] shadow-2xs transition shrink-0"
+                              title="Ouvrir la Landing Page dans un nouvel onglet"
+                            >
+                              <Globe className="w-3 h-3" />
+                              <span>Page</span>
+                              <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                            </a>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 italic">Sans page</span>
+                          )}
+                        </div>
+
+                        {p.agentNotes && (
+                          <div className="text-[10px] text-amber-900 bg-amber-50 border border-amber-200/80 rounded-lg p-2 leading-relaxed">
+                            <span className="font-black text-amber-800 block mb-0.5">💡 Pitch & Instructions :</span>
+                            {p.agentNotes}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+
             {/* TAB: STOCK */}
             {activeTab === 'STOCK' && (
               <div className="p-3 space-y-2">

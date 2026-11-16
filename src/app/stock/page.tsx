@@ -22,6 +22,11 @@ import {
   RefreshCw,
   XCircle,
   Pencil,
+  ExternalLink,
+  Copy,
+  Check,
+  Globe,
+  Sparkles,
 } from 'lucide-react';
 
 export default function StockPage() {
@@ -54,6 +59,8 @@ export default function StockPage() {
   const [sellingPrice, setSellingPrice] = useState('');
   const [stockQuantity, setStockQuantity] = useState('');
   const [alertThreshold, setAlertThreshold] = useState('10');
+  const [landingPageUrl, setLandingPageUrl] = useState('');
+  const [agentNotes, setAgentNotes] = useState('');
 
   // Adjust Form
   const [adjustType, setAdjustType] = useState('PURCHASE');
@@ -61,13 +68,16 @@ export default function StockPage() {
   const [adjustRef, setAdjustRef] = useState('');
   const [adjustNotes, setAdjustNotes] = useState('');
 
-  // Edit Product Form (Prix d'achat, Prix de vente, Nom, Seuil)
+  // Edit Product Form (Prix d'achat, Prix de vente, Nom, Seuil, Landing Page, Notes)
   const [showEditProductModal, setShowEditProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
   const [editName, setEditName] = useState('');
   const [editCostPrice, setEditCostPrice] = useState('');
   const [editSellingPrice, setEditSellingPrice] = useState('');
   const [editAlertThreshold, setEditAlertThreshold] = useState('10');
+  const [editLandingPageUrl, setEditLandingPageUrl] = useState('');
+  const [editAgentNotes, setEditAgentNotes] = useState('');
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
   const fetchStock = async () => {
     setLoading(true);
@@ -102,6 +112,13 @@ export default function StockPage() {
     }
   }, [selectedStoreId, stores, currentCountry?.code]);
 
+  const handleCopyUrl = (url: string) => {
+    if (!url) return;
+    navigator.clipboard.writeText(url);
+    setCopiedUrl(url);
+    setTimeout(() => setCopiedUrl(null), 2500);
+  };
+
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -117,6 +134,8 @@ export default function StockPage() {
           sellingPrice,
           stockQuantity,
           alertThreshold,
+          landingPageUrl,
+          agentNotes,
         }),
       });
       const data = await res.json();
@@ -127,6 +146,8 @@ export default function StockPage() {
         setCostPrice('');
         setSellingPrice('');
         setStockQuantity('');
+        setLandingPageUrl('');
+        setAgentNotes('');
         fetchStock();
       } else {
         alert(data.error || 'Erreur lors de la création du produit');
@@ -188,6 +209,8 @@ export default function StockPage() {
     setEditCostPrice(product.costPrice?.toString() || '');
     setEditSellingPrice(product.sellingPrice?.toString() || '');
     setEditAlertThreshold(product.alertThreshold?.toString() || '10');
+    setEditLandingPageUrl(product.landingPageUrl || '');
+    setEditAgentNotes(product.agentNotes || '');
     setShowEditProductModal(true);
   };
 
@@ -205,6 +228,8 @@ export default function StockPage() {
           costPrice: editCostPrice,
           sellingPrice: editSellingPrice,
           alertThreshold: editAlertThreshold,
+          landingPageUrl: editLandingPageUrl,
+          agentNotes: editAgentNotes,
           userName: currentUser?.name || 'Admin',
           userRole: currentUser?.role || 'ADMIN',
         }),
@@ -479,6 +504,9 @@ export default function StockPage() {
                   )}
                 </th>
                 <th className="py-3 px-3">{t('stock.sellingPrice', 'Prix Vente')}</th>
+                <th className="py-3 px-3 text-indigo-900 font-bold bg-indigo-50/40 border-r border-indigo-100">
+                  🌐 Landing Page & Pitch
+                </th>
                 <th className="py-3 px-3 text-center bg-blue-50/50 text-blue-900 font-bold border-x border-blue-100">
                   📥 Total Entré
                 </th>
@@ -498,7 +526,7 @@ export default function StockPage() {
             <tbody className="divide-y divide-slate-100">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={canManageStock ? 10 : 9} className="py-10 text-center text-slate-400">
+                  <td colSpan={canManageStock ? 11 : 10} className="py-10 text-center text-slate-400">
                     Aucun produit trouvé pour les filtres sélectionnés.
                   </td>
                 </tr>
@@ -512,6 +540,7 @@ export default function StockPage() {
 
                   const isOut = warehouseQty === 0;
                   const isLow = warehouseQty > 0 && warehouseQty <= threshold;
+                  const isNewProduct = product.createdAt && (Date.now() - new Date(product.createdAt).getTime() < 72 * 3600 * 1000);
 
                   const currency = product.store?.currency || currentStore?.currency || 'MAD';
 
@@ -519,11 +548,17 @@ export default function StockPage() {
                     <tr key={product.id} className="hover:bg-slate-50/80 transition-colors">
                       {/* SKU & Name */}
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-[11px] border border-slate-200">
                             {product.sku}
                           </span>
                           <span className="font-bold text-slate-900">{product.name}</span>
+                          {isNewProduct && (
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1 shadow-2xs">
+                              <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                              <span>Nouveau</span>
+                            </span>
+                          )}
                         </div>
                         {product.description && (
                           <div className="text-[11px] text-slate-400 truncate max-w-[220px] mt-0.5">
@@ -565,6 +600,60 @@ export default function StockPage() {
                       {/* Selling Price */}
                       <td className="py-3 px-3 font-bold text-slate-900">
                         {product.sellingPrice} {currency}
+                      </td>
+
+                      {/* Landing Page & Pitch */}
+                      <td className="py-3 px-3 bg-indigo-50/10 border-r border-slate-100">
+                        {product.landingPageUrl ? (
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5">
+                              <a
+                                href={product.landingPageUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-md text-[11px] border border-indigo-200 transition-colors shadow-2xs group"
+                                title="Ouvrir la Landing Page dans un nouvel onglet"
+                              >
+                                <Globe className="w-3 h-3 text-indigo-600 group-hover:scale-110 transition-transform" />
+                                <span>Page Vente</span>
+                                <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyUrl(product.landingPageUrl)}
+                                className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                                title="Copier le lien de la page"
+                              >
+                                {copiedUrl === product.landingPageUrl ? (
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            </div>
+                            {product.agentNotes && (
+                              <div
+                                className="text-[10px] text-slate-600 bg-amber-50/80 border border-amber-200 rounded px-1.5 py-0.5 max-w-[200px] truncate flex items-center gap-1"
+                                title={`Notes Agent : ${product.agentNotes}`}
+                              >
+                                <span className="font-semibold text-amber-800 shrink-0">Pitch:</span>
+                                <span className="truncate">{product.agentNotes}</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[11px] text-slate-400 italic">Non renseignée</span>
+                            {product.agentNotes && (
+                              <div
+                                className="text-[10px] text-slate-600 bg-amber-50/80 border border-amber-200 rounded px-1.5 py-0.5 max-w-[200px] truncate"
+                                title={`Notes Agent : ${product.agentNotes}`}
+                              >
+                                💡 {product.agentNotes}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       {/* 1. Total Entré */}
@@ -773,6 +862,36 @@ export default function StockPage() {
                   value={alertThreshold}
                   onChange={(e) => setAlertThreshold(e.target.value)}
                   className="w-full text-xs border border-slate-300 rounded-lg p-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Lien Landing Page (Page de Vente Produit)</span>
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://votreboutique.com/produit"
+                  value={landingPageUrl}
+                  onChange={(e) => setLandingPageUrl(e.target.value)}
+                  className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:border-indigo-500 focus:outline-none"
+                />
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  Permet aux agents d&apos;ouvrir la page produit en 1 clic pour voir le pitch client.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Instructions & Pitch pour les Agents Call Center (Optionnel)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Ex: Mettre en avant la garantie 1 an + offre 2 achetés = 1 offert"
+                  value={agentNotes}
+                  onChange={(e) => setAgentNotes(e.target.value)}
+                  className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:border-indigo-500 focus:outline-none"
                 />
               </div>
 
@@ -1015,6 +1134,33 @@ export default function StockPage() {
                   value={editAlertThreshold}
                   onChange={(e) => setEditAlertThreshold(e.target.value)}
                   className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Lien Landing Page (Page de Vente Produit)</span>
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://votreboutique.com/produit"
+                  value={editLandingPageUrl}
+                  onChange={(e) => setEditLandingPageUrl(e.target.value)}
+                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Instructions & Pitch pour les Agents Call Center
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Ex: Arguments de vente, offres promotionnelles, upsells conseillés..."
+                  value={editAgentNotes}
+                  onChange={(e) => setEditAgentNotes(e.target.value)}
+                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:border-indigo-500 focus:outline-none"
                 />
               </div>
 

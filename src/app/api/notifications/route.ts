@@ -147,12 +147,34 @@ export async function GET(req: NextRequest) {
       orderBy: { shippedAt: 'asc' },
     });
 
+    // 5. Fetch Newly Added Products (last 72h) - for all agents and managers
+    const threeDaysAgo = new Date(Date.now() - 72 * 3600 * 1000);
+    const newProducts = await prisma.product.findMany({
+      where: {
+        ...productWhere,
+        createdAt: { gte: threeDaysAgo },
+      },
+      select: {
+        id: true,
+        name: true,
+        sku: true,
+        sellingPrice: true,
+        landingPageUrl: true,
+        agentNotes: true,
+        createdAt: true,
+        store: { select: { name: true, currency: true } },
+      },
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+    });
+
     const totalAlertsCount =
       outOfStockProducts.length +
       lowStockProducts.length +
       absentAgents.length +
       overdueCallbacks.length +
-      stuckShipments.length;
+      stuckShipments.length +
+      newProducts.length;
 
     return NextResponse.json({
       success: true,
@@ -161,6 +183,7 @@ export async function GET(req: NextRequest) {
       absentAgents,
       overdueCallbacks,
       stuckShipments,
+      newProducts,
       totalAlertsCount,
       isAgent,
       hasCriticalAlerts: outOfStockProducts.length > 0 || absentAgents.length > 0 || overdueCallbacks.length > 0,

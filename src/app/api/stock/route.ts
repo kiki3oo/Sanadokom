@@ -195,7 +195,20 @@ export async function POST(req: NextRequest) {
 
     // Action 2: Create a new product
     if (action === 'CREATE') {
-      const { storeId, sku, name, description, costPrice, sellingPrice, stockQuantity, alertThreshold, userName, userRole } = body;
+      const {
+        storeId,
+        sku,
+        name,
+        description,
+        costPrice,
+        sellingPrice,
+        stockQuantity,
+        alertThreshold,
+        landingPageUrl,
+        agentNotes,
+        userName,
+        userRole,
+      } = body;
 
       if (!storeId || !sku || !name) {
         return NextResponse.json({ error: 'Store, SKU, and Name are required' }, { status: 400 });
@@ -214,6 +227,8 @@ export async function POST(req: NextRequest) {
           stockInitial: initialQty,
           stockQuantity: initialQty,
           alertThreshold: parseInt(alertThreshold || 10),
+          landingPageUrl: landingPageUrl?.trim() || null,
+          agentNotes: agentNotes?.trim() || null,
         },
       });
 
@@ -240,15 +255,26 @@ export async function POST(req: NextRequest) {
         storeId: product.storeId,
         oldValue: '0 unités',
         newValue: `${initialQty} unités`,
-        details: `A créé le nouveau produit "${product.name}" (SKU: ${product.sku}) - Prix Vente: ${product.sellingPrice} MAD, Stock initial: ${product.stockQuantity}`,
+        details: `A créé le nouveau produit "${product.name}" (SKU: ${product.sku}) - Prix Vente: ${product.sellingPrice} MAD, Stock initial: ${product.stockQuantity}${product.landingPageUrl ? ` - Landing Page: ${product.landingPageUrl}` : ''}`,
       });
 
       return NextResponse.json({ success: true, product });
     }
 
-    // Action 3: Update existing product details (Prix d'achat, Prix de vente, Nom, Seuil)
+    // Action 3: Update existing product details (Prix d'achat, Prix de vente, Nom, Seuil, Landing Page)
     if (action === 'UPDATE') {
-      const { productId, name, description, costPrice, sellingPrice, alertThreshold, userName, userRole } = body;
+      const {
+        productId,
+        name,
+        description,
+        costPrice,
+        sellingPrice,
+        alertThreshold,
+        landingPageUrl,
+        agentNotes,
+        userName,
+        userRole,
+      } = body;
 
       // Vérification stricte : Réservé exclusivement à l'ADMIN
       const sessionCookie = req.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -276,6 +302,8 @@ export async function POST(req: NextRequest) {
       if (costPrice !== undefined) updateData.costPrice = parseFloat(costPrice || 0);
       if (sellingPrice !== undefined) updateData.sellingPrice = parseFloat(sellingPrice || 0);
       if (alertThreshold !== undefined) updateData.alertThreshold = parseInt(alertThreshold || 10);
+      if (landingPageUrl !== undefined) updateData.landingPageUrl = landingPageUrl ? landingPageUrl.trim() : null;
+      if (agentNotes !== undefined) updateData.agentNotes = agentNotes ? agentNotes.trim() : null;
 
       const updated = await prisma.product.update({
         where: { id: productId },
