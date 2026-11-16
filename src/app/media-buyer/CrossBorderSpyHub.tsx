@@ -215,7 +215,7 @@ const TARGET_MARKETS: TargetMarket[] = [
   },
 ];
 
-export type NicheId = 'ALL' | 'SUPPLEMENTS' | 'COSMETICS' | 'WELLNESS' | 'KITCHEN' | 'CAR' | 'HOME' | 'MINCEUR';
+export type NicheId = 'ALL' | 'SUPPLEMENTS' | 'GUMMIES' | 'COSMETICS' | 'WELLNESS' | 'KITCHEN' | 'CAR' | 'HOME' | 'MINCEUR';
 
 interface NicheChip {
   id: NicheId;
@@ -228,6 +228,7 @@ interface NicheChip {
 const NICHE_CHIPS: NicheChip[] = [
   { id: 'ALL', nameAr: '✨ جميع الفئات (الكل)', nameFr: '✨ Toutes les niches (Tout)', icon: '🌟', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
   { id: 'SUPPLEMENTS', nameAr: '💊 المكملات الغذائية والصحة', nameFr: '💊 Compléments & Suppléments', icon: '💊', color: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+  { id: 'GUMMIES', nameAr: '🍬 حلويات الفيتامينات (Gummies)', nameFr: '🍬 Gummies & Bonbons Santé', icon: '🍬', color: 'bg-fuchsia-50 text-fuchsia-800 border-fuchsia-200' },
   { id: 'COSMETICS', nameAr: '💄 مستحضرات التجميل والعناية', nameFr: '💄 Cosmétiques & Skincare', icon: '💄', color: 'bg-pink-50 text-pink-700 border-pink-200' },
   { id: 'WELLNESS', nameAr: '🧘 آلام الظهر والمفاصل', nameFr: '🧘 Soulagement & Douleurs', icon: '🧘', color: 'bg-purple-50 text-purple-700 border-purple-200' },
   { id: 'KITCHEN', nameAr: '🍳 أدوات المطبخ والمنزل', nameFr: '🍳 Cuisine & Maison', icon: '🍳', color: 'bg-amber-50 text-amber-800 border-amber-200' },
@@ -328,8 +329,8 @@ const PRESET_WINNING_PRODUCTS: WinningPreset[] = [
     nameAr: 'حلويات خل التفاح (ACV Gummies) للتنحيف والهضم بدون طعم مر',
     nameFr: 'Gummies Vinaigre de Cidre de Pomme Détox & Digestion',
     keyword: 'Apple Cider Vinegar ACV Gummies Belly Bloat',
-    niche: 'SUPPLEMENTS',
-    nicheAr: 'مكملات هضم وتنحيف',
+    niche: 'GUMMIES',
+    nicheAr: 'مكملات هضم وتنحيف (Gummies)',
     nicheFr: 'Gummies Détox & Minceur',
     sourceWholesale: 2.2,
     badge: '🍬 Impulse Buy Winner',
@@ -338,6 +339,54 @@ const PRESET_WINNING_PRODUCTS: WinningPreset[] = [
     momentumLabelFr: 'Achat d’impulsion immédiat grâce au format bonbon',
     whyWinningAr: 'حل سهل لانتفاخ البطن وسوء الهضم، طعم حلو يقضي على حموضة الخل، الفيديوهات تحقق تفاعل استثنائي.',
     whyWinningFr: 'Remplace le vinaigre liquide indigeste par des gummies savoureux. Forte viralité UGC.',
+  },
+  {
+    id: 'biotin-hair-gummies',
+    nameAr: 'حلويات البيوتين والزنك (Hair Gummies) لإنبات وتكثيف الشعر ومنع التساقط',
+    nameFr: 'Gummies Biotine & Zinc Pousse des Cheveux & Anti-Chute',
+    keyword: 'Biotin Hair Growth Gummies Zinc Hair Loss',
+    niche: 'GUMMIES',
+    nicheAr: 'شعر وجمال (Gummies)',
+    nicheFr: 'Cheveux & Beauté (Gummies)',
+    sourceWholesale: 2.1,
+    badge: '💖 #1 Selling Hair Vitamin',
+    trendVelocity: 97,
+    momentumLabelAr: 'أكثر مكمل مبيعاً للنساء والفتيات فالعالم',
+    momentumLabelFr: 'Numéro 1 des ventes beauté/cheveux sur TikTok & Meta',
+    whyWinningAr: 'حجم مبيعات أسطوري، طعم التوت اللذيذ يلغي فكرة الدواء، صور ومقارنات قبل وبعد (Before/After) تعطي نسبة تحويل خيالية.',
+    whyWinningFr: 'Remplacement idéal des gélules difficiles à avaler. Visuels avant/après viraux avec taux de conversion record.',
+  },
+  {
+    id: 'melatonin-sleep-gummies',
+    nameAr: 'حلويات الميلاتونين والبابونج (Sleep Gummies) للنوم السريع والتخلص من الأرق',
+    nameFr: 'Gummies Mélatonine & Camomille Sommeil Profond & Anti-Stress',
+    keyword: 'Melatonin Sleep Gummies Nighttime Relaxation Insomnia',
+    niche: 'GUMMIES',
+    nicheAr: 'نوم واسترخاء (Gummies)',
+    nicheFr: 'Sommeil & Sérénité (Gummies)',
+    sourceWholesale: 2.0,
+    badge: '🌙 Instant Relief Winner',
+    trendVelocity: 94,
+    momentumLabelAr: 'حل طبيعي فوري للأرق بدون إدمان',
+    momentumLabelFr: 'Solution naturelle immédiate sans accoutumance',
+    whyWinningAr: 'مطلوب جداً من الأشخاص الذين يعانون من صعوبة النوم والتوتر الليلي، مفعول سريع خلال 30 دقيقة، منتج غير إدماني.',
+    whyWinningFr: 'Effet en 30 minutes, non addictif. Cible très réceptive à fort pouvoir d’achat.',
+  },
+  {
+    id: 'creatine-muscle-gummies',
+    nameAr: 'حلويات الكرياتين أحادي الهيدرات (Creatine Gummies) لزيادة القوة والعضلات للرياضيين',
+    nameFr: 'Gummies Créatine Monohydrate Pure Prise de Muscle & Force',
+    keyword: 'Creatine Monohydrate Gummies Muscle Growth Workout',
+    niche: 'GUMMIES',
+    nicheAr: 'رياضة وتضخيم (Gummies)',
+    nicheFr: 'Sport & Musculation (Gummies)',
+    sourceWholesale: 2.5,
+    badge: '🏋️‍♂️ Fitness Trend 2026',
+    trendVelocity: 91,
+    momentumLabelAr: 'ترند الجيم الجديد الذي عوض بودرة الكرياتين المرة',
+    momentumLabelFr: 'Révolutionne la supplémentation sportive en remplaçant la poudre',
+    whyWinningAr: 'الرياضيون ورواد الجيم يفضلون مضغ حلويات لذيذة بدل خلط بودرة الكرياتين بالماء، منتج صاعد بقوة لدى فئة الشباب.',
+    whyWinningFr: 'Très pratique pour les sportifs sans avoir besoin de shaker. Forte demande masculine 18-35 ans.',
   },
   {
     id: 'matcha-ceremonial-tea',
@@ -515,7 +564,11 @@ export function CrossBorderSpyHub({
   const filteredPresets = useMemo(() => {
     let list = PRESET_WINNING_PRODUCTS;
     if (selectedNiche !== 'ALL') {
-      list = list.filter((p) => p.niche === selectedNiche);
+      if (selectedNiche === 'SUPPLEMENTS') {
+        list = list.filter((p) => p.niche === 'SUPPLEMENTS' || p.niche === 'GUMMIES');
+      } else {
+        list = list.filter((p) => p.niche === selectedNiche);
+      }
     }
     if (searchKeyword.trim()) {
       const q = searchKeyword.toLowerCase();
