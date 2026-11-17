@@ -107,14 +107,15 @@ export async function POST(req: NextRequest) {
     const { action } = body;
 
     if (action === 'RESEARCH_MARKETS') {
-      const { mode, target, source, product, language, category } = body;
+      const { mode, target, source, product, language, category, tone } = body;
       if (
         (mode !== 'scout' && mode !== 'audit') ||
         typeof target !== 'string' || !target.trim() || target.length > 120 ||
         typeof source !== 'string' || source.length > 180 ||
         typeof product !== 'string' || product.length > 1600 ||
         (mode === 'audit' && !product.trim()) ||
-        (category !== undefined && !['COSMETICS', 'SUPPLEMENTS', 'KITCHEN', 'CAR', 'WELLNESS', 'HOME', 'BOTH', 'ALL'].includes(category))
+        (category !== undefined && !['COSMETICS', 'SUPPLEMENTS', 'KITCHEN', 'CAR', 'WELLNESS', 'HOME', 'BOTH', 'ALL'].includes(category)) ||
+        (tone !== undefined && !['AGGRESSIVE', 'MEDICAL_AUTHORITY', 'UGC_VIRAL', 'BUNDLE_OFFER'].includes(tone))
       ) {
         return NextResponse.json({ success: false, error: 'MARKET_RESEARCH_INPUT' }, { status: 400 });
       }
@@ -123,6 +124,7 @@ export async function POST(req: NextRequest) {
         const report = await researchMarkets({
           mode, target: target.trim(), source: source.trim(), product: product.trim(), category,
           language: language === 'ar' ? 'ar' : 'fr',
+          tone: tone || 'AGGRESSIVE',
         });
         return NextResponse.json({ success: true, report });
       } catch (error) {

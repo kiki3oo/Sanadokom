@@ -12,6 +12,7 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '' }:
   const [target, setTarget] = useState(defaultTarget);
   const [source, setSource] = useState('');
   const [brief, setBrief] = useState('');
+  const [tone, setTone] = useState<'AGGRESSIVE' | 'MEDICAL_AUTHORITY' | 'UGC_VIRAL' | 'BUNDLE_OFFER'>('AGGRESSIVE');
   const [report, setReport] = useState<ResearchReport | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState('');
@@ -30,8 +31,13 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '' }:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'RESEARCH_MARKETS', mode, target, source, product: scout ? brief : product,
+          action: 'RESEARCH_MARKETS',
+          mode,
+          target,
+          source,
+          product: scout ? brief : product,
           language: isAr ? 'ar' : 'fr',
+          tone,
         }),
       });
       const data = await res.json();
@@ -58,7 +64,7 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '' }:
       <p className="text-sm text-slate-600">
         {scout
           ? label('Comparez la traction à l’étranger et la présence locale observée, avec des sources consultables.', 'قارن مؤشرات الطلب في الخارج والحضور المحلي المرصود، مع روابط المصادر.')
-          : label('Recherchez le produit, les concurrents locaux et trois angles avec scripts UGC et textes publicitaires.', 'ابحث عن المنتج والمنافسين المحليين واحصل على ثلاث زوايا مع سيناريوهات ونصوص إعلانية.')}
+          : label('Recherchez le produit, les concurrents locaux et trois angles avec 10 hooks agressifs, scripts UGC et textes multi-plateformes.', 'ابحث عن المنافسين المحليين واحصل على 10 هوكات إعلانية نارية، نصوص فيسبوك وتيك توك وواتساب، وسيناريوهات UGC احترافية.')}
       </p>
       <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void search(); }}>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -73,6 +79,36 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '' }:
               onChange={(event) => setSource(event.target.value)} placeholder={label('Ex. France, États-Unis', 'مثلاً فرنسا، الولايات المتحدة')} />
           </label>
         </div>
+
+        {!scout && (
+          <div className="space-y-1.5">
+            <span className="block text-xs font-bold text-slate-700">
+              {label('Niveau d’agressivité et ton publicitaire (Direct Response)', 'نبرة الإعلانات وقوة الإقناع (Direct-Response):')}
+            </span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { id: 'AGGRESSIVE', labelAr: '🔥 عدواني ومقنع (Aggressive)', labelFr: '🔥 Agressif & Direct' },
+                { id: 'MEDICAL_AUTHORITY', labelAr: '🩺 طبي وموثوق (Authority)', labelFr: '🩺 Autorité & Expert' },
+                { id: 'UGC_VIRAL', labelAr: '🎬 مؤثرين وتيك توك (Viral)', labelFr: '🎬 Viral & UGC' },
+                { id: 'BUNDLE_OFFER', labelAr: '🎁 باقات وعروض (Offers)', labelFr: '🎁 Packs & Urgence' },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setTone(item.id as any)}
+                  className={`px-3 py-2 text-xs font-bold rounded-xl border transition-all text-center ${
+                    tone === item.id
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm ring-2 ring-indigo-300'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  {isAr ? item.labelAr : item.labelFr}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {scout && (
           <label className="block space-y-1 text-sm font-semibold">
             {label('Niche ou produit à rechercher (facultatif)', 'الفئة أو المنتج المطلوب (اختياري)')}
@@ -80,28 +116,33 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '' }:
           </label>
         )}
         <button type="submit" disabled={running || !target.trim() || (!scout && !product.trim())}
-          className="rounded-xl bg-indigo-700 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50">
-          {running ? label('Recherche en cours…', 'البحث جارٍ…') : label('Lancer la recherche web', 'ابدأ البحث على الويب')}
+          className="rounded-xl bg-indigo-700 hover:bg-indigo-800 px-5 py-2.5 text-sm font-bold text-white transition-all disabled:opacity-50 cursor-pointer">
+          {running ? label('Recherche & génération en cours…', 'جارٍ البحث وتوليد الإعلانات…') : label('Lancer la recherche et générer les copies', 'ابدأ البحث وتوليد الإعلانات النارية')}
         </button>
       </form>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       {report && (
-        <div className="space-y-3 border-t border-slate-200 pt-4">
-          <button type="button" className="rounded-lg border px-3 py-1.5 text-sm font-semibold"
-            onClick={async () => {
-              try {
-                const sources = report.citations.map(({ title, url }) => title + ' — ' + url);
-                await navigator.clipboard.writeText([report.text, ...Array.from(new Set(sources))].join('\n'));
-                setCopied(true);
-              } catch {
-                setError(label('Copie impossible dans ce navigateur.', 'تعذر النسخ في هذا المتصفح.'));
-              }
-            }}>
-            {copied ? label('Copié', 'تم النسخ') : label('Copier le rapport', 'انسخ التقرير')}
-          </button>
-          <CitedText report={report} />
+        <div className="space-y-4 border-t border-slate-200 pt-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 text-xs font-bold transition-all shadow-xs cursor-pointer"
+              onClick={async () => {
+                try {
+                  const sources = report.citations.map(({ title, url }) => title + ' — ' + url);
+                  await navigator.clipboard.writeText([report.text, ...Array.from(new Set(sources))].join('\n\n'));
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 3000);
+                } catch {
+                  setError(label('Copie impossible dans ce navigateur.', 'تعذر النسخ في هذا المتصفح.'));
+                }
+              }}>
+              {copied ? label('✅ Rapport copié avec succès !', '✅ تم نسخ التقرير والإعلانات بالكامل !') : label('📋 Copier tout le rapport & les copies', '📋 نسخ التقرير والإعلانات كاملة')}
+            </button>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+            <CitedText report={report} />
+          </div>
           {report.citations.length === 0 && (
-            <p className="text-sm text-amber-800">{label('Aucune source exploitable dans cette réponse.', 'لا توجد مصادر قابلة للتحقق في هذه الإجابة.')}</p>
+            <p className="text-xs text-amber-800">{label('Aucune source externe consultable dans cette réponse.', 'تم الاعتماد على محرك الاستخبارات الداخلي بدون مصادر خارجية.')}</p>
           )}
         </div>
       )}
