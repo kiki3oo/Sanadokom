@@ -26,6 +26,7 @@ import {
   MessageCircle,
   AlertTriangle,
   PhoneCall,
+  Sparkles,
 } from 'lucide-react';
 import ManualOrderModal from '@/components/ManualOrderModal';
 import BulkImportOrdersModal from '@/components/BulkImportOrdersModal';
@@ -107,6 +108,67 @@ export default function OrdersPage() {
   const [refusalReason, setRefusalReason] = useState<string>('💸 Trop cher / Pas de budget');
   const [refusalNotes, setRefusalNotes] = useState('');
 
+  // On-Site Swap (Changement de Destinataire) states
+  const [localMatchesMap, setLocalMatchesMap] = useState<Record<string, any[]>>({});
+  const [swapModalData, setSwapModalData] = useState<{
+    targetOrder: any;
+    candidateSources: any[];
+    selectedSourceId: string;
+    courierDriverPhone: string;
+    customNotes: string;
+    loading: boolean;
+    result: any;
+  } | null>(null);
+
+  const fetchLocalMatches = async () => {
+    try {
+      const res = await fetch(`/api/shipping/reassign-on-site?storeId=${selectedStoreId || 'ALL'}`);
+      const data = await res.json();
+      if (data.success && data.matches) {
+        const map: Record<string, any[]> = {};
+        data.matches.forEach((m: any) => {
+          map[m.targetOrder.id] = m.candidateSources;
+        });
+        setLocalMatchesMap(map);
+      } else {
+        setLocalMatchesMap({});
+      }
+    } catch (e) {
+      console.error('Failed to load local matches', e);
+    }
+  };
+
+  const handleConfirmSwap = async () => {
+    if (!swapModalData || !swapModalData.selectedSourceId) return;
+    setSwapModalData(prev => prev ? { ...prev, loading: true } : null);
+    try {
+      const res = await fetch('/api/shipping/reassign-on-site', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetOrderId: swapModalData.targetOrder.id,
+          sourceOrderId: swapModalData.selectedSourceId,
+          courierDriverPhone: swapModalData.courierDriverPhone,
+          customNotes: swapModalData.customNotes,
+          userId: currentUser?.id,
+          userName: currentUser?.name || 'Agent Logistique',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSwapModalData(prev => prev ? { ...prev, loading: false, result: data } : null);
+        fetchOrders();
+        fetchLocalMatches();
+      } else {
+        alert(data.error || 'Erreur lors du changement de destinataire');
+        setSwapModalData(prev => prev ? { ...prev, loading: false } : null);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Erreur de connexion');
+      setSwapModalData(prev => prev ? { ...prev, loading: false } : null);
+    }
+  };
+
   useEffect(() => {
     if (currentCountry?.code === 'SN') {
       setCourierProvider('MANUAL');
@@ -147,7 +209,11 @@ export default function OrdersPage() {
     setLoading(true);
     try {
       let url = `/api/orders?storeId=${selectedStoreId}&logisticsOnly=true`;
-      if (statusFilter !== 'ALL') url += `&status=${statusFilter}`;
+      if (statusFilter === 'SWAP_OPPORTUNITIES') {
+        url += `&status=CONFIRMED`;
+      } else if (statusFilter !== 'ALL') {
+        url += `&status=${statusFilter}`;
+      }
       if (remittanceFilter !== 'ALL') url += `&remittance=${remittanceFilter}`;
       if (!isAdmin && hasPermission('onlyOwnOrders') && currentUser?.id) {
         url += `&agentId=${currentUser.id}`;
@@ -181,12 +247,17 @@ export default function OrdersPage() {
   useEffect(() => {
     fetchOrders();
     fetchTopAgent();
+    fetchLocalMatches();
     setSelectedIds([]);
   }, [selectedStoreId, currentCountry?.code, statusFilter, remittanceFilter, filterAgentId, currentUser?.id]);
 
+  const displayedOrders = statusFilter === 'SWAP_OPPORTUNITIES'
+    ? orders.filter((o) => localMatchesMap[o.id] && localMatchesMap[o.id].length > 0)
+    : orders;
+
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(orders.map((o) => o.id));
+      setSelectedIds(displayedOrders.map((o) => o.id));
     } else {
       setSelectedIds([]);
     }
@@ -529,6 +600,19 @@ export default function OrdersPage() {
           >
             <span>{t('orders.savedToReship')}</span>
           </button>
+          {Object.keys(localMatchesMap).length > 0 && (
+            <button
+              onClick={() => setStatusFilter(statusFilter === 'SWAP_OPPORTUNITIES' ? 'ALL' : 'SWAP_OPPORTUNITIES')}
+              className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
+                statusFilter === 'SWAP_OPPORTUNITIES'
+                  ? 'bg-gradient-to-r from-amber-600 to-rose-600 text-white shadow-xs font-black ring-2 ring-amber-300'
+                  : 'text-amber-900 bg-amber-100/90 hover:bg-amber-200 border border-amber-300 font-bold'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+              <span>🎯 كوليات عالقة بالمكان ({Object.keys(localMatchesMap).length})</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -739,11 +823,32 @@ export default function OrdersPage() {
         </div>
       )}
 
+      {statusFilter === 'SWAP_OPPORTUNITIES' && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-rose-600 text-white flex items-center justify-center font-black text-sm shadow-xs">
+              🎯
+            </span>
+            <div>
+              <h4 className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                <span>{displayedOrders.length} كولية قابلة للتحويل على المكان (Changement de Destinataire)</span>
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">
+                  ربح حتى لـ 70 درهم فـ الكولية!
+                </span>
+              </h4>
+              <p className="text-[11px] text-amber-800">
+                هاد الكوليات ملغية/مرفوضة عند الموزع فـ نفس المدينة، بدل ما ترجع للوكالة ونخلصو الروتور ونعاودو نصيفطو كولية جديدة، دير تحويل المستلم على البلاصة وربح مصاريف الشحن والروتور والوقت!
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Orders Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-xs text-slate-500">{t('table.loading')}</div>
-        ) : orders.length === 0 ? (
+        ) : displayedOrders.length === 0 ? (
           <div className="p-12 text-center text-xs text-slate-500">{t('table.noData')}</div>
         ) : (
           <div className="overflow-x-auto">
@@ -754,7 +859,7 @@ export default function OrdersPage() {
                     <th className="py-3 px-4 w-10">
                       <input
                         type="checkbox"
-                        checked={selectedIds.length === orders.length && orders.length > 0}
+                        checked={selectedIds.length === displayedOrders.length && displayedOrders.length > 0}
                         onChange={handleSelectAll}
                         className="rounded text-indigo-600 focus:ring-indigo-500"
                       />
@@ -771,7 +876,7 @@ export default function OrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {orders.map((order) => {
+                {displayedOrders.map((order) => {
                   const isSelected = selectedIds.includes(order.id);
 
                   return (
@@ -1072,16 +1177,40 @@ export default function OrdersPage() {
                             )}
 
                             {order.status === 'CONFIRMED' && (
-                              <button
-                                onClick={() => {
-                                  setSelectedIds([order.id]);
-                                  handleBulkDispatch();
-                                }}
-                                className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold border border-indigo-200 flex items-center gap-1"
-                              >
-                                <Send className="w-3 h-3" />
-                                <span>Expédier</span>
-                              </button>
+                              <div className="flex items-center gap-1.5">
+                                {localMatchesMap[order.id] && localMatchesMap[order.id].length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const candidates = localMatchesMap[order.id];
+                                      setSwapModalData({
+                                        targetOrder: order,
+                                        candidateSources: candidates,
+                                        selectedSourceId: candidates[0]?.sourceOrder?.id || '',
+                                        courierDriverPhone: '',
+                                        customNotes: '',
+                                        loading: false,
+                                        result: null,
+                                      });
+                                    }}
+                                    className="px-2.5 py-1 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 hover:from-amber-600 hover:to-rose-700 text-white rounded-lg text-[11px] font-black shadow-xs flex items-center gap-1 cursor-pointer animate-pulse whitespace-nowrap"
+                                    title={`كولي متوفر فـ ${order.customerCity}! استغلو وربح حتى لـ 70 درهم`}
+                                  >
+                                    <Sparkles className="w-3 h-3 text-amber-200" />
+                                    <span>🎯 كولي فـ {order.customerCity} (+70 DH)</span>
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    setSelectedIds([order.id]);
+                                    handleBulkDispatch();
+                                  }}
+                                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-semibold border border-indigo-200 flex items-center gap-1"
+                                >
+                                  <Send className="w-3 h-3" />
+                                  <span>Expédier</span>
+                                </button>
+                              </div>
                             )}
 
                             <button
@@ -1366,6 +1495,220 @@ export default function OrdersPage() {
                 ✓ Enregistrer le Refus
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* On-Site Package Reassignment (Changement de Destinataire) Modal */}
+      {swapModalData && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <span className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-600 text-white flex items-center justify-center font-black text-lg shadow-xs">
+                  🎯
+                </span>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">
+                    تحويل كولي على المكان (Changement de Destinataire)
+                  </h3>
+                  <span className="text-xs text-slate-500 font-medium">
+                    استغلال كولي متواجد ومرفوض/ملغي فـ {swapModalData.targetOrder.customerCity} لتسليمه للزبون الجديد
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setSwapModalData(null)}
+                className="text-slate-400 hover:text-slate-600 font-bold p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {swapModalData.result ? (
+              /* Success Result View */
+              <div className="mt-4 space-y-4">
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-950 space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-black text-emerald-800">
+                    <span>✅ تم تحويل الكولية وتعديل الوجهة بنجاح !</span>
+                  </div>
+                  <p className="text-xs text-emerald-800">
+                    تم ربط الطلبية الجديدة برقم التتبع: <strong className="font-mono text-emerald-900 bg-white/80 px-2 py-0.5 rounded border border-emerald-300">{swapModalData.result.trackingNumber}</strong> وتصفير مصاريف الشحن (توفير {swapModalData.result.savingsDH} درهم).
+                  </p>
+                  {swapModalData.result.courierApiResult?.success && (
+                    <div className="text-[11px] bg-emerald-100/80 p-2 rounded-lg text-emerald-900 font-semibold">
+                      ⚡ تمت مزامنة تغيير المستلم تلقائياً مع نظام شركة التوصيل ({swapModalData.result.courierProvider}) عبر الـ API.
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+                  <div className="text-xs font-bold text-slate-700">
+                    📲 إرسال التعليمات للموزع / الوكالة عبر WhatsApp :
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    انقر على الزر لإرسال رسالة جاهزة للموزع فيها تفاصيل الكولية القديمة، العنوان الجديد، ورقم هاتف الزبون الجديد ليقوم بتسليمها فورا.
+                  </p>
+                  <a
+                    href={swapModalData.result.whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs flex items-center justify-center gap-2 transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>فتح وتوجيه الرسالة على WhatsApp</span>
+                  </a>
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setSwapModalData(null)}
+                    className="px-5 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-xl cursor-pointer"
+                  >
+                    إغلاق (Fermer)
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Configuration / Confirmation View */
+              <div className="mt-4 space-y-4 text-xs">
+                {/* 1. Target Order Details */}
+                <div className="p-3 bg-indigo-50/70 border border-indigo-200/80 rounded-xl space-y-1">
+                  <div className="text-[11px] font-black text-indigo-900 uppercase tracking-wider">
+                    👤 الزبون الجديد المراد التسليم له (Commande #{swapModalData.targetOrder.orderNumber})
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                    <div>
+                      <span className="font-bold text-slate-900 text-xs">{swapModalData.targetOrder.customerName}</span>
+                      <span className="text-slate-500 font-mono text-[11px] ml-2">({swapModalData.targetOrder.customerPhone})</span>
+                    </div>
+                    <span className="font-black text-indigo-700 bg-white px-2 py-0.5 rounded border border-indigo-200 text-xs">
+                      {swapModalData.targetOrder.totalAmount} DH (COD)
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-600">
+                    📍 {swapModalData.targetOrder.customerAddress || 'عنوان غير محدد'} - <strong>{swapModalData.targetOrder.customerCity}</strong>
+                  </div>
+                </div>
+
+                {/* 2. Candidate Source Packages Selection */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    📦 اختر الكولية المتواجدة حالياً عند الموزع فـ {swapModalData.targetOrder.customerCity} :
+                  </label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {swapModalData.candidateSources.map((item: any) => {
+                      const src = item.sourceOrder;
+                      const isSelected = swapModalData.selectedSourceId === src.id;
+                      return (
+                        <div
+                          key={src.id}
+                          onClick={() => setSwapModalData({ ...swapModalData, selectedSourceId: src.id })}
+                          className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-amber-500 bg-amber-50/70 ring-2 ring-amber-300 shadow-xs'
+                              : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-slate-900 text-xs">
+                                {src.trackingNumber || src.orderNumber}
+                              </span>
+                              <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-bold">
+                                {src.courierProvider}
+                              </span>
+                              {src.courierProvider === 'Cathedis' && (
+                                <span className="text-[10px] bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded font-bold">
+                                  ⚡ API Auto
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                              {src.deliverySubStatus || src.status}
+                            </span>
+                          </div>
+                          <div className="mt-1 flex items-center justify-between text-[11px] text-slate-500">
+                            <span>الزبون السابق: {src.customerName}</span>
+                            <span className="font-black text-emerald-700">توفير: ~70 DH</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 3. Driver WhatsApp Phone & Notes */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      📱 هاتف الموزع / الوكالة (WhatsApp) :
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 0612345678"
+                      value={swapModalData.courierDriverPhone}
+                      onChange={(e) => setSwapModalData({ ...swapModalData, courierDriverPhone: e.target.value })}
+                      className="w-full text-xs border border-slate-300 rounded-xl p-2 outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      📝 تعليمات إضافية للموزع :
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: الكليان كيتسنى دابا / التوصيل قبل 6"
+                      value={swapModalData.customNotes}
+                      onChange={(e) => setSwapModalData({ ...swapModalData, customNotes: e.target.value })}
+                      className="w-full text-xs border border-slate-300 rounded-xl p-2 outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Savings Banner */}
+                <div className="p-3 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl text-emerald-950 text-[11px] flex items-center justify-between gap-2 shadow-2xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">💰</span>
+                    <div>
+                      <strong>الربح المالي الفوري :</strong> 35 درهم مصاريف شحن وفرتيها + 35 درهم روتور تفاديتيه = <strong>70 درهم ربح صافي</strong>.
+                    </div>
+                  </div>
+                  <span className="font-black text-xs text-emerald-800 bg-white px-2 py-1 rounded-lg border border-emerald-300 shrink-0">
+                    +70 DH
+                  </span>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="mt-5 flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setSwapModalData(null)}
+                    disabled={swapModalData.loading}
+                    className="px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmSwap}
+                    disabled={swapModalData.loading || !swapModalData.selectedSourceId}
+                    className="px-4 py-2 text-xs font-black bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-600 hover:to-rose-700 disabled:opacity-50 text-white rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-all"
+                  >
+                    {swapModalData.loading ? (
+                      <span>جاري المعالجة...</span>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>✓ تأكيد تحويل الكولية وتعديل الوجهة</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

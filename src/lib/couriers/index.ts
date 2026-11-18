@@ -19,10 +19,29 @@ export interface ShipmentResponse {
   error?: string;
 }
 
+export interface RecipientChangeRequest {
+  trackingNumber: string;
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  customerCity: string;
+  customerAddress: string;
+  totalCOD: number;
+  notes?: string;
+}
+
+export interface RecipientChangeResponse {
+  success: boolean;
+  message?: string;
+  apiHandled: boolean;
+  rawResponse?: any;
+}
+
 export interface CourierProvider {
   name: string;
   createShipment(shipment: ShipmentRequest, config?: any): Promise<ShipmentResponse>;
   trackShipment(trackingNumber: string, config?: any): Promise<{ status: string; history?: any[] }>;
+  changeRecipient?(request: RecipientChangeRequest, config?: any): Promise<RecipientChangeResponse>;
 }
 
 // 1. Cathedis Implementation
@@ -76,6 +95,42 @@ export class CathedisProvider implements CourierProvider {
         { date: new Date().toISOString(), status: 'Colis réceptionné au hub Cathedis Casablanca' },
         { date: new Date().toISOString(), status: 'En cours d acheminement vers le centre régional' },
       ],
+    };
+  }
+
+  async changeRecipient(request: RecipientChangeRequest, config?: any): Promise<RecipientChangeResponse> {
+    if (config?.apiKey && config?.apiUrl) {
+      try {
+        const res = await fetch(`${config.apiUrl}/shipments/${encodeURIComponent(request.trackingNumber)}/recipient`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${config.apiKey}`,
+          },
+          body: JSON.stringify({
+            recipient_name: request.customerName,
+            recipient_phone: request.customerPhone,
+            recipient_city: request.customerCity,
+            recipient_address: request.customerAddress,
+            cod_value: request.totalCOD,
+            instructions: request.notes || 'Changement de destinataire',
+          }),
+        });
+        const data = await res.json().catch(() => null);
+        return {
+          success: res.ok,
+          apiHandled: true,
+          message: res.ok ? 'Changement de destinataire validé sur l API Cathedis' : data?.message || 'Erreur API transporteur',
+          rawResponse: data,
+        };
+      } catch (err: any) {
+        console.error('Cathedis changeRecipient API error:', err);
+      }
+    }
+    return {
+      success: true,
+      apiHandled: false,
+      message: 'Enregistré en local. Envoyez le message WhatsApp pour confirmer avec la brigade locale.',
     };
   }
 }
