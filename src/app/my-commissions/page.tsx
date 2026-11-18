@@ -415,8 +415,13 @@ export default function MyCommissionsPage() {
 
                       <td className="py-3 px-3 text-right">
                         <div className="font-black text-indigo-600">
-                          {order.confirmerFee || agent?.commissionFee || 10} {currency}
+                          {order.confirmerFee ?? agent?.commissionFee ?? 10} {currency}
                         </div>
+                        {order.confirmerFee === 5.0 && (
+                          <div className="text-[10px] text-amber-600 font-extrabold whitespace-nowrap">
+                            🚨 Sauvetage Suivi Colis (+5 {currency})
+                          </div>
+                        )}
                         {order.upsell && (
                           <div className="text-[10px] text-emerald-600 font-bold whitespace-nowrap">
                             (Base {agent?.commissionFee || 10} + UpSell +{Math.max(0, (order.confirmerFee || 10) - (agent?.commissionFee || 10))} {currency})

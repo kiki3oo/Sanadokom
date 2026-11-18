@@ -26,6 +26,13 @@ export interface DeliveryAlert {
   resolvedAt?: string | null;
   resolvedBy?: string | null;
   resolvedAction?: string | null;
+  // Rescue attributes (20-min countdown & 5 DH commission)
+  isBotRescue?: boolean;
+  rescueCommission?: number;
+  rescueAssignedAt?: string | null;
+  rescueExpiresAt?: string | null;
+  rescueCallLoggedAt?: string | null;
+  rotationCount?: number;
 }
 
 const ALERTS_FILE_PATH = runtimeDataPath('delivery-alerts.json');
@@ -112,6 +119,11 @@ export function addDeliveryAlert(data: {
   subStatus: string;
   status: string;
   reason?: string;
+  isBotRescue?: boolean;
+  rescueCommission?: number;
+  rescueAssignedAt?: string | null;
+  rescueExpiresAt?: string | null;
+  rotationCount?: number;
 }): DeliveryAlert {
   if (!memoryAlerts) {
     loadAlertsFromFile();
@@ -127,6 +139,8 @@ export function addDeliveryAlert(data: {
       ? 'Le livreur a signalé que le client ne répond pas au téléphone'
       : data.subStatus.includes('REPORTE')
       ? 'Le livreur a signalé un report de livraison demandé'
+      : data.subStatus.includes('REFUS') || data.subStatus.includes('ANNUL')
+      ? 'Refus ou annulation signalée par le livreur'
       : 'Incident de livraison signalé par le transporteur');
 
   if (existing) {
@@ -137,9 +151,18 @@ export function addDeliveryAlert(data: {
     existing.dismissedBy = [];
     if (data.courierProvider) existing.courierProvider = data.courierProvider;
     if (data.trackingNumber) existing.trackingNumber = data.trackingNumber;
+    if (data.assignedAgentId) existing.assignedAgentId = data.assignedAgentId;
+    if (data.assignedAgentName) existing.assignedAgentName = data.assignedAgentName;
+    if (data.isBotRescue !== undefined) existing.isBotRescue = data.isBotRescue;
+    if (data.rescueCommission !== undefined) existing.rescueCommission = data.rescueCommission;
+    if (data.rescueAssignedAt) existing.rescueAssignedAt = data.rescueAssignedAt;
+    if (data.rescueExpiresAt) existing.rescueExpiresAt = data.rescueExpiresAt;
     saveAlertsToFile(memoryAlerts || []);
     return existing;
   }
+
+  const now = new Date();
+  const rescueExpiresAt = data.rescueExpiresAt || (data.isBotRescue ? new Date(now.getTime() + 20 * 60 * 1000).toISOString() : null);
 
   const newAlert: DeliveryAlert = {
     id: `alert-${data.orderId}-${Date.now()}`,
@@ -159,14 +182,54 @@ export function addDeliveryAlert(data: {
     subStatus: data.subStatus,
     status: data.status,
     reason,
-    createdAt: new Date().toISOString(),
+    createdAt: now.toISOString(),
     dismissedBy: [],
     resolved: false,
+    isBotRescue: data.isBotRescue ?? false,
+    rescueCommission: data.rescueCommission ?? (data.isBotRescue ? 5.0 : undefined),
+    rescueAssignedAt: data.rescueAssignedAt || (data.isBotRescue ? now.toISOString() : null),
+    rescueExpiresAt,
+    rotationCount: data.rotationCount ?? 0,
   };
 
   const updated = [newAlert, ...(memoryAlerts || [])];
   saveAlertsToFile(updated);
   return newAlert;
+}
+
+export function markAlertCallLogged(orderId: string): void {
+  if (!memoryAlerts) {
+    loadAlertsFromFile();
+  }
+  const alert = (memoryAlerts || []).find((a) => a.orderId === orderId && !a.resolved);
+  if (alert) {
+    alert.rescueCallLoggedAt = new Date().toISOString();
+    saveAlertsToFile(memoryAlerts || []);
+  }
+}
+
+export function reassignRescueAlert(
+  orderId: string,
+  newAgentId: string,
+  newAgentName: string
+): DeliveryAlert | null {
+  if (!memoryAlerts) {
+    loadAlertsFromFile();
+  }
+  const alert = (memoryAlerts || []).find((a) => a.orderId === orderId && !a.resolved);
+  if (alert) {
+    const now = new Date();
+    alert.assignedAgentId = newAgentId;
+    alert.assignedAgentName = newAgentName;
+    alert.rescueAssignedAt = now.toISOString();
+    alert.rescueExpiresAt = new Date(now.getTime() + 20 * 60 * 1000).toISOString();
+    alert.rescueCallLoggedAt = null;
+    alert.rotationCount = (alert.rotationCount || 0) + 1;
+    alert.dismissedBy = [];
+    saveAlertsToFile(memoryAlerts || []);
+    return alert;
+  }
+  return null;
 }
 
 export function resolveDeliveryAlert(

@@ -4,11 +4,96 @@ import {
   addDeliveryAlert,
   resolveDeliveryAlert,
   dismissDeliveryAlert,
+  reassignRescueAlert,
 } from '@/lib/deliveryAlerts';
 import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
+
+async function rotateExpiredRescueOrders() {
+  const alerts = getDeliveryAlerts({ unresolvedOnly: true });
+  const now = new Date();
+  const expired = alerts.filter(
+    (a) =>
+      a.rescueExpiresAt &&
+      new Date(a.rescueExpiresAt) < now &&
+      !a.rescueCallLoggedAt &&
+      !a.resolved
+  );
+
+  if (expired.length === 0) return;
+
+  const activeAgents = await prisma.user.findMany({
+    where: { role: 'CALL_AGENT', active: true },
+    select: { id: true, name: true, permissions: true },
+  });
+  if (activeAgents.length === 0) return;
+
+  for (const alert of expired) {
+    try {
+      const order = await prisma.order.findUnique({
+        where: { id: alert.orderId },
+        select: { id: true, storeId: true, agentNotes: true, assignedAgentId: true },
+      });
+      if (!order) continue;
+
+      let candidates = activeAgents.filter((ag) => ag.id !== alert.assignedAgentId);
+      if (candidates.length === 0) {
+        reassignRescueAlert(alert.orderId, alert.assignedAgentId || activeAgents[0].id, alert.assignedAgentName || activeAgents[0].name);
+        continue;
+      }
+
+      const storeCandidates = candidates.filter((ag) => {
+        if (!ag.permissions) return true;
+        try {
+          const p = JSON.parse(ag.permissions);
+          if (Array.isArray(p.assignedStoreIds) && p.assignedStoreIds.length > 0) {
+            return p.assignedStoreIds.includes(order.storeId);
+          }
+        } catch {}
+        return true;
+      });
+
+      const pool = storeCandidates.length > 0 ? storeCandidates : candidates;
+      const counts = await Promise.all(
+        pool.map(async (ag) => ({
+          agent: ag,
+          count: await prisma.order.count({
+            where: { assignedAgentId: ag.id, status: { in: ['IN_TRANSIT', 'NO_ANSWER', 'CALLBACK'] } },
+          }),
+        }))
+      );
+      counts.sort((a, b) => a.count - b.count);
+      const nextAgent = counts[0].agent;
+      const oldAgentName = alert.assignedAgentName || 'Agent';
+
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          assignedAgentId: nextAgent.id,
+          confirmerFee: 5.0,
+          agentNotes: (order.agentNotes || '') +
+            `\n[🔄 تدوير تلقائي بعد 20 دقيقة]: تم سحب الكولية من ${oldAgentName} لعدم الاتصال وتحويلها لـ ${nextAgent.name} للإنقاذ السريع (+5 DH) (${now.toLocaleTimeString('fr-FR')})`,
+        },
+      });
+
+      reassignRescueAlert(alert.orderId, nextAgent.id, nextAgent.name);
+
+      await logActivity({
+        userId: nextAgent.id,
+        userName: nextAgent.name,
+        userRole: 'CALL_AGENT',
+        action: 'ORDER_ASSIGN',
+        entity: 'ORDER',
+        orderId: order.id,
+        details: `[تدوير تلقائي 20 دقيقة]: سحب الكولية من ${oldAgentName} وتحويلها لـ ${nextAgent.name} (+5 DH عند التسليم)`,
+      });
+    } catch (e) {
+      console.error('Error auto-rotating rescue alert:', e);
+    }
+  }
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,6 +101,9 @@ export async function GET(req: NextRequest) {
     const agentId = searchParams.get('agentId');
     const role = searchParams.get('role');
     const unresolvedOnly = searchParams.get('unresolvedOnly') !== 'false';
+
+    // Auto-rotate any delivery rescue orders where 20 minutes passed without a call
+    await rotateExpiredRescueOrders();
 
     let allowedAgentIds: string[] | undefined = agentId ? [agentId] : undefined;
     const replacementInfoMap: Record<string, { absentName: string; rule: string; bonus: number }> = {};

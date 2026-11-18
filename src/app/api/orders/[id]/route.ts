@@ -283,12 +283,82 @@ export async function PATCH(
       'CLIENT_REFUSE',
       'REFUS_CLIENT',
       'REFUS',
+      'ANNULE',
+      'ANNULATION',
+      'CLIENT_ABSENT',
+      'ABSENT',
+      'ADRESSE_INCOMPLETE',
+      'ADRESSE_ERRONEE',
+      'HORS_ZONE',
+      'ECHEC',
     ];
 
     if (
       updatedOrder.subStatus &&
       alertSubStatuses.some((s) => updatedOrder.subStatus?.toUpperCase().includes(s))
     ) {
+      const isBotRescue = !updatedOrder.assignedAgentId ||
+        updatedOrder.subStatus === 'CONFIRME_WHATSAPP_BOT' ||
+        Boolean(updatedOrder.agentNotes?.includes('WhatsApp Bot'));
+
+      let assignedAgentId = updatedOrder.assignedAgentId;
+      let assignedAgentName = updatedOrder.assignedAgent?.name || null;
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 20 * 60 * 1000); // 20-min countdown
+
+      // If unassigned (e.g. confirmed by WhatsApp Bot), auto-assign to the least loaded Call Center agent
+      if (!assignedAgentId) {
+        try {
+          const activeAgents = await prisma.user.findMany({
+            where: { role: 'CALL_AGENT', active: true },
+            select: { id: true, name: true, permissions: true },
+          });
+
+          const storeAgents = activeAgents.filter((ag) => {
+            if (!ag.permissions) return true;
+            try {
+              const p = JSON.parse(ag.permissions);
+              if (Array.isArray(p.assignedStoreIds) && p.assignedStoreIds.length > 0) {
+                return p.assignedStoreIds.includes(updatedOrder.storeId);
+              }
+            } catch {}
+            return true;
+          });
+
+          const pool = storeAgents.length > 0 ? storeAgents : activeAgents;
+          if (pool.length > 0) {
+            const counts = await Promise.all(
+              pool.map(async (ag) => ({
+                agent: ag,
+                count: await prisma.order.count({
+                  where: {
+                    assignedAgentId: ag.id,
+                    status: { in: ['IN_TRANSIT', 'NO_ANSWER', 'CALLBACK'] },
+                  },
+                }),
+              }))
+            );
+            counts.sort((a, b) => a.count - b.count);
+            const chosenAgent = counts[0].agent;
+
+            assignedAgentId = chosenAgent.id;
+            assignedAgentName = chosenAgent.name;
+
+            await prisma.order.update({
+              where: { id: updatedOrder.id },
+              data: {
+                assignedAgentId: chosenAgent.id,
+                confirmerFee: 5.0, // 5 DH rescue fee for WhatsApp bot orders
+                agentNotes: (updatedOrder.agentNotes || '') +
+                  `\n[🚨 إنقاذ سريع 20 دقيقة]: تم تحويل الكولية لـ ${chosenAgent.name} بعمولة إنقاذ 5 دراهم عند التسليم (${now.toLocaleTimeString('fr-FR')})`,
+              },
+            });
+          }
+        } catch (e) {
+          console.error('Error auto-assigning delivery rescue order:', e);
+        }
+      }
+
       addDeliveryAlert({
         orderId: updatedOrder.id,
         orderNumber: updatedOrder.orderNumber,
@@ -298,12 +368,17 @@ export async function PATCH(
         customerAddress: updatedOrder.customerAddress,
         totalAmount: updatedOrder.totalAmount,
         currency: updatedOrder.store?.currency || 'MAD',
-        assignedAgentId: updatedOrder.assignedAgentId,
-        assignedAgentName: updatedOrder.assignedAgent?.name || null,
+        assignedAgentId,
+        assignedAgentName,
         courierProvider: updatedOrder.courierProvider || 'Transporteur',
         trackingNumber: updatedOrder.trackingNumber,
         subStatus: updatedOrder.subStatus,
         status: updatedOrder.status,
+        isBotRescue,
+        rescueCommission: 5.0,
+        rescueAssignedAt: now.toISOString(),
+        rescueExpiresAt: expiresAt.toISOString(),
+        rotationCount: 0,
       });
     } else if (
       ['DELIVERED', 'SAUVE_A_RELIVRER'].includes(updatedOrder.status) ||

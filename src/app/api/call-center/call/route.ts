@@ -5,6 +5,7 @@ import { sendFacebookConversionEvent } from '@/lib/facebook';
 import { unlockLead } from '@/lib/leadLocks';
 import { logActivity } from '@/lib/audit';
 import { getCallStrategySettings } from '@/lib/callStrategySettings';
+import { markAlertCallLogged } from '@/lib/deliveryAlerts';
 
 export async function POST(req: NextRequest) {
   try {
@@ -52,6 +53,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Mark delivery rescue alert call logged (proves agent called within 20m window)
+    markAlertCallLogged(orderId);
+
     // 2. Prepare Order Update
     const orderUpdates: any = {
       status,
@@ -64,7 +68,10 @@ export async function POST(req: NextRequest) {
     if (agentId) {
       orderUpdates.assignedAgentId = agentId;
       agentUser = await prisma.user.findUnique({ where: { id: agentId } });
-      if (agentUser && agentUser.commissionFee) {
+      // Keep rescue commission 5.0 DH if this order is a delivery rescue order
+      if (order.confirmerFee === 5.0) {
+        orderUpdates.confirmerFee = 5.0;
+      } else if (agentUser && agentUser.commissionFee) {
         orderUpdates.confirmerFee = agentUser.commissionFee;
       }
     }

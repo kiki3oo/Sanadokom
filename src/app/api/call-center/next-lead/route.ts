@@ -54,10 +54,41 @@ export async function GET(req: NextRequest) {
 
     let chosenOrder: any = null;
 
+    // Rule 0: Top Priority Urgent Delivery Rescue (20-min Countdown & 5 DH Commission)
+    // If agent has an urgent delivery rescue order assigned with 5 DH fee, serve it first before new leads!
+    const deliveryRescueOrder = await prisma.order.findFirst({
+      where: {
+        assignedAgentId: agentId,
+        confirmerFee: 5.0,
+        status: { in: ['IN_TRANSIT', 'SHIPPED'] },
+        storeId: whereBase.storeId,
+      },
+      include: {
+        store: { select: { id: true, name: true, currency: true } },
+        items: {
+          include: {
+            product: { select: { id: true, name: true, sku: true, stockQuantity: true } },
+          },
+        },
+        callLogs: {
+          orderBy: { createdAt: 'desc' },
+          take: 3,
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    if (deliveryRescueOrder) {
+      const lock = getLeadLock(deliveryRescueOrder.id);
+      if (!lock || lock.agentId === agentId) {
+        chosenOrder = deliveryRescueOrder;
+      }
+    }
+
     // Rule 1: Backlog Throttling for current agent
     // If current agent has >= maxUnansweredBacklog leads in NO_ANSWER where lastCallAt < expiredCutoff,
     // serve them their overdue NO_ANSWER lead first to prevent cherry-picking!
-    if (strategySettings.enableBacklogThrottle) {
+    if (!chosenOrder && strategySettings.enableBacklogThrottle) {
       const myOverdueNoAnswer = await prisma.order.findFirst({
         where: {
           status: 'NO_ANSWER',

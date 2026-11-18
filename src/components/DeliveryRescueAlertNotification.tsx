@@ -26,7 +26,13 @@ export default function DeliveryRescueAlertNotification() {
   const [currentAlertIndex, setCurrentAlertIndex] = useState<number>(0);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState<number>(Date.now());
   const notifiedAlertIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Web Audio SOS Siren: Authentic Ambulance Two-Tone (Pin-Pon / Wee-Woo 🚑)
   const playSosChime = () => {
@@ -265,7 +271,11 @@ export default function DeliveryRescueAlertNotification() {
             <span className="text-base leading-none">⚠️</span>
             <div>
               <span className="font-extrabold text-white block text-xs">
-                {t('sos.incidentAlert', 'Le livreur a signalé : Client Ne Répond Pas !')}
+                {alert.subStatus?.toUpperCase().includes('ANNUL')
+                  ? '⚠️ تم تسجيل إلغاء الكولية من طرف الموزع! تدخل فوراً لإنقاذها'
+                  : alert.subStatus?.toUpperCase().includes('REFUS')
+                  ? '🚫 الموزع سجل رفض الكولية! تواصل مع الزبون واكتشف السبب'
+                  : t('sos.incidentAlert', 'Le livreur a signalé : Client Ne Répond Pas !')}
               </span>
               <p className="text-[11px] text-rose-300 mt-0.5 leading-relaxed">
                 {t(
@@ -275,6 +285,34 @@ export default function DeliveryRescueAlertNotification() {
               </p>
             </div>
           </div>
+
+          {/* 20-Minute Rescue Countdown & 5 DH Commission Badge */}
+          {(() => {
+            const expiresMs = alert.rescueExpiresAt ? new Date(alert.rescueExpiresAt).getTime() : null;
+            const secondsLeft = expiresMs ? Math.max(0, Math.floor((expiresMs - nowMs) / 1000)) : null;
+            const mins = secondsLeft !== null ? Math.floor(secondsLeft / 60) : 0;
+            const secs = secondsLeft !== null ? secondsLeft % 60 : 0;
+            const timerStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+            return (
+              <div className="bg-gradient-to-r from-amber-500/25 via-rose-500/20 to-amber-500/25 text-white border border-amber-400/50 p-2.5 rounded-xl text-xs font-bold flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-1.5 text-amber-300">
+                  <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+                  <span>{alert.isBotRescue ? '🚨 إنقاذ كولية واتساب بوت' : '🚨 إنقاذ ومتابعة الكولية'}: <strong className="text-emerald-400 text-sm font-black">+5 DH</strong></span>
+                </div>
+                {secondsLeft !== null && (
+                  <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black font-mono tracking-wider ${
+                    secondsLeft < 300
+                      ? 'bg-rose-600 text-white animate-pulse shadow-rose-500/50 shadow-md'
+                      : 'bg-slate-950 text-amber-300 border border-amber-500/40'
+                  }`} title="المتبقي قبل التدوير التلقائي لأيجنت آخر">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>⏱️ {timerStr}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Replacement Tag if covering absent colleague */}
           {(alert as any).replacementInfo && (
