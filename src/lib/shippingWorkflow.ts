@@ -154,5 +154,7 @@ export function resolveCourierForOrder(
 
 export function getAllCouriers(config?: ShippingWorkflowConfig) {
   const current = config || loadShippingWorkflowConfig();
-  return [...AVAILABLE_COURIERS, ...(current.customCouriers || [])];
+  const nativeIds = new Set(AVAILABLE_COURIERS.map((c) => c.id));
+  const custom = (current.customCouriers || []).filter((c) => !nativeIds.has(c.id));
+  return [...AVAILABLE_COURIERS, ...custom];
 }

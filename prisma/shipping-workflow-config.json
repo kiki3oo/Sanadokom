@@ -72,13 +72,5 @@
   ],
   "lastAutoDispatchAt": "2026-11-04T00:53:36.453Z",
   "lastDispatchedCount": 1,
-  "customCouriers": [
-    {
-      "id": "DIGYLOG",
-      "name": "Digylog",
-      "country": "MA",
-      "phone": "0660302517",
-      "deliveryFee": 35
-    }
-  ]
+  "customCouriers": []
 }
