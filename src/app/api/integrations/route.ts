@@ -156,7 +156,73 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, n8nWebhookConfig: updated });
     }
 
-    // 4. Test n8n Webhook Node
+    // 4. Test Courier Connection (e.g. Digylog)
+    if (type === 'TEST_COURIER') {
+      const { provider, apiKey, apiUrl } = body;
+      if (!apiKey || !apiKey.trim()) {
+        return NextResponse.json({ error: 'Token API requis pour tester la connexion' }, { status: 400 });
+      }
+
+      if (provider === 'DIGYLOG') {
+        const cleanToken = apiKey.trim();
+        const baseUrl = apiUrl?.trim() || 'https://api.digylog.com/api/seller/v48';
+
+        try {
+          // Check 1: Public endpoint check
+          const pubRes = await fetch('https://api.digylog.com/publicapi/moroccocities', {
+            headers: { 'Accept': 'application/json' },
+          });
+          const pubOk = pubRes.ok;
+
+          // Check 2: Auth check with token
+          const authRes = await fetch(`${baseUrl}/hastoken`, {
+            headers: {
+              'Authorization': `Bearer ${cleanToken}`,
+              'Accept': 'application/json',
+            },
+          });
+
+          const authBody = await authRes.json().catch(() => null);
+
+          if (authRes.status === 403 && authBody?.message?.includes('Access denied for this app')) {
+            return NextResponse.json({
+              success: true,
+              connected: true,
+              permissionsPending: true,
+              message: 'Token reconnu par Digylog ! Veuillez maintenant activer les permissions dans votre compte Digylog (Paramètres > API > Votre Application > Permissions > "Activer tout").',
+              raw: authBody,
+            });
+          }
+
+          if (authRes.ok) {
+            return NextResponse.json({
+              success: true,
+              connected: true,
+              permissionsPending: false,
+              message: 'Connexion Digylog réussie et autorisations vérifiées à 100% !',
+              raw: authBody,
+            });
+          }
+
+          return NextResponse.json({
+            success: false,
+            connected: pubOk,
+            status: authRes.status,
+            error: authBody?.message || `Erreur d authentification Digylog (HTTP ${authRes.status})`,
+            raw: authBody,
+          });
+        } catch (err: any) {
+          return NextResponse.json({
+            success: false,
+            error: `Impossible de contacter l API Digylog: ${err.message}`,
+          }, { status: 502 });
+        }
+      }
+
+      return NextResponse.json({ success: true, message: `Test simulé réussi pour ${provider}` });
+    }
+
+    // 5. Test n8n Webhook Node
     if (type === 'TEST_N8N_WEBHOOK') {
       const { url, secret } = body;
       if (!url) {
