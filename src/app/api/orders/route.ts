@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
 import { enrichOrdersWithCustomerProfiles } from '@/lib/customerHistory';
 import { dispatchOutgoingWebhook } from '@/lib/outgoingWebhooks';
+import { findMatchingDigylogCity } from '@/lib/moroccanCities';
 
 export const dynamic = 'force-dynamic';
 
@@ -211,13 +212,20 @@ export async function POST(req: NextRequest) {
       if (ag && ag.commissionFee) confirmerFee = ag.commissionFee;
     }
 
+    // Normalize city to Digylog standard
+    let resolvedCity = (customerCity && typeof customerCity === 'string' ? customerCity.trim() : '') || (store.currency === 'XOF' ? 'Dakar' : 'Casablanca');
+    if (store.currency !== 'XOF' && resolvedCity) {
+      const matchedCity = findMatchingDigylogCity(resolvedCity);
+      if (matchedCity) resolvedCity = matchedCity.name;
+    }
+
     const order = await prisma.order.create({
       data: {
         orderNumber,
         storeId,
         customerName: customerName.trim(),
         customerPhone: cleanPhone,
-        customerCity: customerCity?.trim() || 'Casablanca',
+        customerCity: resolvedCity,
         customerAddress: customerAddress?.trim() || '',
         customerNote: customerNote?.trim() || null,
         agentNotes: agentNotes?.trim() || null,

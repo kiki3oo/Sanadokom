@@ -28,28 +28,7 @@ interface ManualOrderModalProps {
   defaultStatus?: 'CONFIRMED' | 'PENDING';
 }
 
-const MOROCCAN_CITIES = [
-  'Casablanca',
-  'Rabat',
-  'Marrakech',
-  'Tanger',
-  'Fès',
-  'Agadir',
-  'Meknès',
-  'Oujda',
-  'Kenitra',
-  'Tétouan',
-  'Salé',
-  'Temara',
-  'Mohammedia',
-  'El Jadida',
-  'Nador',
-  'Béni Mellal',
-  'Khouribga',
-  'Settat',
-  'Safi',
-  'Autre Ville',
-];
+import { MOROCCAN_CITIES } from '@/lib/moroccanCities';
 
 export default function ManualOrderModal({
   isOpen,
@@ -141,7 +120,7 @@ export default function ManualOrderModal({
 
     setSubmitting(true);
     try {
-      const cityToSave = customerCity === 'Autre Ville' ? customCity.trim() || 'Maroc' : customerCity;
+      const cityToSave = customerCity.trim() || 'Casablanca';
 
       const res = await fetch('/api/orders', {
         method: 'POST',
@@ -396,27 +375,20 @@ export default function ManualOrderModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-slate-700 mb-1">{t('manual.city')} *</label>
-              <select
+              <input
+                type="text"
+                list="manual-moroccan-cities-list"
                 value={customerCity}
                 onChange={(e) => setCustomerCity(e.target.value)}
-                className="w-full font-semibold border border-slate-200 rounded-xl p-2.5 bg-slate-50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
-              >
+                placeholder="Ex: Casablanca, Marrakech, Agadir..."
+                className="w-full font-semibold border border-slate-200 rounded-xl p-2.5 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                required
+              />
+              <datalist id="manual-moroccan-cities-list">
                 {MOROCCAN_CITIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
+                  <option key={c} value={c} />
                 ))}
-              </select>
-              {customerCity === 'Autre Ville' && (
-                <input
-                  type="text"
-                  placeholder="Tapez le nom de la ville..."
-                  value={customCity}
-                  onChange={(e) => setCustomCity(e.target.value)}
-                  className="w-full font-semibold border border-slate-200 rounded-xl p-2 mt-2 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
-                  required
-                />
-              )}
+              </datalist>
             </div>
 
             <div>

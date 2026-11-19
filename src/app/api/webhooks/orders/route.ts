@@ -2,6 +2,7 @@ import { metaMatchCookie, queueDeliveryEvent, trySendDeliveryEvent } from '@/lib
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendFacebookConversionEvent } from '@/lib/facebook';
+import { findMatchingDigylogCity } from '@/lib/moroccanCities';
 import {
   loadWhatsAppConfig,
   loadWhatsAppLogs,
@@ -298,6 +299,16 @@ export async function POST(req: NextRequest) {
     // 6. Create Order in Database
     const fbc = metaMatchCookie(body.fbc ?? body._fbc, 'fbc');
     const fbp = metaMatchCookie(body.fbp ?? body._fbp, 'fbp');
+
+    // Normalize city to official Digylog / Moroccan city format
+    let resolvedCity = (customerCity && typeof customerCity === 'string' ? customerCity.trim() : '') || (store.currency === 'XOF' ? 'Dakar' : 'Casablanca');
+    if (store.currency !== 'XOF' && resolvedCity) {
+      const matchedCity = findMatchingDigylogCity(resolvedCity);
+      if (matchedCity) {
+        resolvedCity = matchedCity.name;
+      }
+    }
+
     const { order, queued } = await prisma.$transaction(async tx => {
       const order = await tx.order.create({
         data: {
@@ -305,7 +316,7 @@ export async function POST(req: NextRequest) {
           storeId: store.id,
           customerName: customerName.trim(),
           customerPhone: cleanPhone,
-          customerCity: customerCity || 'Casablanca',
+          customerCity: resolvedCity,
           customerAddress: customerAddress || '',
           customerNote: customerNote || null,
           status: isDuplicate ? 'DUPLICATE' : 'PENDING',

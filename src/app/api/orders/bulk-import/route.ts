@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logActivity } from '@/lib/audit';
+import { findMatchingDigylogCity } from '@/lib/moroccanCities';
 
 export async function POST(req: NextRequest) {
   try {
@@ -106,7 +107,11 @@ export async function POST(req: NextRequest) {
       }
 
       const customerName = rawName || `Client ${cleanPhone.slice(-4)}`;
-      const customerCity = String(row.customerCity || row.city || row.ville || 'Casablanca').trim();
+      let customerCity = String(row.customerCity || row.city || row.ville || (store.currency === 'XOF' ? 'Dakar' : 'Casablanca')).trim();
+      if (store.currency !== 'XOF' && customerCity) {
+        const matchedCity = findMatchingDigylogCity(customerCity);
+        if (matchedCity) customerCity = matchedCity.name;
+      }
       const customerAddress = String(row.customerAddress || row.address || row.adresse || '').trim();
       const customerNote = String(row.customerNote || row.note || '').trim() || null;
       const agentNotes = String(row.agentNotes || row.remarque || '').trim() || null;

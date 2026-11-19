@@ -47,6 +47,7 @@ import UtmBadge from '@/components/UtmBadge';
 import CallCenterLivePresenceBar from '@/components/CallCenterLivePresenceBar';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePresence } from '@/context/PresenceContext';
+import { MOROCCAN_CITIES } from '@/lib/moroccanCities';
 
 export default function CallCenterPage() {
   const { selectedStoreId } = useStore();
@@ -1576,10 +1577,17 @@ export default function CallCenterPage() {
                 <label className="text-slate-400 block font-semibold mb-1">{t('cc.deliveryCity', 'Ville de livraison')}</label>
                 <input
                   type="text"
+                  list="digylog-cities-datalist"
                   value={customCity}
                   onChange={(e) => setCustomCity(e.target.value)}
+                  placeholder="Tapez le nom de la ville..."
                   className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
+                <datalist id="digylog-cities-datalist">
+                  {MOROCCAN_CITIES.map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
               </div>
 
               <div>
