@@ -58,7 +58,8 @@ export async function PATCH(
     // 3. EXECUTE REFUND (Création Dépense & Clôture Résolue)
     if (body.action === 'EXECUTE_REFUND' || body.executeRefund === true) {
       const netAmount = Number(body.netRefundAmount !== undefined ? body.netRefundAmount : (existing.netRefundAmount || existing.refundAmount || 0));
-      
+      const refundMethod = body.refundMethod || 'VIREMENT_BANCAIRE';
+
       let targetStoreId = existing.storeId;
       if (!targetStoreId) {
         const anyStore = await prisma.store.findFirst();
@@ -67,17 +68,40 @@ export async function PATCH(
 
       let expenseId: string | null = null;
       if (netAmount > 0 && targetStoreId) {
-        const ribInfo = body.customerRib || existing.customerRib || 'N/A';
-        const bankInfo = body.customerBankName || existing.customerBankName || '';
+        let desc = '';
+        if (refundMethod === 'PAR_LIVREUR') {
+          desc = `[SAV Remboursement Livreur] Ticket ${existing.ticketNumber} (#${existing.orderNumber}) - Client: ${existing.customerName} - Repris et remboursé en espèces par le livreur (${existing.courierProvider || 'Transporteur'}) - Déduit du versement`;
+        } else {
+          const ribInfo = body.customerRib || existing.customerRib || 'N/A';
+          const bankInfo = body.customerBankName || existing.customerBankName || '';
+          desc = `[SAV Remboursement] Ticket ${existing.ticketNumber} (#${existing.orderNumber}) - Client: ${existing.customerName} - RIB: ${ribInfo} (${bankInfo})`;
+        }
+
         const exp = await prisma.expense.create({
           data: {
             storeId: targetStoreId,
             category: 'OTHER',
             amount: netAmount,
-            description: `[SAV Remboursement] Ticket ${existing.ticketNumber} (#${existing.orderNumber}) - Client: ${existing.customerName} - RIB: ${ribInfo} (${bankInfo})`,
+            description: desc,
           },
         });
         expenseId = exp.id;
+      }
+
+      // If refunded directly by courier on-site, update order status and courier remittance
+      if (refundMethod === 'PAR_LIVREUR' && existing.orderId) {
+        try {
+          await prisma.order.update({
+            where: { id: existing.orderId },
+            data: {
+              status: 'RETURNED',
+              subStatus: 'REMBOURSE_PAR_LIVREUR',
+              courierStatus: 'REMBOURSE_PAR_LIVREUR',
+            },
+          });
+        } catch (e) {
+          console.error('Error updating order on courier refund:', e);
+        }
       }
 
       updates.status = 'RESOLU';
@@ -85,10 +109,12 @@ export async function PATCH(
       updates.netRefundAmount = netAmount;
       updates.refundPaidAt = new Date().toISOString();
       updates.refundExpenseId = expenseId;
-      updates.refundMethod = body.refundMethod || 'VIREMENT_BANCAIRE';
+      updates.refundMethod = refundMethod;
       if (body.customerRib) updates.customerRib = body.customerRib;
       if (body.customerBankName) updates.customerBankName = body.customerBankName;
-      updates.resolutionNotes = `Remboursement de ${netAmount} DH effectué avec succès via ${body.refundMethod || 'Virement bancaire'}.${expenseId ? ` Dépense enregistrée #${expenseId}.` : ''}`;
+      updates.resolutionNotes = refundMethod === 'PAR_LIVREUR'
+        ? `Colis repris et remboursé en espèces (${netAmount} DH) directement par le livreur (${existing.courierProvider || 'Transporteur'}). Versement déduit.`
+        : `Remboursement de ${netAmount} DH effectué avec succès via ${refundMethod}.${expenseId ? ` Dépense enregistrée #${expenseId}.` : ''}`;
     }
 
     const updated = updateReclamation(id, updates);

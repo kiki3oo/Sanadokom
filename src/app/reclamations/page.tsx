@@ -186,7 +186,8 @@ export default function ReclamationsPage() {
     customerRib: '',
     customerBankName: 'CIH Bank',
     returnShippingFee: 30,
-    refundMethod: 'VIREMENT_BANCAIRE',
+    refundMethod: 'PAR_LIVREUR',
+    courierDriverPhone: '',
     processing: false,
     completedResult: null as any,
   });
@@ -436,17 +437,40 @@ export default function ReclamationsPage() {
         if (finalPhone.startsWith('0')) {
           finalPhone = (currentCountry.code === 'SN' ? '221' : '212') + finalPhone.substring(1);
         }
-        const waMsg = isAr
-          ? `السلام عليكم أ سيدي/لالة ${showRefundModal.customerName}، تم بنجاح تحويل مبلغ ${netAmount} درهم لحسابكم البنكي (${refundData.customerBankName} - RIB: ${refundData.customerRib}) بخصوص طلبية #${showRefundModal.orderNumber}. شكرا لثقتكم وتفهمكم.`
-          : `Bonjour ${showRefundModal.customerName}, nous vous confirmons le virement de ${netAmount} DH sur votre compte (${refundData.customerBankName} - RIB: ${refundData.customerRib}) pour la commande #${showRefundModal.orderNumber}. Merci de votre confiance.`;
+
+        // WhatsApp message for customer
+        let waMsg = '';
+        if (refundData.refundMethod === 'PAR_LIVREUR') {
+          waMsg = isAr
+            ? `السلام عليكم أ سيدي/لالة ${showRefundModal.customerName}، راه تواصلنا مع موزع شركة التوصيل باش يدوز عندك ياخد الكولية ويرجع ليك مبلغ ${netAmount} درهم كاش فـ يديك بخصوص طلبية #${showRefundModal.orderNumber}. عفاك وجد المنتوج فـ الكرتونة ديالو وشكرا.`
+            : `Bonjour ${showRefundModal.customerName}, notre livreur passera récupérer le colis et vous remettre ${netAmount} DH en espèces en main propre pour la commande #${showRefundModal.orderNumber}. Merci de préparer l'article dans son emballage.`;
+        } else {
+          waMsg = isAr
+            ? `السلام عليكم أ سيدي/لالة ${showRefundModal.customerName}، تم بنجاح تحويل مبلغ ${netAmount} درهم لحسابكم البنكي (${refundData.customerBankName} - RIB: ${refundData.customerRib}) بخصوص طلبية #${showRefundModal.orderNumber}. شكرا لثقتكم وتفهمكم.`
+            : `Bonjour ${showRefundModal.customerName}, nous vous confirmons le virement de ${netAmount} DH sur votre compte (${refundData.customerBankName} - RIB: ${refundData.customerRib}) pour la commande #${showRefundModal.orderNumber}. Merci de votre confiance.`;
+        }
         const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(waMsg)}`;
+
+        // WhatsApp message for courier driver (if PAR_LIVREUR)
+        let whatsappDriverUrl = '';
+        if (refundData.refundMethod === 'PAR_LIVREUR') {
+          const tracking = showRefundModal.trackingNumber || showRefundModal.orderNumber;
+          const driverMsg = `سلام خويا عفاك بخصوص كولي رقم ${tracking} ديال الكليان ${showRefundModal.customerName} (${showRefundModal.customerCity} - ${showRefundModal.customerPhone})، عفاك دوز عندو خوذ من عندو الكولية ورجع ليه مبلغ ${netAmount} درهم كاش، وغادي تخصم فـ الفيرمون (Versement) مع الوكالة وشكرا بزاف.`;
+          const cleanDriverPhone = refundData.courierDriverPhone ? refundData.courierDriverPhone.replace(/[^0-9]/g, '') : '';
+          const finalDriverPhone = cleanDriverPhone.startsWith('0') ? '212' + cleanDriverPhone.substring(1) : cleanDriverPhone;
+          whatsappDriverUrl = finalDriverPhone 
+            ? `https://wa.me/${finalDriverPhone}?text=${encodeURIComponent(driverMsg)}`
+            : `https://wa.me/?text=${encodeURIComponent(driverMsg)}`;
+        }
 
         setRefundData((prev) => ({
           ...prev,
           processing: false,
           completedResult: {
             netAmount,
+            refundMethod: refundData.refundMethod,
             whatsappUrl,
+            whatsappDriverUrl,
           },
         }));
         fetchTickets();
@@ -973,7 +997,8 @@ export default function ReclamationsPage() {
                               customerRib: ticket.customerRib || '',
                               customerBankName: ticket.customerBankName || 'CIH Bank',
                               returnShippingFee: ticket.returnShippingFee !== undefined ? ticket.returnShippingFee : 30,
-                              refundMethod: 'VIREMENT_BANCAIRE',
+                              refundMethod: 'PAR_LIVREUR',
+                              courierDriverPhone: '',
                               processing: false,
                               completedResult: null,
                             });
@@ -1598,7 +1623,7 @@ export default function ReclamationsPage() {
               <button
                 onClick={() => {
                   setShowRefundModal(null);
-                  setRefundData({ customerRib: '', customerBankName: 'CIH Bank', returnShippingFee: 30, refundMethod: 'VIREMENT_BANCAIRE', processing: false, completedResult: null });
+                  setRefundData({ customerRib: '', customerBankName: 'CIH Bank', returnShippingFee: 30, refundMethod: 'PAR_LIVREUR', courierDriverPhone: '', processing: false, completedResult: null });
                 }}
                 className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
               >
@@ -1611,35 +1636,63 @@ export default function ReclamationsPage() {
                 <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-950 space-y-2">
                   <div className="flex items-center gap-2 text-sm font-black text-emerald-800">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    <span>{isAr ? 'تم تسجيل الإرجاع المالي وإغلاق الملف بنجاح !' : 'Remboursement exécuté avec succès !'}</span>
+                    <span>
+                      {refundData.completedResult.refundMethod === 'PAR_LIVREUR'
+                        ? (isAr ? 'تم تسجيل الاسترجاع كاش عبر الموزع بنجاح !' : 'Remboursement sur place par livreur enregistré !')
+                        : (isAr ? 'تم تسجيل الإرجاع المالي وإغلاق الملف بنجاح !' : 'Remboursement exécuté avec succès !')}
+                    </span>
                   </div>
                   <p className="text-xs text-emerald-800">
-                    {isAr
-                      ? `تم خصم مبلغ ${refundData.completedResult.netAmount} درهم وتسجيله كـ (Sortie de Caisse / Dépense) لحفظ توازن الأرباح المحاسبية بدقة.`
-                      : `Montant net de ${refundData.completedResult.netAmount} DH enregistré en charge (Dépense SAV) pour préserver l'exactitude de la trésorerie.`}
+                    {refundData.completedResult.refundMethod === 'PAR_LIVREUR'
+                      ? (isAr
+                          ? `الموزع غيدوز يستلم الكولية ويرجع ${refundData.completedResult.netAmount} درهم كاش للزبون. والمبلغ تم قفله وتحديث حالة الكولي (Versement Déduit) لضبط الحسابات.`
+                          : `Le livreur reprend le colis et remet ${refundData.completedResult.netAmount} DH en espèces au client. Retenue enregistrée sur le versement transporteur.`)
+                      : (isAr
+                          ? `تم خصم مبلغ ${refundData.completedResult.netAmount} درهم وتسجيله كـ (Sortie de Caisse / Dépense) لحفظ توازن الأرباح المحاسبية بدقة.`
+                          : `Montant net de ${refundData.completedResult.netAmount} DH enregistré en charge (Dépense SAV) pour préserver l'exactitude de la trésorerie.`)}
                   </p>
                 </div>
 
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                  <span className="text-xs font-bold text-slate-800 block">
-                    {isAr ? '📲 إرسال إشعار وتأكيد التحويل للزبون :' : 'Confirmer au client par WhatsApp :'}
-                  </span>
-                  <a
-                    href={refundData.completedResult.whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs flex items-center justify-center gap-2 transition"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>{isAr ? 'إرسال وصل التحويل عبر WhatsApp' : 'Envoyer reçu sur WhatsApp'}</span>
-                  </a>
+                {/* WhatsApp Dispatch Buttons */}
+                <div className="space-y-2">
+                  {refundData.completedResult.whatsappDriverUrl && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl space-y-1.5">
+                      <span className="text-[11px] font-bold text-amber-900 block">
+                        🛵 {isAr ? 'إرسال التعليمات للموزع / الوكالة عبر WhatsApp :' : 'Envoyer la consigne au livreur sur WhatsApp :'}
+                      </span>
+                      <a
+                        href={refundData.completedResult.whatsappDriverUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2.5 px-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl text-xs font-black shadow-xs flex items-center justify-center gap-2 transition"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        <span>{isAr ? 'توجيه الموزع لاسترجاع الكولية وأداء الكاش' : 'Consigne Livreur (Reprise + Cash)'}</span>
+                      </a>
+                    </div>
+                  )}
+
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-1.5">
+                    <span className="text-[11px] font-bold text-emerald-900 block">
+                      👤 {isAr ? 'إشعار الزبون عبر WhatsApp :' : 'Notifier le client sur WhatsApp :'}
+                    </span>
+                    <a
+                      href={refundData.completedResult.whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs flex items-center justify-center gap-2 transition"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      <span>{isAr ? 'إرسال التأكيد للزبون عبر WhatsApp' : 'Notifier le client sur WhatsApp'}</span>
+                    </a>
+                  </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end pt-1">
                   <button
                     onClick={() => {
                       setShowRefundModal(null);
-                      setRefundData({ customerRib: '', customerBankName: 'CIH Bank', returnShippingFee: 30, refundMethod: 'VIREMENT_BANCAIRE', processing: false, completedResult: null });
+                      setRefundData({ customerRib: '', customerBankName: 'CIH Bank', returnShippingFee: 30, refundMethod: 'PAR_LIVREUR', courierDriverPhone: '', processing: false, completedResult: null });
                     }}
                     className="px-5 py-2 text-xs font-bold bg-slate-900 text-white rounded-xl cursor-pointer"
                   >
@@ -1661,6 +1714,23 @@ export default function ReclamationsPage() {
                   </div>
                 </div>
 
+                {/* Qui effectue le remboursement */}
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block">
+                    {isAr ? 'طريقة ومصدر الاسترجاع المالي :' : 'Mode et source de remboursement :'}
+                  </label>
+                  <select
+                    value={refundData.refundMethod}
+                    onChange={(e) => setRefundData({ ...refundData, refundMethod: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 cursor-pointer focus:ring-2 focus:ring-teal-500 text-xs"
+                  >
+                    <option value="PAR_LIVREUR">🛵 موزع شركة التوصيل (استرجاع كاش عند استلام الكولي / يخصم من Versement)</option>
+                    <option value="VIREMENT_BANCAIRE">🏛️ تحويل بنكي مباشر من الشركة (Virement RIB)</option>
+                    <option value="CASHPLUS">💸 عبر وكالة تحويل أموال (CashPlus / Wafacash)</option>
+                    <option value="ESPECE">💵 نقداً بالوكالة / المقر (Espèces)</option>
+                  </select>
+                </div>
+
                 {/* Return fee deduction */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
@@ -1680,53 +1750,87 @@ export default function ReclamationsPage() {
 
                   <div className="space-y-1">
                     <label className="font-bold text-slate-700 block">
-                      {isAr ? 'وسيلة التحويل' : 'Mode de paiement'}
+                      {isAr ? 'الصافي للزبون' : 'Net client'}
                     </label>
-                    <select
-                      value={refundData.refundMethod}
-                      onChange={(e) => setRefundData({ ...refundData, refundMethod: e.target.value })}
-                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
-                    >
-                      <option value="VIREMENT_BANCAIRE">Virement Bancaire (RIB)</option>
-                      <option value="CASHPLUS">CashPlus / Wafacash</option>
-                      <option value="ESPECE">Espèces (Interne)</option>
-                    </select>
+                    <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-xl font-black text-emerald-800 text-sm">
+                      {Math.max(0, (showRefundModal.totalAmount || 0) - Number(refundData.returnShippingFee))} DH
+                    </div>
                   </div>
                 </div>
 
-                {/* Bank / RIB */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 block">
-                      {isAr ? 'اسم البنك' : 'Banque'}
-                    </label>
-                    <input
-                      type="text"
-                      value={refundData.customerBankName}
-                      onChange={(e) => setRefundData({ ...refundData, customerBankName: e.target.value })}
-                      placeholder="Ex: CIH Bank"
-                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-medium"
-                    />
+                {/* PAR_LIVREUR specific fields */}
+                {refundData.refundMethod === 'PAR_LIVREUR' ? (
+                  <div className="p-3 bg-amber-50/90 border border-amber-300 rounded-2xl space-y-2.5 text-xs text-amber-950">
+                    <div className="flex items-center gap-1.5 font-black text-amber-900">
+                      <Truck className="w-4 h-4 text-amber-600" />
+                      <span>{isAr ? 'استرجاع كاش فـ البلاصة بواسطة الموزع' : 'Reprise & Remboursement sur Place'}</span>
+                    </div>
+                    <p className="text-[11px] text-amber-800">
+                      {isAr
+                        ? 'الموزع كيدوز عند الزبون ياخد الكولية ويرجع ليه المبلغ كاش فـ البلاصة. والمبلغ كيتخصم أوتوماتيكياً من مستحقات الشحن (Versement Transporteur).'
+                        : 'Le livreur repasse chez le client, récupère le colis et lui remet le montant cash sur place. La société de livraison déduit le montant du versement.'}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                      <div>
+                        <label className="font-bold block text-[11px] text-slate-700 mb-0.5">
+                          📱 هاتف الموزع / الوكالة (WhatsApp) :
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ex: 0612345678"
+                          value={refundData.courierDriverPhone}
+                          onChange={(e) => setRefundData({ ...refundData, courierDriverPhone: e.target.value })}
+                          className="w-full p-2 bg-white border border-amber-300 rounded-xl text-xs font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-bold block text-[11px] text-slate-700 mb-0.5">
+                          📦 رقم التتبع (Tracking) :
+                        </label>
+                        <input
+                          type="text"
+                          disabled
+                          value={showRefundModal.trackingNumber || showRefundModal.orderNumber}
+                          className="w-full p-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-700"
+                        />
+                      </div>
+                    </div>
                   </div>
+                ) : (
+                  /* Bank / RIB fields */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="font-bold text-slate-700 block">
+                        {isAr ? 'اسم البنك' : 'Banque'}
+                      </label>
+                      <input
+                        type="text"
+                        value={refundData.customerBankName}
+                        onChange={(e) => setRefundData({ ...refundData, customerBankName: e.target.value })}
+                        placeholder="Ex: CIH Bank"
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-medium"
+                      />
+                    </div>
 
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 block">
-                      {isAr ? 'رقم الحساب (RIB - 24 رقم)' : 'RIB Client (24 chiffres)'}
-                    </label>
-                    <input
-                      type="text"
-                      value={refundData.customerRib}
-                      onChange={(e) => setRefundData({ ...refundData, customerRib: e.target.value })}
-                      placeholder="24 chiffres"
-                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
-                    />
+                    <div className="space-y-1">
+                      <label className="font-bold text-slate-700 block">
+                        {isAr ? 'رقم الحساب (RIB - 24 رقم)' : 'RIB Client (24 chiffres)'}
+                      </label>
+                      <input
+                        type="text"
+                        value={refundData.customerRib}
+                        onChange={(e) => setRefundData({ ...refundData, customerRib: e.target.value })}
+                        placeholder="24 chiffres"
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Net refund summary */}
                 <div className="p-3 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-2xl flex items-center justify-between text-teal-950">
                   <span className="font-bold">
-                    {isAr ? 'المبلغ الصافي المراد تحويله للزبون :' : 'Montant net à virer au client :'}
+                    {isAr ? 'المبلغ الصافي المراد إرجاعه للزبون :' : 'Montant net à rembourser au client :'}
                   </span>
                   <span className="text-base font-black text-emerald-700">
                     {Math.max(0, (showRefundModal.totalAmount || 0) - Number(refundData.returnShippingFee))} DH
@@ -1754,7 +1858,7 @@ export default function ReclamationsPage() {
                     ) : (
                       <>
                         <Check className="w-3.5 h-3.5" />
-                        <span>{isAr ? '✓ تأكيد التحويل وتسجيل المصروف' : '✓ Confirmer le Virement & Enregistrer'}</span>
+                        <span>{isAr ? '✓ تأكيد العملية وتسجيل الاسترجاع' : '✓ Confirmer & Enregistrer'}</span>
                       </>
                     )}
                   </button>
