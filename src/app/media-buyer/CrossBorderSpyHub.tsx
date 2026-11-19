@@ -62,94 +62,62 @@ interface TargetMarket {
 }
 
 const SOURCE_COUNTRIES: SourceCountry[] = [
-  {
-    code: 'ALL',
-    nameAr: 'العالم كامل (Global)',
-    nameFr: 'Tous les pays (Global)',
-    flag: '🌍',
-    currency: 'USD',
-    symbol: '$',
-    fxToMad: 10.0,
-    fxToXof: 615,
-    fxToSar: 3.75,
-  },
-  {
-    code: 'US',
-    nameAr: 'الولايات المتحدة الأمريكية',
-    nameFr: 'États-Unis',
-    flag: '🇺🇸',
-    currency: 'USD',
-    symbol: '$',
-    fxToMad: 10.0,
-    fxToXof: 615,
-    fxToSar: 3.75,
-  },
-  {
-    code: 'FR',
-    nameAr: 'فرنسا وأوروبا',
-    nameFr: 'France & Europe',
-    flag: '🇫🇷',
-    currency: 'EUR',
-    symbol: '€',
-    fxToMad: 10.8,
-    fxToXof: 655.957,
-    fxToSar: 4.05,
-  },
-  {
-    code: 'SA',
-    nameAr: 'المملكة العربية السعودية',
-    nameFr: 'Arabie Saoudite',
-    flag: '🇸🇦',
-    currency: 'SAR',
-    symbol: 'SAR',
-    fxToMad: 2.67,
-    fxToXof: 164,
-    fxToSar: 1.0,
-  },
-  {
-    code: 'AE',
-    nameAr: 'الإمارات العربية المتحدة',
-    nameFr: 'Émirats Arabes Unis',
-    flag: '🇦🇪',
-    currency: 'AED',
-    symbol: 'AED',
-    fxToMad: 2.72,
-    fxToXof: 167,
-    fxToSar: 1.02,
-  },
-  {
-    code: 'GB',
-    nameAr: 'المملكة المتحدة',
-    nameFr: 'Royaume-Uni',
-    flag: '🇬🇧',
-    currency: 'GBP',
-    symbol: '£',
-    fxToMad: 12.6,
-    fxToXof: 775,
-    fxToSar: 4.75,
-  },
-  {
-    code: 'ES',
-    nameAr: 'إسبانيا',
-    nameFr: 'Espagne',
-    flag: '🇪🇸',
-    currency: 'EUR',
-    symbol: '€',
-    fxToMad: 10.8,
-    fxToXof: 655.957,
-    fxToSar: 4.05,
-  },
-  {
-    code: 'CN',
-    nameAr: 'الصين (1688 / المصانع)',
-    nameFr: 'Chine (1688 / Usines)',
-    flag: '🇨🇳',
-    currency: 'CNY',
-    symbol: '¥',
-    fxToMad: 1.38,
-    fxToXof: 85,
-    fxToSar: 0.52,
-  },
+  // Global
+  { code: 'ALL', nameAr: 'العالم كامل (Global)', nameFr: 'Tous les pays (Global)', flag: '🌍', currency: 'USD', symbol: '$', fxToMad: 10.0, fxToXof: 615, fxToSar: 3.75 },
+  // North Africa & Middle East
+  { code: 'MA', nameAr: 'المغرب', nameFr: 'Maroc', flag: '🇲🇦', currency: 'MAD', symbol: 'د.م', fxToMad: 1.0, fxToXof: 61.5, fxToSar: 0.375 },
+  { code: 'DZ', nameAr: 'الجزائر', nameFr: 'Algérie', flag: '🇩🇿', currency: 'DZD', symbol: 'DZD', fxToMad: 0.075, fxToXof: 4.6, fxToSar: 0.028 },
+  { code: 'TN', nameAr: 'تونس', nameFr: 'Tunisie', flag: '🇹🇳', currency: 'TND', symbol: 'TND', fxToMad: 3.2, fxToXof: 198, fxToSar: 1.2 },
+  { code: 'EG', nameAr: 'مصر', nameFr: 'Égypte', flag: '🇪🇬', currency: 'EGP', symbol: 'EGP', fxToMad: 0.21, fxToXof: 13, fxToSar: 0.078 },
+  { code: 'LY', nameAr: 'ليبيا', nameFr: 'Libye', flag: '🇱🇾', currency: 'LYD', symbol: 'LYD', fxToMad: 2.05, fxToXof: 126, fxToSar: 0.77 },
+  { code: 'MR', nameAr: 'موريتانيا', nameFr: 'Mauritanie', flag: '🇲🇷', currency: 'MRU', symbol: 'MRU', fxToMad: 0.25, fxToXof: 15.5, fxToSar: 0.095 },
+  { code: 'SA', nameAr: 'المملكة العربية السعودية', nameFr: 'Arabie Saoudite', flag: '🇸🇦', currency: 'SAR', symbol: 'SAR', fxToMad: 2.67, fxToXof: 164, fxToSar: 1.0 },
+  { code: 'AE', nameAr: 'الإمارات العربية المتحدة', nameFr: 'Émirats Arabes Unis', flag: '🇦🇪', currency: 'AED', symbol: 'AED', fxToMad: 2.72, fxToXof: 167, fxToSar: 1.02 },
+  { code: 'KW', nameAr: 'الكويت', nameFr: 'Koweït', flag: '🇰🇼', currency: 'KWD', symbol: 'KWD', fxToMad: 32.5, fxToXof: 2000, fxToSar: 12.2 },
+  { code: 'QA', nameAr: 'قطر', nameFr: 'Qatar', flag: '🇶🇦', currency: 'QAR', symbol: 'QAR', fxToMad: 2.74, fxToXof: 168, fxToSar: 1.03 },
+  { code: 'OM', nameAr: 'سلطنة عمان', nameFr: 'Oman', flag: '🇴🇲', currency: 'OMR', symbol: 'OMR', fxToMad: 26.0, fxToXof: 1600, fxToSar: 9.75 },
+  { code: 'BH', nameAr: 'البحرين', nameFr: 'Bahreïn', flag: '🇧🇭', currency: 'BHD', symbol: 'BHD', fxToMad: 26.5, fxToXof: 1630, fxToSar: 9.95 },
+  { code: 'JO', nameAr: 'الأردن', nameFr: 'Jordanie', flag: '🇯🇴', currency: 'JOD', symbol: 'JOD', fxToMad: 14.1, fxToXof: 867, fxToSar: 5.29 },
+  { code: 'IQ', nameAr: 'العراق', nameFr: 'Irak', flag: '🇮🇶', currency: 'IQD', symbol: 'IQD', fxToMad: 0.0076, fxToXof: 0.47, fxToSar: 0.0028 },
+  { code: 'LB', nameAr: 'لبنان', nameFr: 'Liban', flag: '🇱🇧', currency: 'USD', symbol: '$', fxToMad: 10.0, fxToXof: 615, fxToSar: 3.75 },
+  // West & Central Africa
+  { code: 'SN', nameAr: 'السنغال', nameFr: 'Sénégal', flag: '🇸🇳', currency: 'XOF', symbol: 'FCFA', fxToMad: 0.016, fxToXof: 1.0, fxToSar: 0.0061 },
+  { code: 'CI', nameAr: "ساحل العاج", nameFr: "Côte d'Ivoire", flag: '🇨🇮', currency: 'XOF', symbol: 'FCFA', fxToMad: 0.016, fxToXof: 1.0, fxToSar: 0.0061 },
+  { code: 'ML', nameAr: 'مالي', nameFr: 'Mali', flag: '🇲🇱', currency: 'XOF', symbol: 'FCFA', fxToMad: 0.016, fxToXof: 1.0, fxToSar: 0.0061 },
+  { code: 'BF', nameAr: 'بوركينا فاسو', nameFr: 'Burkina Faso', flag: '🇧🇫', currency: 'XOF', symbol: 'FCFA', fxToMad: 0.016, fxToXof: 1.0, fxToSar: 0.0061 },
+  { code: 'GN', nameAr: 'غينيا كوناكري', nameFr: 'Guinée', flag: '🇬🇳', currency: 'GNF', symbol: 'GNF', fxToMad: 0.0012, fxToXof: 0.071, fxToSar: 0.00043 },
+  { code: 'CM', nameAr: 'الكاميرون', nameFr: 'Cameroun', flag: '🇨🇲', currency: 'XAF', symbol: 'FCFA', fxToMad: 0.016, fxToXof: 1.0, fxToSar: 0.0061 },
+  { code: 'GA', nameAr: 'الغابون', nameFr: 'Gabon', flag: '🇬🇦', currency: 'XAF', symbol: 'FCFA', fxToMad: 0.016, fxToXof: 1.0, fxToSar: 0.0061 },
+  { code: 'CD', nameAr: 'الكونغو الديمقراطية', nameFr: 'RD Congo', flag: '🇨🇩', currency: 'USD', symbol: '$', fxToMad: 10.0, fxToXof: 615, fxToSar: 3.75 },
+  // Europe
+  { code: 'FR', nameAr: 'فرنسا وأوروبا', nameFr: 'France & Europe', flag: '🇫🇷', currency: 'EUR', symbol: '€', fxToMad: 10.8, fxToXof: 655.957, fxToSar: 4.05 },
+  { code: 'ES', nameAr: 'إسبانيا', nameFr: 'Espagne', flag: '🇪🇸', currency: 'EUR', symbol: '€', fxToMad: 10.8, fxToXof: 655.957, fxToSar: 4.05 },
+  { code: 'DE', nameAr: 'ألمانيا', nameFr: 'Allemagne', flag: '🇩🇪', currency: 'EUR', symbol: '€', fxToMad: 10.8, fxToXof: 655.957, fxToSar: 4.05 },
+  { code: 'IT', nameAr: 'إيطاليا', nameFr: 'Italie', flag: '🇮🇹', currency: 'EUR', symbol: '€', fxToMad: 10.8, fxToXof: 655.957, fxToSar: 4.05 },
+  { code: 'GB', nameAr: 'المملكة المتحدة', nameFr: 'Royaume-Uni', flag: '🇬🇧', currency: 'GBP', symbol: '£', fxToMad: 12.6, fxToXof: 775, fxToSar: 4.75 },
+  { code: 'BE', nameAr: 'بلجيكا', nameFr: 'Belgique', flag: '🇧🇪', currency: 'EUR', symbol: '€', fxToMad: 10.8, fxToXof: 655.957, fxToSar: 4.05 },
+  { code: 'NL', nameAr: 'هولندا', nameFr: 'Pays-Bas', flag: '🇳🇱', currency: 'EUR', symbol: '€', fxToMad: 10.8, fxToXof: 655.957, fxToSar: 4.05 },
+  { code: 'CH', nameAr: 'سويسرا', nameFr: 'Suisse', flag: '🇨🇭', currency: 'CHF', symbol: 'CHF', fxToMad: 11.2, fxToXof: 688, fxToSar: 4.2 },
+  { code: 'PT', nameAr: 'البرتغال', nameFr: 'Portugal', flag: '🇵🇹', currency: 'EUR', symbol: '€', fxToMad: 10.8, fxToXof: 655.957, fxToSar: 4.05 },
+  { code: 'TR', nameAr: 'تركيا', nameFr: 'Turquie', flag: '🇹🇷', currency: 'TRY', symbol: '₺', fxToMad: 0.31, fxToXof: 19, fxToSar: 0.12 },
+  // North America
+  { code: 'US', nameAr: 'الولايات المتحدة الأمريكية', nameFr: 'États-Unis', flag: '🇺🇸', currency: 'USD', symbol: '$', fxToMad: 10.0, fxToXof: 615, fxToSar: 3.75 },
+  { code: 'CA', nameAr: 'كندا', nameFr: 'Canada', flag: '🇨🇦', currency: 'CAD', symbol: 'CAD', fxToMad: 7.3, fxToXof: 450, fxToSar: 2.75 },
+  // Latin America
+  { code: 'BR', nameAr: 'البرازيل', nameFr: 'Brésil', flag: '🇧🇷', currency: 'BRL', symbol: 'R$', fxToMad: 1.8, fxToXof: 110, fxToSar: 0.67 },
+  { code: 'MX', nameAr: 'المكسيك', nameFr: 'Mexique', flag: '🇲🇽', currency: 'MXN', symbol: 'MX$', fxToMad: 0.55, fxToXof: 34, fxToSar: 0.21 },
+  { code: 'CO', nameAr: 'كولومبيا', nameFr: 'Colombie', flag: '🇨🇴', currency: 'COP', symbol: 'COP', fxToMad: 0.0025, fxToXof: 0.15, fxToSar: 0.0009 },
+  { code: 'AR', nameAr: 'الأرجنتين', nameFr: 'Argentine', flag: '🇦🇷', currency: 'ARS', symbol: 'ARS', fxToMad: 0.01, fxToXof: 0.6, fxToSar: 0.0037 },
+  { code: 'CL', nameAr: 'تشيلي', nameFr: 'Chili', flag: '🇨🇱', currency: 'CLP', symbol: 'CLP', fxToMad: 0.011, fxToXof: 0.68, fxToSar: 0.0041 },
+  // Asia & Oceania
+  { code: 'AU', nameAr: 'أستراليا', nameFr: 'Australie', flag: '🇦🇺', currency: 'AUD', symbol: 'AUD', fxToMad: 6.6, fxToXof: 405, fxToSar: 2.48 },
+  { code: 'CN', nameAr: 'الصين (1688 / المصانع)', nameFr: 'Chine (1688 / Usines)', flag: '🇨🇳', currency: 'CNY', symbol: '¥', fxToMad: 1.38, fxToXof: 85, fxToSar: 0.52 },
+  { code: 'IN', nameAr: 'الهند', nameFr: 'Inde', flag: '🇮🇳', currency: 'INR', symbol: '₹', fxToMad: 0.12, fxToXof: 7.4, fxToSar: 0.045 },
+  { code: 'ID', nameAr: 'إندونيسيا', nameFr: 'Indonésie', flag: '🇮🇩', currency: 'IDR', symbol: 'IDR', fxToMad: 0.00063, fxToXof: 0.039, fxToSar: 0.00024 },
+  { code: 'MY', nameAr: 'ماليزيا', nameFr: 'Malaisie', flag: '🇲🇾', currency: 'MYR', symbol: 'MYR', fxToMad: 2.25, fxToXof: 138, fxToSar: 0.84 },
+  { code: 'TH', nameAr: 'تايلاند', nameFr: 'Thaïlande', flag: '🇹🇭', currency: 'THB', symbol: 'THB', fxToMad: 0.28, fxToXof: 17.2, fxToSar: 0.105 },
+  { code: 'JP', nameAr: 'اليابان', nameFr: 'Japon', flag: '🇯🇵', currency: 'JPY', symbol: '¥', fxToMad: 0.065, fxToXof: 4.0, fxToSar: 0.024 },
+  { code: 'KR', nameAr: 'كوريا الجنوبية', nameFr: 'Corée du Sud', flag: '🇰🇷', currency: 'KRW', symbol: '₩', fxToMad: 0.0072, fxToXof: 0.44, fxToSar: 0.0027 },
 ];
 
 const TARGET_MARKETS: TargetMarket[] = [
@@ -718,6 +686,73 @@ export function CrossBorderSpyHub({
     return `https://s.1688.com/youyuan/index.htm?tab=all&keywords=${encodeURIComponent(effectiveBaseKeyword)}`;
   }, [effectiveBaseKeyword]);
 
+  // Pinterest Deep-Link Generators (Trends, Viral Pins, UGC Video Pins, Inspiration)
+  const pinterestTrendsUrl = useMemo(() => {
+    const pCountryMap: Record<string, string> = {
+      US: 'US',
+      GB: 'GB',
+      CA: 'CA',
+      FR: 'FR',
+      DE: 'DE',
+      ES: 'ES',
+      IT: 'IT',
+      BR: 'BR',
+      MX: 'MX',
+      AU: 'AU',
+      NZ: 'NZ',
+      AR: 'AR',
+      CO: 'CO',
+      CL: 'CL',
+      JP: 'JP',
+      MA: 'FR',
+      DZ: 'FR',
+      TN: 'FR',
+      SN: 'FR',
+      CI: 'FR',
+      ML: 'FR',
+      BF: 'FR',
+      GN: 'FR',
+      CM: 'FR',
+      GA: 'FR',
+      CD: 'FR',
+      BE: 'FR',
+      CH: 'FR',
+      SA: 'US',
+      AE: 'US',
+      KW: 'US',
+      QA: 'US',
+      OM: 'US',
+      BH: 'US',
+      EG: 'US',
+      JO: 'US',
+      IQ: 'US',
+      LB: 'US',
+      TR: 'DE',
+      PT: 'ES',
+      NL: 'DE',
+      ID: 'AU',
+      MY: 'AU',
+      TH: 'AU',
+      IN: 'GB',
+      KR: 'JP',
+      CN: 'US',
+      ALL: 'US',
+    };
+    const pGeo = pCountryMap[selectedSource.code] || 'US';
+    return `https://trends.pinterest.com/?country=${pGeo}&terms=${encodeURIComponent(effectiveBaseKeyword)}`;
+  }, [selectedSource.code, effectiveBaseKeyword]);
+
+  const pinterestViralPinsUrl = useMemo(() => {
+    const countryContext = selectedSource.code !== 'ALL' && selectedSource.code !== 'CN' ? ` ${selectedSource.nameFr}` : '';
+    return `https://www.pinterest.com/search/pins/?q=${encodeURIComponent(effectiveBaseKeyword + countryContext + ' buy now shop')}&rs=typed`;
+  }, [selectedSource.code, selectedSource.nameFr, effectiveBaseKeyword]);
+
+  const pinterestUgcVideosUrl = useMemo(() => {
+    return `https://www.pinterest.com/search/pins/?q=${encodeURIComponent(effectiveBaseKeyword + ' viral aesthetic review unboxing')}&rs=typed`;
+  }, [effectiveBaseKeyword]);
+
+  const pinterestInspirationUrl = 'https://business.pinterest.com/inspiration/';
+
   // Push to validator action
   const handlePushToValidator = () => {
     onAuditProduct({
@@ -785,14 +820,14 @@ export function CrossBorderSpyHub({
             </div>
             <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white font-heading">
               {label(
-                'Cross-Border Spy & Trends Hub : Meta, TikTok, Google Trends & Sourcing',
-                'مركز التجسس وترندات الإعلانات العالمية: Meta و TikTok و Google Trends'
+                'Cross-Border Spy & Trends Hub : Meta, TikTok, Pinterest, Google Trends & Sourcing',
+                'مركز التجسس وترندات الإعلانات العالمية: Meta و TikTok و Pinterest و Google Trends'
               )}
             </h2>
             <p className="text-sm text-slate-300 leading-relaxed">
               {label(
-                'Explorez les niches rentables (Compléments & Suppléments, Skincare, Maison, Auto) dans le monde entier (Global 🌍) ou par pays, débusquez les pubs actives avec les déclencheurs COD et calculez votre marge nette au Maroc (MAD) ou au Sénégal (FCFA).',
-                'اكتشف النيتشات الأكثر ربحية (المكملات الغذائية، التجميل، الصحة، المنزل، السيارات) في العالم كاملاً (Global 🌍) أو باختيار بلد معين، وتجسس على إعلانات فيسبوك وتيك توك النشطة، واحسب ربحك الصافي نقداً عند الاستلام.'
+                'Explorez les niches rentables (Compléments & Suppléments, Skincare, Maison, Cuisine, Auto) dans le monde entier (Global 🌍) ou parmi plus de 50 pays, débusquez les pubs actives avec les déclencheurs COD et calculez votre marge nette au Maroc (MAD) ou en Afrique de l’Ouest (FCFA).',
+                'اكتشف النيتشات الأكثر ربحية (المكملات الغذائية، التجميل، الصحة، المنزل، المطبخ، السيارات) في العالم كاملاً (Global 🌍) أو باختيار أي دولة من بين أكثر من 50 دولة، وتجسس على إعلانات فيسبوك، تيك توك وبنترست، واحسب ربحك الصافي نقداً عند الاستلام.'
               )}
             </p>
           </div>
@@ -838,8 +873,9 @@ export function CrossBorderSpyHub({
               </span>
               <span className="text-indigo-600 font-bold">{selectedSource.flag} {selectedSource.currency}</span>
             </label>
+            {/* Quick Pills for Most Popular Sourcing Markets */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {SOURCE_COUNTRIES.map((src) => {
+              {SOURCE_COUNTRIES.filter((s) => ['ALL', 'US', 'FR', 'MA', 'SA', 'AE', 'GB', 'CN'].includes(s.code)).map((src) => {
                 const active = src.code === sourceCode;
                 return (
                   <button
@@ -862,6 +898,24 @@ export function CrossBorderSpyHub({
                   </button>
                 );
               })}
+            </div>
+
+            {/* Complete 50+ Countries Worldwide Selector */}
+            <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <span className="text-[11px] font-bold text-slate-500">
+                {label('Ou sélectionner parmi tous les pays (50+ pays) :', 'أو اختر من بين جميع دول العالم (أكثر من 50 دولة) :')}
+              </span>
+              <select
+                value={sourceCode}
+                onChange={(e) => setSourceCode(e.target.value)}
+                className="w-full sm:w-64 text-xs font-bold bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-slate-900 cursor-pointer focus:bg-white focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+              >
+                {SOURCE_COUNTRIES.map((src) => (
+                  <option key={src.code} value={src.code}>
+                    {src.flag} {isAr ? src.nameAr : src.nameFr} ({src.code} - {src.currency})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -1076,8 +1130,8 @@ export function CrossBorderSpyHub({
         )}
       </div>
 
-      {/* Main Action Hub: 4 Interactive Spy Panels */}
-      <div className="grid gap-5 lg:grid-cols-2">
+      {/* Main Action Hub: Interactive Multi-Platform Spy Panels */}
+      <div className="grid gap-5 xl:grid-cols-3 lg:grid-cols-2">
         {/* PANEL 1: Meta Ad Library & TikTok Creative Center */}
         <div className="rounded-3xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm space-y-5 flex flex-col justify-between">
           <div className="space-y-4">
@@ -1208,7 +1262,129 @@ export function CrossBorderSpyHub({
           </div>
         </div>
 
-        {/* PANEL 2: Google Trends & Sourcing 1688 / AliExpress */}
+        {/* PANEL 2: Pinterest Trends & Winning Pins Spy */}
+        <div className="rounded-3xl border border-rose-200 bg-white p-5 md:p-6 shadow-sm space-y-5 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-100 text-[#E60023] flex items-center justify-center font-black text-lg shadow-2xs">
+                  📌
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 text-sm">
+                    {label('Pinterest Trends & Winning Pins Spy', 'تجسس بنترست وترندات المنتجات الرابحة')}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {label('Beauté, Maison, Cuisine & Déco (Très fort pouvoir d’achat)', 'المنجم الأول لمنتجات التجميل، المطبخ، الديكور والمنتجات الجذابة')}
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs px-2.5 py-1 rounded-full font-black bg-rose-50 text-[#E60023] border border-rose-200">
+                {selectedSource.flag} {selectedSource.code}
+              </span>
+            </div>
+
+            {/* Keyword and High Purchase Intent notice */}
+            <div className="p-3 rounded-2xl bg-rose-50/50 border border-rose-100 space-y-1.5">
+              <div className="text-xs">
+                <span className="text-slate-400 font-semibold">{label('Niche / Produit ciblé :', 'المنتج / النيتش المستهدف :')}</span>{' '}
+                <strong className="text-rose-950 font-black">{effectiveBaseKeyword}</strong>
+              </div>
+              <div className="text-[11px] text-rose-800 font-semibold">
+                ✨ {label('Pinterest regroupe 80% de femmes avec une intention d’achat spontanée très élevée.', 'بينترست يضم أكثر من 80% من النساء مع نية شراء وتجربة منتجات جديدة مرتفعة جداً.')}
+              </div>
+            </div>
+
+            {/* Direct Action Buttons */}
+            <div className="space-y-3">
+              {/* 1. Pinterest Trends Explorer */}
+              <a
+                href={pinterestTrendsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full p-4 rounded-2xl border border-rose-200 bg-gradient-to-r from-rose-50 to-red-50 hover:from-rose-100 hover:to-red-100 flex items-center justify-between text-rose-950 font-bold transition-all group cursor-pointer shadow-2xs"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#E60023] text-white flex items-center justify-center font-black text-sm shadow-xs">
+                    P
+                  </div>
+                  <div>
+                    <div className="text-xs font-black flex items-center gap-1.5">
+                      <span>{label('Pinterest Trends Explorer (Officiel)', 'ترندات بنترست الرسمية (Trends Explorer)')}</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-100 text-rose-900 font-black">
+                        {selectedSource.code}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-rose-700/80 font-normal">
+                      {label(
+                        `Voir la courbe de croissance & mots-clés associés (${selectedSource.nameFr})`,
+                        `منحنى صعود المنتج ومعدل البحث (${selectedSource.nameAr})`
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <ExternalLink className="w-4 h-4 text-[#E60023] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </a>
+
+              {/* 2. Pinterest Viral Product Pins & Shopping */}
+              <a
+                href={pinterestViralPinsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full p-3.5 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-slate-900 font-bold transition-all group cursor-pointer shadow-2xs"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">🛍️</span>
+                  <div>
+                    <div className="text-xs font-black">
+                      {label('Pins Produits Gagnants & Boutiques (Buy Now / Shop)', 'المنتجات الأكثر حفظاً وروابط المتاجر (Shop & Buy)')}
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-normal">
+                      {label('Découvrir les boutiques Shopify et pins avec le plus de Saves', 'كشف المتاجر الفعالة والمنشورات الأكثر تفاعلاً')}
+                    </div>
+                  </div>
+                </div>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-600 group-hover:translate-x-0.5 transition-transform" />
+              </a>
+
+              {/* 3. Pinterest UGC Videos & Aesthetic Reviews */}
+              <a
+                href={pinterestUgcVideosUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full p-3 rounded-2xl border border-red-200 bg-red-50/50 hover:bg-red-100/60 flex items-center justify-between text-red-950 font-semibold transition-all group cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Play className="w-4 h-4 text-[#E60023] fill-[#E60023]" />
+                  <span className="text-xs font-bold">
+                    {label('Vidéos UGC & Démonstrations (#Aesthetic #Viral #Review)', 'فيديوهات الاستعراض الجمالي والتجربة (#Review)')}
+                  </span>
+                </div>
+                <ExternalLink className="w-3.5 h-3.5 text-[#E60023] group-hover:translate-x-0.5 transition-transform" />
+              </a>
+
+              {/* 4. Pinterest Ad Inspiration */}
+              <a
+                href={pinterestInspirationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full p-2.5 rounded-xl border border-slate-100 text-slate-500 hover:text-slate-800 text-[11px] font-bold flex items-center justify-between hover:bg-slate-50 transition-colors"
+              >
+                <span>💡 {label('Inspiration Campagnes & Benchmarks Pinterest Business', 'إلهام إعلانات بنترست للبيزنس')}</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          </div>
+
+          <div className="text-[11px] text-slate-500 font-medium pt-2 border-t border-slate-100">
+            📌 {label(
+              'Astuce Pinterest : Téléchargez les images et vidéos esthétiques sans filigrane pour vos landing pages et publicités Meta !',
+              'حيلة بنترست: استعمل الصور والفيديوهات عالية الجودة الموجودة في بنترست في صفحات الهبوط (Landing Pages) وإعلاناتك!'
+            )}
+          </div>
+        </div>
+
+        {/* PANEL 3: Google Trends & Sourcing 1688 / AliExpress */}
         <div className="rounded-3xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm space-y-5 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between">

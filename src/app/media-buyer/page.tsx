@@ -82,6 +82,7 @@ export default function MediaBuyerPage() {
     alibaba1688?: string;
     metaAds?: string;
     tikTokAds?: string;
+    pinterest?: string;
   } | null>(null);
   const [imageConfidence, setImageConfidence] = useState<number | null>(null);
   const [isDraggingImage, setIsDraggingImage] = useState(false);
@@ -925,7 +926,7 @@ export default function MediaBuyerPage() {
                             <span>البحث العكسي المباشر وتتبع الموردين والمنافسين :</span>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
                             {/* Google Lens */}
                             <a
                               href={reverseSearchUrls?.googleLens || `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(uploadedImage)}`}
@@ -957,6 +958,17 @@ export default function MediaBuyerPage() {
                             >
                               <Play className="w-3.5 h-3.5 text-pink-400 fill-pink-400" />
                               <span className="truncate">{t.visualScanAdsSearch}</span>
+                            </a>
+
+                            {/* Pinterest Viral Pins */}
+                            <a
+                              href={reverseSearchUrls?.pinterest || `https://www.pinterest.com/search/pins/?q=${encodeURIComponent(analysisInput.title || 'trending viral product')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2.5 rounded-xl bg-[#E60023] hover:bg-[#c7001e] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                            >
+                              <span>📌</span>
+                              <span className="truncate">{isAr ? 'ترندات Pinterest' : 'Pinterest Pins'}</span>
                             </a>
                           </div>
                         </div>
