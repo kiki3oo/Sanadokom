@@ -84,6 +84,20 @@ const STATUS_CONFIG: Record<
   string,
   { labelFr: string; labelAr: string; bg: string; text: string; dot: string }
 > = {
+  EN_ATTENTE_VALIDATION: {
+    labelFr: 'En attente validation',
+    labelAr: 'في انتظار موافقة الإدارة ⏳',
+    bg: 'bg-amber-100 text-amber-950 border-amber-300 ring-1 ring-amber-300',
+    text: 'text-amber-950 font-black',
+    dot: 'bg-amber-500 animate-pulse',
+  },
+  APPROUVE: {
+    labelFr: 'Approuvé (Validé)',
+    labelAr: 'معتمد من الإدارة ✅',
+    bg: 'bg-teal-50 text-teal-900 border-teal-300',
+    text: 'text-teal-900 font-black',
+    dot: 'bg-teal-500',
+  },
   NOUVEAU: {
     labelFr: 'Nouveau',
     labelAr: 'جديدة',
@@ -128,15 +142,16 @@ const STATUS_CONFIG: Record<
   },
   REJETE: {
     labelFr: 'Rejeté',
-    labelAr: 'مرفوضة',
-    bg: 'bg-slate-100 border-slate-200',
-    text: 'text-slate-600',
-    dot: 'bg-slate-400',
+    labelAr: 'مرفوضة ✕',
+    bg: 'bg-rose-50 border-rose-200',
+    text: 'text-rose-700',
+    dot: 'bg-rose-500',
   },
 };
 
 export default function ReclamationsPage() {
   const { currentUser, isAdmin, isCallAgent, canViewPage } = useAuth();
+  const isManager = currentUser?.role === 'LOGISTICS_MANAGER' || isAdmin;
   const { selectedStoreId, currentCountry } = useStore();
   const { t, language } = useLanguage();
   const isAr = language === 'ar';
@@ -144,9 +159,12 @@ export default function ReclamationsPage() {
   const [tickets, setTickets] = useState<ReclamationTicket[]>([]);
   const [metrics, setMetrics] = useState({
     total: 0,
+    enAttenteValidation: 0,
+    approuve: 0,
     nouveau: 0,
     enCours: 0,
     echanges: 0,
+    remboursements: 0,
     resolu: 0,
     rejete: 0,
     resolutionRate: 100,
@@ -163,6 +181,15 @@ export default function ReclamationsPage() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<ReclamationTicket | null>(null);
   const [showExchangeModal, setShowExchangeModal] = useState<ReclamationTicket | null>(null);
+  const [showRefundModal, setShowRefundModal] = useState<ReclamationTicket | null>(null);
+  const [refundData, setRefundData] = useState({
+    customerRib: '',
+    customerBankName: 'CIH Bank',
+    returnShippingFee: 30,
+    refundMethod: 'VIREMENT_BANCAIRE',
+    processing: false,
+    completedResult: null as any,
+  });
 
   // Lookup state in New Modal
   const [orderQuery, setOrderQuery] = useState('');
@@ -182,6 +209,9 @@ export default function ReclamationsPage() {
     orderNumber: '',
     description: '',
     customerDemand: '',
+    customerRib: '',
+    customerBankName: 'CIH Bank',
+    returnShippingFee: 30,
   });
 
   // Exchange form data
@@ -280,6 +310,7 @@ export default function ReclamationsPage() {
           ...newFormData,
           orderId: selectedOrder?.id || null,
           storeId: selectedOrder?.storeId || selectedStoreId || null,
+          totalAmount: selectedOrder?.totalAmount || 0,
           authorId: currentUser?.id,
           authorName: currentUser?.name,
           authorRole: currentUser?.role,
@@ -288,6 +319,11 @@ export default function ReclamationsPage() {
 
       const data = await res.json();
       if (data.success) {
+        alert(
+          !isAdmin && !isManager
+            ? (isAr ? '⏳ تم تسجيل الشكاية وهي الآن في انتظار موافقة الإدارة (Manager/Admin).' : '⏳ Réclamation enregistrée et en attente de validation par la direction.')
+            : (isAr ? '✅ تم تسجيل الشكاية بنجاح.' : '✅ Réclamation créée avec succès.')
+        );
         setShowNewModal(false);
         setSelectedOrder(null);
         setOrderQuery('');
@@ -302,6 +338,9 @@ export default function ReclamationsPage() {
           orderNumber: '',
           description: '',
           customerDemand: '',
+          customerRib: '',
+          customerBankName: 'CIH Bank',
+          returnShippingFee: 30,
         });
         fetchTickets();
       } else {
@@ -309,6 +348,115 @@ export default function ReclamationsPage() {
       }
     } catch (e: any) {
       alert(e.message || 'Erreur');
+    }
+  };
+
+  // Approve ticket (Admin / Manager)
+  const handleApproveTicket = async (ticketId: string) => {
+    try {
+      const res = await fetch(`/api/reclamations/${ticketId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'APPROVE',
+          authorId: currentUser?.id,
+          authorName: currentUser?.name,
+          authorRole: currentUser?.role,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(isAr ? '✅ تمت الموافقة على الشكاية واعتمادها بنجاح !' : '✅ Réclamation validée et approuvée avec succès !');
+        fetchTickets();
+      } else {
+        alert(data.error || 'Erreur lors de la validation');
+      }
+    } catch (e: any) {
+      alert(e.message || 'Erreur');
+    }
+  };
+
+  // Reject ticket (Admin / Manager)
+  const handleRejectTicket = async (ticketId: string) => {
+    const reason = prompt(isAr ? 'أدخل سبب رفض هذه الشكاية :' : 'Préciser le motif de rejet :');
+    if (!reason) return;
+    try {
+      const res = await fetch(`/api/reclamations/${ticketId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'REJECT',
+          rejectionReason: reason,
+          authorId: currentUser?.id,
+          authorName: currentUser?.name,
+          authorRole: currentUser?.role,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(isAr ? 'تم رفض الشكاية.' : 'Réclamation rejetée.');
+        fetchTickets();
+      } else {
+        alert(data.error || 'Erreur lors du rejet');
+      }
+    } catch (e: any) {
+      alert(e.message || 'Erreur');
+    }
+  };
+
+  // Execute Financial Refund
+  const handleConfirmRefund = async () => {
+    if (!showRefundModal) return;
+    setRefundData((prev) => ({ ...prev, processing: true }));
+    try {
+      const totalAmount = showRefundModal.totalAmount || 0;
+      const fee = Number(refundData.returnShippingFee) || 0;
+      const netAmount = Math.max(0, totalAmount - fee);
+
+      const res = await fetch(`/api/reclamations/${showRefundModal.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'EXECUTE_REFUND',
+          executeRefund: true,
+          netRefundAmount: netAmount,
+          customerRib: refundData.customerRib,
+          customerBankName: refundData.customerBankName,
+          refundMethod: refundData.refundMethod,
+          authorId: currentUser?.id,
+          authorName: currentUser?.name,
+          authorRole: currentUser?.role,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        const cleanPhone = showRefundModal.customerPhone.replace(/[^0-9]/g, '');
+        let finalPhone = cleanPhone;
+        if (finalPhone.startsWith('0')) {
+          finalPhone = (currentCountry.code === 'SN' ? '221' : '212') + finalPhone.substring(1);
+        }
+        const waMsg = isAr
+          ? `السلام عليكم أ سيدي/لالة ${showRefundModal.customerName}، تم بنجاح تحويل مبلغ ${netAmount} درهم لحسابكم البنكي (${refundData.customerBankName} - RIB: ${refundData.customerRib}) بخصوص طلبية #${showRefundModal.orderNumber}. شكرا لثقتكم وتفهمكم.`
+          : `Bonjour ${showRefundModal.customerName}, nous vous confirmons le virement de ${netAmount} DH sur votre compte (${refundData.customerBankName} - RIB: ${refundData.customerRib}) pour la commande #${showRefundModal.orderNumber}. Merci de votre confiance.`;
+        const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(waMsg)}`;
+
+        setRefundData((prev) => ({
+          ...prev,
+          processing: false,
+          completedResult: {
+            netAmount,
+            whatsappUrl,
+          },
+        }));
+        fetchTickets();
+      } else {
+        alert(data.error || 'Erreur remboursement');
+        setRefundData((prev) => ({ ...prev, processing: false }));
+      }
+    } catch (e: any) {
+      alert(e.message || 'Erreur');
+      setRefundData((prev) => ({ ...prev, processing: false }));
     }
   };
 
@@ -323,6 +471,7 @@ export default function ReclamationsPage() {
           resolutionNotes: notes,
           authorId: currentUser?.id,
           authorName: currentUser?.name,
+          authorRole: currentUser?.role,
         }),
       });
       const data = await res.json();
@@ -332,6 +481,8 @@ export default function ReclamationsPage() {
           setSelectedTicket(data.ticket);
         }
         fetchTickets();
+      } else {
+        alert(data.error || 'Erreur mise à jour');
       }
     } catch (e) {
       console.error(e);
@@ -427,11 +578,29 @@ export default function ReclamationsPage() {
       </div>
 
       {/* KPI Stats Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Total */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5">
+        {/* En Attente de Validation */}
+        <div className={`p-4 rounded-2xl border transition-all shadow-2xs ${
+          metrics.enAttenteValidation > 0
+            ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-300 ring-2 ring-amber-200'
+            : 'bg-white border-slate-200/80'
+        }`}>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-black text-amber-900 uppercase tracking-wider">
+              {isAr ? 'في انتظار الموافقة' : 'À Valider (Manager)'}
+            </span>
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-black text-amber-950">{metrics.enAttenteValidation}</span>
+            <span className="text-xs text-amber-700 font-bold">{isAr ? 'ملف' : 'dossiers'}</span>
+          </div>
+        </div>
+
+        {/* Total */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               {isAr ? 'مجموع الشكايات' : 'Total Dossiers'}
             </span>
             <FileText className="w-4 h-4 text-slate-400" />
@@ -443,28 +612,28 @@ export default function ReclamationsPage() {
         </div>
 
         {/* En Cours / Nouveaux */}
-        <div className="bg-white p-5 rounded-2xl border border-amber-200 bg-amber-50/20 shadow-2xs">
+        <div className="bg-white p-4 rounded-2xl border border-blue-200 bg-blue-50/20 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">
-              {isAr ? 'قيد المعالجة' : 'À Traiter / En Cours'}
+            <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">
+              {isAr ? 'قيد المعالجة' : 'En Cours'}
             </span>
-            <Clock className="w-4 h-4 text-amber-500" />
+            <Clock className="w-4 h-4 text-blue-500" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-amber-900">
+            <span className="text-2xl font-black text-blue-900">
               {metrics.nouveau + metrics.enCours}
             </span>
-            <span className="text-xs text-amber-700 font-semibold">
-              ({metrics.nouveau} {isAr ? 'جديدة' : 'nouveaux'})
+            <span className="text-xs text-blue-700 font-semibold">
+              ({metrics.approuve} {isAr ? 'معتمدة' : 'validés'})
             </span>
           </div>
         </div>
 
         {/* Échanges Programmés */}
-        <div className="bg-white p-5 rounded-2xl border border-purple-200 bg-purple-50/20 shadow-2xs">
+        <div className="bg-white p-4 rounded-2xl border border-purple-200 bg-purple-50/20 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-purple-700 uppercase tracking-wider">
-              {isAr ? 'استبدال مبرمج 🔄' : 'Échanges Générés'}
+            <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">
+              {isAr ? 'استبدال 🔄' : 'Échanges'}
             </span>
             <RotateCcw className="w-4 h-4 text-purple-600" />
           </div>
@@ -474,17 +643,17 @@ export default function ReclamationsPage() {
           </div>
         </div>
 
-        {/* Taux de Résolution */}
-        <div className="bg-white p-5 rounded-2xl border border-emerald-200 bg-emerald-50/20 shadow-2xs">
+        {/* Remboursements */}
+        <div className="bg-white p-4 rounded-2xl border border-teal-200 bg-teal-50/20 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
-              {isAr ? 'نسبة الحل والرضى' : 'Taux de Résolution'}
+            <span className="text-[11px] font-bold text-teal-700 uppercase tracking-wider">
+              {isAr ? 'استرجاع مالي 💰' : 'Remboursements'}
             </span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <CheckCircle2 className="w-4 h-4 text-teal-600" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-emerald-900">{metrics.resolutionRate}%</span>
-            <span className="text-xs text-emerald-700 font-semibold">
+            <span className="text-2xl font-black text-teal-900">{metrics.remboursements}</span>
+            <span className="text-xs text-teal-700 font-semibold">
               ({metrics.resolu} {isAr ? 'محلولة' : 'résolus'})
             </span>
           </div>
@@ -497,6 +666,8 @@ export default function ReclamationsPage() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-sm border-b border-slate-100">
           {[
             { id: 'ALL', labelFr: 'Toutes', labelAr: 'الكل' },
+            { id: 'EN_ATTENTE_VALIDATION', labelFr: `À Valider (${metrics.enAttenteValidation}) ⏳`, labelAr: `في انتظار الموافقة (${metrics.enAttenteValidation}) ⏳` },
+            { id: 'APPROUVE', labelFr: 'Approuvés ✅', labelAr: 'معتمدة من الإدارة ✅' },
             { id: 'NOUVEAU', labelFr: 'Nouveaux', labelAr: 'جديدة' },
             { id: 'EN_COURS', labelFr: 'En Cours', labelAr: 'قيد المعالجة' },
             { id: 'ECHANGE_PROGRAMME', labelFr: 'Échanges 🔄', labelAr: 'استبدال 🔄' },
@@ -508,8 +679,8 @@ export default function ReclamationsPage() {
               onClick={() => setSelectedStatus(tab.id)}
               className={`px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
                 selectedStatus === tab.id
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  ? (tab.id === 'EN_ATTENTE_VALIDATION' ? 'bg-amber-600 text-white shadow-xs font-black' : 'bg-slate-900 text-white shadow-xs')
+                  : (tab.id === 'EN_ATTENTE_VALIDATION' && metrics.enAttenteValidation > 0 ? 'bg-amber-100 text-amber-900 font-black border border-amber-300' : 'text-slate-600 hover:bg-slate-100')
               }`}
             >
               {isAr ? tab.labelAr : tab.labelFr}
@@ -643,6 +814,13 @@ export default function ReclamationsPage() {
                       <span className="text-xs text-slate-500 font-semibold">
                         🏪 {ticket.storeName || 'Boutique'}
                       </span>
+
+                      {/* Approval badge if approved */}
+                      {ticket.approvedByName && (
+                        <span className="text-[10px] bg-teal-100 text-teal-900 border border-teal-200 px-2 py-0.5 rounded-md font-bold">
+                          ✓ معتمد: {ticket.approvedByName}
+                        </span>
+                      )}
                     </div>
 
                     {/* Customer & Description */}
@@ -659,6 +837,11 @@ export default function ReclamationsPage() {
                             </span>
                           </>
                         )}
+                        {ticket.totalAmount && (
+                          <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                            {ticket.totalAmount} DH
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-slate-600 mt-1 line-clamp-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
                         💬 <span className="font-semibold text-slate-800">{ticket.description}</span>
@@ -669,6 +852,51 @@ export default function ReclamationsPage() {
                         )}
                       </p>
                     </div>
+
+                    {/* Pending Approval Alert Banner */}
+                    {ticket.status === 'EN_ATTENTE_VALIDATION' && (
+                      <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 p-2.5 rounded-xl flex flex-wrap items-center justify-between gap-2 mt-1">
+                        <div className="flex items-center gap-2 text-xs font-bold text-amber-950">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping shrink-0" />
+                          <span>
+                            {isAr
+                              ? `⚠️ في انتظار موافقة الإدارة | فتحها الوكيل: ${ticket.createdByName || ticket.assignedAgentName || 'Agent'}`
+                              : `⚠️ En attente de validation | Agent: ${ticket.createdByName || ticket.assignedAgentName || 'Agent'}`}
+                          </span>
+                        </div>
+                        {(isAdmin || isManager) ? (
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleApproveTicket(ticket.id)}
+                              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black shadow-xs flex items-center gap-1 transition-all cursor-pointer"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>{isAr ? 'موافقة وتفعيل ✅' : 'Valider ✅'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRejectTicket(ticket.id)}
+                              className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>{isAr ? 'رفض' : 'Rejeter'}</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] font-bold text-amber-800 bg-white/80 px-2 py-0.5 rounded border border-amber-200">
+                            🔒 قيد مراجعة الإدارة (غير معتمد بعد)
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* If Refund already paid */}
+                    {ticket.refundPaidAt && (
+                      <div className="flex items-center gap-2 text-xs bg-emerald-50 text-emerald-900 border border-emerald-200 px-3 py-1.5 rounded-xl font-bold w-fit">
+                        <span>💰 تم تحويل {ticket.refundAmount} DH للزبون ({ticket.customerBankName || 'Virement'})</span>
+                      </div>
+                    )}
 
                     {/* If Exchange already generated */}
                     {ticket.exchangeOrderNumber && (
@@ -693,8 +921,9 @@ export default function ReclamationsPage() {
                     <div className="flex items-center gap-2">
                       <select
                         value={ticket.status}
+                        disabled={ticket.status === 'EN_ATTENTE_VALIDATION' && !isAdmin && !isManager}
                         onChange={(e) => handleUpdateTicketStatus(ticket.id, e.target.value)}
-                        className={`text-xs font-black px-3 py-1.5 rounded-xl border cursor-pointer focus:outline-none ${statusCfg.bg} ${statusCfg.text}`}
+                        className={`text-xs font-black px-3 py-1.5 rounded-xl border cursor-pointer focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed ${statusCfg.bg} ${statusCfg.text}`}
                       >
                         {Object.entries(STATUS_CONFIG).map(([k, cfg]) => (
                           <option key={k} value={k}>
@@ -713,7 +942,7 @@ export default function ReclamationsPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {/* WhatsApp Call / Message */}
                       <a
                         href={getWhatsAppUrl(ticket)}
@@ -734,8 +963,30 @@ export default function ReclamationsPage() {
                         <Phone className="w-4 h-4" />
                       </a>
 
+                      {/* Remboursement Execution Button (for approved tickets of type DEMANDE_REMBOURSEMENT) */}
+                      {ticket.type === 'DEMANDE_REMBOURSEMENT' && !ticket.refundPaidAt && ticket.status !== 'REJETE' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowRefundModal(ticket);
+                            setRefundData({
+                              customerRib: ticket.customerRib || '',
+                              customerBankName: ticket.customerBankName || 'CIH Bank',
+                              returnShippingFee: ticket.returnShippingFee !== undefined ? ticket.returnShippingFee : 30,
+                              refundMethod: 'VIREMENT_BANCAIRE',
+                              processing: false,
+                              completedResult: null,
+                            });
+                          }}
+                          className="flex items-center gap-1.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-black px-3 py-1.5 rounded-xl shadow-xs transition cursor-pointer"
+                          title="Exécuter le remboursement financier"
+                        >
+                          <span>💰 {isAr ? 'إرجاع الفلوس' : 'Rembourser'}</span>
+                        </button>
+                      )}
+
                       {/* 1-Click Generate Exchange */}
-                      {!ticket.exchangeOrderNumber && ticket.status !== 'RESOLU' && (
+                      {!ticket.exchangeOrderNumber && ticket.type !== 'DEMANDE_REMBOURSEMENT' && ticket.status !== 'RESOLU' && ticket.status !== 'EN_ATTENTE_VALIDATION' && (
                         <button
                           onClick={() => {
                             setShowExchangeModal(ticket);
@@ -977,6 +1228,87 @@ export default function ReclamationsPage() {
                 />
               </div>
 
+              {/* Remboursement specific fields */}
+              {newFormData.type === 'DEMANDE_REMBOURSEMENT' && (
+                <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-black text-blue-900">
+                    <RotateCcw className="w-3.5 h-3.5 text-blue-600" />
+                    <span>{isAr ? 'معلومات الاسترجاع المالي (Remboursement)' : 'Coordonnées de Remboursement'}</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-blue-900">
+                        {isAr ? 'اسم البنك / وسيلة التحويل' : 'Banque ou Moyen'}
+                      </label>
+                      <select
+                        value={newFormData.customerBankName}
+                        onChange={(e) => setNewFormData({ ...newFormData, customerBankName: e.target.value })}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-blue-200 rounded-xl font-bold text-slate-800"
+                      >
+                        <option value="CIH Bank">CIH Bank</option>
+                        <option value="Attijariwafa Bank">Attijariwafa Bank</option>
+                        <option value="Bank of Africa (BMCE)">Bank of Africa</option>
+                        <option value="Banque Populaire (BCP)">Banque Populaire</option>
+                        <option value="Barid Bank">Al Barid Bank</option>
+                        <option value="CFG Bank">CFG Bank</option>
+                        <option value="CashPlus / Wafacash">CashPlus / Wafacash</option>
+                        <option value="Autre">Autre</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-blue-900">
+                        {isAr ? 'مصاريف الروتور المقتطعة' : 'Frais de retour déduits'}
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          value={newFormData.returnShippingFee}
+                          onChange={(e) => setNewFormData({ ...newFormData, returnShippingFee: Number(e.target.value) })}
+                          className="w-full px-2.5 py-1.5 text-xs bg-white border border-blue-200 rounded-xl font-bold text-slate-800"
+                        />
+                        <span className="text-xs font-bold text-blue-900">DH</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-blue-900">
+                      {isAr ? 'رقم الحساب البنكي للزبون (RIB - 24 رقم) أو هاتف CashPlus' : 'RIB Bancaire (24 chiffres) ou Tél CashPlus'}
+                    </label>
+                    <input
+                      type="text"
+                      value={newFormData.customerRib}
+                      onChange={(e) => setNewFormData({ ...newFormData, customerRib: e.target.value })}
+                      placeholder="Ex: 230 780 0000000000000000 00"
+                      className="w-full px-2.5 py-1.5 text-xs bg-white border border-blue-200 rounded-xl font-mono text-slate-800"
+                    />
+                  </div>
+
+                  {selectedOrder?.totalAmount && (
+                    <div className="p-2 bg-white/80 rounded-xl text-[11px] text-blue-950 font-medium flex items-center justify-between">
+                      <span>المبلغ الصافي للزبون:</span>
+                      <strong className="text-emerald-700 font-black">
+                        {Math.max(0, selectedOrder.totalAmount - (newFormData.returnShippingFee || 0))} DH
+                      </strong>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Agent workflow disclaimer */}
+              {!isAdmin && !isManager && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs flex items-center gap-2">
+                  <span className="text-base shrink-0">⏳</span>
+                  <span>
+                    {isAr
+                      ? 'بصفتك وكيلاً (Agent)، سيتم إرسال هذا الملف في حالة "في انتظار الموافقة" للمدير أو الأدمن لمراجعته والموافقة عليه قبل تنفيذ أي عملية.'
+                      : 'En tant qu\'agent, ce dossier sera créé au statut "En attente de validation" pour approbation par la direction avant exécution.'}
+                  </span>
+                </div>
+              )}
+
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
@@ -989,7 +1321,9 @@ export default function ReclamationsPage() {
                   type="submit"
                   className="px-5 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition cursor-pointer"
                 >
-                  {isAr ? 'حفظ الشكاية' : 'Enregistrer le ticket'}
+                  {!isAdmin && !isManager
+                    ? (isAr ? 'إرسال للموافقة (En attente)' : 'Soumettre pour validation')
+                    : (isAr ? 'حفظ واعتماد الشكاية' : 'Enregistrer le ticket')}
                 </button>
               </div>
             </form>
@@ -1238,6 +1572,195 @@ export default function ReclamationsPage() {
                 </a>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Exécution du Remboursement Financier */}
+      {showRefundModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-teal-100 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-teal-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-teal-600/10 text-teal-700 flex items-center justify-center font-bold text-lg">
+                  💰
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">
+                    {isAr ? 'تنفيذ الإرجاع المالي (Remboursement)' : 'Exécuter le Remboursement Client'}
+                  </h3>
+                  <span className="text-xs text-slate-500 font-mono">
+                    {showRefundModal.ticketNumber} • Commande #{showRefundModal.orderNumber}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowRefundModal(null);
+                  setRefundData({ customerRib: '', customerBankName: 'CIH Bank', returnShippingFee: 30, refundMethod: 'VIREMENT_BANCAIRE', processing: false, completedResult: null });
+                }}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {refundData.completedResult ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-950 space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-black text-emerald-800">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    <span>{isAr ? 'تم تسجيل الإرجاع المالي وإغلاق الملف بنجاح !' : 'Remboursement exécuté avec succès !'}</span>
+                  </div>
+                  <p className="text-xs text-emerald-800">
+                    {isAr
+                      ? `تم خصم مبلغ ${refundData.completedResult.netAmount} درهم وتسجيله كـ (Sortie de Caisse / Dépense) لحفظ توازن الأرباح المحاسبية بدقة.`
+                      : `Montant net de ${refundData.completedResult.netAmount} DH enregistré en charge (Dépense SAV) pour préserver l'exactitude de la trésorerie.`}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                  <span className="text-xs font-bold text-slate-800 block">
+                    {isAr ? '📲 إرسال إشعار وتأكيد التحويل للزبون :' : 'Confirmer au client par WhatsApp :'}
+                  </span>
+                  <a
+                    href={refundData.completedResult.whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs flex items-center justify-center gap-2 transition"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>{isAr ? 'إرسال وصل التحويل عبر WhatsApp' : 'Envoyer reçu sur WhatsApp'}</span>
+                  </a>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => {
+                      setShowRefundModal(null);
+                      setRefundData({ customerRib: '', customerBankName: 'CIH Bank', returnShippingFee: 30, refundMethod: 'VIREMENT_BANCAIRE', processing: false, completedResult: null });
+                    }}
+                    className="px-5 py-2 text-xs font-bold bg-slate-900 text-white rounded-xl cursor-pointer"
+                  >
+                    {isAr ? 'إغلاق' : 'Fermer'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 text-xs">
+                {/* Client & Order details */}
+                <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900">{showRefundModal.customerName}</span>
+                    <span className="font-mono text-slate-500">{showRefundModal.customerPhone}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-600 pt-1 border-t border-slate-200/60">
+                    <span>{isAr ? 'المبلغ الإجمالي المدفوع (COD) :' : 'Montant total encaissé :'}</span>
+                    <strong className="text-slate-900 font-black">{showRefundModal.totalAmount || 0} DH</strong>
+                  </div>
+                </div>
+
+                {/* Return fee deduction */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 block">
+                      {isAr ? 'مصاريف الاسترجاع المقتطعة' : 'Frais de retour à déduire'}
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        value={refundData.returnShippingFee}
+                        onChange={(e) => setRefundData({ ...refundData, returnShippingFee: Number(e.target.value) })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                      />
+                      <span className="font-bold text-slate-600">DH</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 block">
+                      {isAr ? 'وسيلة التحويل' : 'Mode de paiement'}
+                    </label>
+                    <select
+                      value={refundData.refundMethod}
+                      onChange={(e) => setRefundData({ ...refundData, refundMethod: e.target.value })}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                    >
+                      <option value="VIREMENT_BANCAIRE">Virement Bancaire (RIB)</option>
+                      <option value="CASHPLUS">CashPlus / Wafacash</option>
+                      <option value="ESPECE">Espèces (Interne)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Bank / RIB */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 block">
+                      {isAr ? 'اسم البنك' : 'Banque'}
+                    </label>
+                    <input
+                      type="text"
+                      value={refundData.customerBankName}
+                      onChange={(e) => setRefundData({ ...refundData, customerBankName: e.target.value })}
+                      placeholder="Ex: CIH Bank"
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 block">
+                      {isAr ? 'رقم الحساب (RIB - 24 رقم)' : 'RIB Client (24 chiffres)'}
+                    </label>
+                    <input
+                      type="text"
+                      value={refundData.customerRib}
+                      onChange={(e) => setRefundData({ ...refundData, customerRib: e.target.value })}
+                      placeholder="24 chiffres"
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Net refund summary */}
+                <div className="p-3 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-2xl flex items-center justify-between text-teal-950">
+                  <span className="font-bold">
+                    {isAr ? 'المبلغ الصافي المراد تحويله للزبون :' : 'Montant net à virer au client :'}
+                  </span>
+                  <span className="text-base font-black text-emerald-700">
+                    {Math.max(0, (showRefundModal.totalAmount || 0) - Number(refundData.returnShippingFee))} DH
+                  </span>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowRefundModal(null)}
+                    disabled={refundData.processing}
+                    className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  >
+                    {isAr ? 'إلغاء' : 'Annuler'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmRefund}
+                    disabled={refundData.processing}
+                    className="px-5 py-2 text-xs font-black bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {refundData.processing ? (
+                      <span>{isAr ? 'جاري التسجيل...' : 'Traitement...'}</span>
+                    ) : (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>{isAr ? '✓ تأكيد التحويل وتسجيل المصروف' : '✓ Confirmer le Virement & Enregistrer'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

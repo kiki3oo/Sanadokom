@@ -23,6 +23,13 @@ export async function POST(
       );
     }
 
+    if (ticket.status === 'EN_ATTENTE_VALIDATION' && body.agentRole === 'CALL_AGENT') {
+      return NextResponse.json(
+        { success: false, error: 'Ce ticket est en attente de validation par un Manager ou Admin avant de pouvoir créer un échange.' },
+        { status: 403 }
+      );
+    }
+
     // 1. Fetch original order
     let originalOrder = await prisma.order.findFirst({
       where: {

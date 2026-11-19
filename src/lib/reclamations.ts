@@ -29,6 +29,8 @@ export interface ReclamationTicket {
     | 'AUTRE';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   status:
+    | 'EN_ATTENTE_VALIDATION'
+    | 'APPROUVE'
     | 'NOUVEAU'
     | 'EN_COURS'
     | 'ATTENTE_CLIENT'
@@ -48,6 +50,28 @@ export interface ReclamationTicket {
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string | null;
+
+  // Validation hiérarchique (Agent -> Manager / Admin)
+  createdById?: string | null;
+  createdByName?: string | null;
+  createdByRole?: string | null;
+  approvedById?: string | null;
+  approvedByName?: string | null;
+  approvedAt?: string | null;
+  rejectedById?: string | null;
+  rejectedByName?: string | null;
+  rejectedAt?: string | null;
+  rejectionReason?: string | null;
+  managerNotes?: string | null;
+
+  // Détails remboursement & retour
+  customerRib?: string | null;
+  customerBankName?: string | null;
+  returnShippingFee?: number;
+  netRefundAmount?: number;
+  refundPaidAt?: string | null;
+  refundMethod?: string | null;
+  refundExpenseId?: string | null;
 }
 
 const RECLAMATIONS_FILE_PATH = runtimeDataPath('reclamations.json');

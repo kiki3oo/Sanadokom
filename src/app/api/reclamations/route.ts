@@ -69,9 +69,12 @@ export async function GET(req: NextRequest) {
 
     const metrics = {
       total: allStoreTickets.length,
+      enAttenteValidation: allStoreTickets.filter((t) => t.status === 'EN_ATTENTE_VALIDATION').length,
+      approuve: allStoreTickets.filter((t) => t.status === 'APPROUVE').length,
       nouveau: allStoreTickets.filter((t) => t.status === 'NOUVEAU').length,
       enCours: allStoreTickets.filter((t) => ['EN_COURS', 'ATTENTE_CLIENT', 'ATTENTE_TRANSPORTEUR'].includes(t.status)).length,
       echanges: allStoreTickets.filter((t) => t.status === 'ECHANGE_PROGRAMME' || t.exchangeOrderId).length,
+      remboursements: allStoreTickets.filter((t) => t.type === 'DEMANDE_REMBOURSEMENT').length,
       resolu: allStoreTickets.filter((t) => t.status === 'RESOLU').length,
       rejete: allStoreTickets.filter((t) => t.status === 'REJETE').length,
       resolutionRate: allStoreTickets.length > 0 
@@ -126,6 +129,21 @@ export async function POST(req: NextRequest) {
 
     const firstItem = orderData?.items?.[0];
 
+    const isAuthorAdminOrManager = body.authorRole === 'ADMIN' || body.authorRole === 'LOGISTICS_MANAGER';
+    // If created by Call Agent, enforce EN_ATTENTE_VALIDATION
+    let initialStatus = body.status;
+    if (!initialStatus) {
+      initialStatus = isAuthorAdminOrManager ? 'NOUVEAU' : 'EN_ATTENTE_VALIDATION';
+    } else if (!isAuthorAdminOrManager && (initialStatus === 'APPROUVE' || initialStatus === 'RESOLU')) {
+      initialStatus = 'EN_ATTENTE_VALIDATION';
+    }
+
+    const totalAmount = orderData?.totalAmount || body.totalAmount || 0;
+    const returnShippingFee = body.returnShippingFee !== undefined ? Number(body.returnShippingFee) : 30;
+    const netRefundAmount = body.netRefundAmount !== undefined 
+      ? Number(body.netRefundAmount) 
+      : Math.max(0, totalAmount - returnShippingFee);
+
     const newTicket = createReclamation({
       orderId: orderData?.id || body.orderId || '',
       orderNumber: orderData?.orderNumber || body.orderNumber || 'DIRECT',
@@ -139,11 +157,11 @@ export async function POST(req: NextRequest) {
       productSku: firstItem?.product?.sku || body.productSku || '',
       courierProvider: orderData?.courierProvider || body.courierProvider || null,
       trackingNumber: orderData?.trackingNumber || body.trackingNumber || null,
-      totalAmount: orderData?.totalAmount || body.totalAmount || 0,
+      totalAmount,
       currency: orderData?.store?.currency || body.currency || 'MAD',
       type: body.type || 'PRODUIT_DEFECTUEUX',
       priority: body.priority || 'MEDIUM',
-      status: body.status || 'NOUVEAU',
+      status: initialStatus,
       description: body.description,
       customerDemand: body.customerDemand || '',
       resolutionNotes: body.resolutionNotes || '',
@@ -152,8 +170,22 @@ export async function POST(req: NextRequest) {
       assignedAgentName: body.assignedAgentName || orderData?.assignedAgent?.name || null,
       exchangeOrderId: null,
       exchangeOrderNumber: null,
-      refundAmount: body.refundAmount ? Number(body.refundAmount) : 0,
+      refundAmount: body.refundAmount ? Number(body.refundAmount) : netRefundAmount,
       resolvedAt: null,
+
+      // Hierarchical validation
+      createdById: body.authorId || null,
+      createdByName: body.authorName || 'Agent SAV',
+      createdByRole: body.authorRole || 'CALL_AGENT',
+      approvedById: isAuthorAdminOrManager ? body.authorId : null,
+      approvedByName: isAuthorAdminOrManager ? body.authorName : null,
+      approvedAt: isAuthorAdminOrManager ? new Date().toISOString() : null,
+
+      // Refund / Return details
+      customerRib: body.customerRib || null,
+      customerBankName: body.customerBankName || null,
+      returnShippingFee,
+      netRefundAmount,
     });
 
     // Activity log
