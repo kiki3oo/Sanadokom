@@ -630,7 +630,7 @@ export default function MediaBuyerPage() {
               }`}
             >
               <Compass className="w-4 h-4 text-indigo-600" />
-              <span>{isAr ? 'رادار التجسس وترندات الإعلانات' : 'Ad Spy & Trends Hub'}</span>
+              <span>{isAr ? 'رادار التجسس (Meta, TikTok, Pinterest 📌)' : 'Ad Spy & Trends (Meta, TikTok, Pinterest 📌)'}</span>
             </button>
 
             <button

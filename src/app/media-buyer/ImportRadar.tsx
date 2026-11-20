@@ -244,10 +244,21 @@ function ProductCard({ product, local, label, targetStoreId, onAudit }: {
       </div>
 
       <div className="mt-auto pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-        <button type="button" onClick={onAudit}
-          className="rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-bold text-indigo-800 hover:bg-indigo-100 transition-colors">
-          {label('Ouvrir dans l’audit produit', 'حلّ المنتج فالأوديت')}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={onAudit}
+            className="rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-bold text-indigo-800 hover:bg-indigo-100 transition-colors">
+            {label('Ouvrir dans l’audit produit', 'حلّ المنتج فالأوديت')}
+          </button>
+          <a
+            href={`https://www.pinterest.com/search/pins/?q=${encodeURIComponent(product.brand + ' ' + product.name + ' viral review')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-[#E60023] hover:bg-rose-100 transition-colors"
+          >
+            <span>📌</span>
+            <span>{label('Pinterest', 'بينترست')}</span>
+          </a>
+        </div>
 
         {pushed ? (
           <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300">
