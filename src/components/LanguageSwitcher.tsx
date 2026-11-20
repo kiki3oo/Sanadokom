@@ -35,7 +35,7 @@ export default function LanguageSwitcher() {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 transition-colors shadow-2xs cursor-pointer"
-        title="Changer de langue / تبديل اللغة / Change Language"
+        title={language === 'ar' ? 'تبديل اللغة' : (language === 'fr' ? 'Changer de langue' : 'Change language')}
       >
         <span className="text-base leading-none">{currentLang.flag}</span>
         <span className="hidden sm:inline font-semibold">{currentLang.short}</span>
@@ -45,7 +45,7 @@ export default function LanguageSwitcher() {
       {isOpen && (
         <div className="absolute right-0 mt-1.5 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
           <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider border-b border-slate-100">
-            Langue / اللغة
+            {language === 'ar' ? 'اختيار اللغة' : 'Langue'}
           </div>
           {LANGUAGES.map((lang) => {
             const isSelected = language === lang.code;

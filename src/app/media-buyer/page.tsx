@@ -317,9 +317,12 @@ export default function MediaBuyerPage() {
   // Copilot Decision Filter
   const [copilotFilter, setCopilotFilter] = useState<'ALL' | 'SCALE' | 'KILL' | 'ALERT'>('ALL');
 
-  const countryNames: Record<string, string> = {
-    MA: 'Maroc', GCC: 'Arabie saoudite', SN: 'Sénégal', US: 'États-Unis',
-    FR: 'France', UK: 'Royaume-Uni', CA: 'Canada',
+  const countryNames: Record<string, string> = isAr ? {
+    MA: 'المغرب', GCC: 'السعودية ودول الخليج', SN: 'السنغال', US: 'الولايات المتحدة',
+    FR: 'فرنسا', UK: 'بريطانيا', CA: 'كندا', GLOBAL: 'السوق العالمي',
+  } : {
+    MA: 'Maroc', GCC: 'Arabie saoudite & Golfe', SN: 'Sénégal', US: 'États-Unis',
+    FR: 'France', UK: 'Royaume-Uni', CA: 'Canada', GLOBAL: 'Marché Global',
   };
 
   // --- Tab 3: Media Buyer Copilot State ---
@@ -1873,7 +1876,7 @@ export default function MediaBuyerPage() {
           </section>
 
           <div id="market-research-section" className="scroll-mt-6">
-            <MarketResearch mode="audit" isAr={isAr} key={auditMarket || analysisInput.targetCountry}
+            <MarketResearch mode="audit" isAr={isAr} language={language === 'ar' ? 'ar' : 'fr'} key={`${auditMarket || analysisInput.targetCountry}-${language}`}
               defaultTarget={auditMarket || countryNames[analysisInput.targetCountry]}
               wholesalePrice={analysisInput.wholesalePrice}
               retailPrice={analysisInput.retailPrice}

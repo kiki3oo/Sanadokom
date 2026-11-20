@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useState, useMemo } from 'react';
+import { Fragment, useState, useMemo, useEffect } from 'react';
 import type { ResearchReport } from '@/lib/marketResearch';
 import { cleanLatexAndFormat } from '@/lib/cleanLatex';
 import {
@@ -30,30 +30,49 @@ interface ParsedSection {
   type: 'VERDICT' | 'FINANCE' | 'HOOKS' | 'COPIES' | 'UGC' | 'STRATEGY' | 'GENERAL';
 }
 
-export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', wholesalePrice, retailPrice, shippingFee }: {
+export function MarketResearch({ mode, isAr, language, product = '', defaultTarget = '', wholesalePrice, retailPrice, shippingFee }: {
   mode: 'scout' | 'audit';
   isAr: boolean;
+  language?: 'ar' | 'fr';
   product?: string;
   defaultTarget?: string;
   wholesalePrice?: number;
   retailPrice?: number;
   shippingFee?: number;
 }) {
+  const currentLang = language || (isAr ? 'ar' : 'fr');
   const [target, setTarget] = useState(defaultTarget);
   const [source, setSource] = useState('');
   const [brief, setBrief] = useState('');
   const [tone, setTone] = useState<'AGGRESSIVE' | 'MEDICAL_AUTHORITY' | 'UGC_VIRAL' | 'BUNDLE_OFFER'>('AGGRESSIVE');
   const [report, setReport] = useState<ResearchReport | null>(null);
+  const [reportLang, setReportLang] = useState<'ar' | 'fr' | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [copiedSectionId, setCopiedSectionId] = useState<string | null>(null);
 
   const scout = mode === 'scout';
-  const label = (fr: string, ar: string) => isAr ? ar : fr;
+  const label = (fr: string, ar: string) => currentLang === 'ar' ? ar : fr;
   const field = 'w-full rounded-xl border border-slate-300 bg-white p-3 text-sm focus:ring-2 focus:ring-indigo-500 font-medium';
 
-  async function search(forceRefresh = false) {
+  // Automatically synchronize target input when defaultTarget prop changes (e.g. language switch)
+  useEffect(() => {
+    if (defaultTarget) {
+      setTarget(defaultTarget);
+    }
+  }, [defaultTarget]);
+
+  // When language switches (e.g. from 'fr' to 'ar') while a report was already generated,
+  // automatically re-run search for the current language so the user NEVER sees half-French half-Arabic!
+  useEffect(() => {
+    if (report && reportLang && reportLang !== currentLang && !running) {
+      void search(false, currentLang);
+    }
+  }, [currentLang, reportLang]);
+
+  async function search(forceRefresh = false, langOverride?: 'ar' | 'fr') {
+    const langToUse = langOverride || currentLang;
     setRunning(true);
     setError('');
     if (forceRefresh) setReport(null);
@@ -68,7 +87,7 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
           target,
           source,
           product: scout ? brief : product,
-          language: isAr ? 'ar' : 'fr',
+          language: langToUse,
           tone,
           wholesalePrice,
           retailPrice,
@@ -88,6 +107,7 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
           text: cleanLatexAndFormat(data.report.text || ''),
         };
         setReport(sanitizedData);
+        setReportLang(langToUse);
       }
     } catch {
       setError(label('Recherche indisponible. Réessayez dans un instant.', 'البحث غير متاح حالياً. أعد المحاولة بعد قليل.'));
@@ -101,46 +121,65 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
     if (!report?.text) return [];
     const fullText = cleanLatexAndFormat(report.text);
     
-    // Split by Markdown heading 4 (####) or heading 3 (###) or separator bars
-    const parts = fullText.split(/(?=\n####|\n### |━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━)/g);
+    // Split by Markdown headings 1, 2, 3, 4 (##, ###, ####) or separator bars
+    // Handles any #+ followed by digits, emojis (📊, 💰, etc.) or section titles
+    const sectionSplitRegex = /\n(?=(?:#{1,4}\s*(?:[0-9]+[.)]|📊|💰|⚠️|🎣|📱|🎬|🚀|🏁|💪|🎯|Audit|Conclusion|الخلاصة|تقرير)|━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━))/gi;
+    const parts = fullText.split(sectionSplitRegex);
     const sections: ParsedSection[] = [];
 
     for (let i = 0; i < parts.length; i++) {
       const raw = parts[i].trim();
-      if (!raw) continue;
+      if (!raw || /^━+$/.test(raw)) continue;
 
       const lines = raw.split('\n');
-      let titleLine = lines[0].replace(/^[#━\s]+/, '').trim();
-      const content = lines.slice(1).join('\n').trim();
+      // Strip markdown header symbols and formatting from title
+      let titleLine = lines[0].replace(/^[#*━\s–-]+/, '').replace(/[*#]+$/, '').trim();
+      
+      // Clean internal content lines:
+      // If a line begins with ## or ###, transform into clean bold text instead of breaking the card
+      const contentLines = lines.slice(1).map(l => {
+        const trimmed = l.trim();
+        if (/^#{1,4}\s+/.test(trimmed)) {
+          return trimmed.replace(/^#{1,4}\s+/, '**') + '**';
+        }
+        return l;
+      });
+      const content = contentLines.join('\n').trim();
 
       if (!titleLine && !content) continue;
 
       let type: ParsedSection['type'] = 'GENERAL';
       let badge = '';
 
-      if (/🏁|Verdict|القرار النهائي|Conclusion/i.test(titleLine) || /WINNER/i.test(titleLine)) {
+      if (/🏁|Verdict|القرار النهائي|Conclusion|واش المنتج WINNER/i.test(titleLine)) {
         type = 'VERDICT';
-        badge = isAr ? '🏆 القرار الفاصل' : '🏆 Verdict Final';
-      } else if (/💰|Chiffres|Économie|الحسابات المالية|COD Economics|Prix/i.test(titleLine)) {
+        badge = currentLang === 'ar' ? '🏆 القرار الفاصل' : '🏆 Verdict Final';
+      } else if (/💰|Chiffres|Économie|الحسابات المالية|COD Economics|Prix|السعر/i.test(titleLine)) {
         type = 'FINANCE';
-        badge = isAr ? '💰 الأرقام والربحية' : '💰 Économie COD';
+        badge = currentLang === 'ar' ? '💰 الأرقام والربحية' : '💰 Économie COD';
       } else if (/🎣|Hooks|Accroches|رؤوس إعلانية/i.test(titleLine)) {
         type = 'HOOKS';
-        badge = isAr ? '🎣 هوكات الإعلانات' : '🎣 10 Winning Hooks';
-      } else if (/📱|Textes|Copies|نصوص إعلانية|TikTok|Facebook/i.test(titleLine)) {
+        badge = currentLang === 'ar' ? '🎣 هوكات الإعلانات' : '🎣 10 Winning Hooks';
+      } else if (/📱|Textes|Copies|نصوص إعلانية|TikTok|Facebook|WhatsApp/i.test(titleLine)) {
         type = 'COPIES';
-        badge = isAr ? '📱 نصوص المنصات' : '📱 Ad Copies';
-      } else if (/🎬|Scripts|UGC|سيناريوهات/i.test(titleLine)) {
+        badge = currentLang === 'ar' ? '📱 نصوص المنصات' : '📱 Ad Copies';
+      } else if (/🎬|Scripts|UGC|سيناريوهات|مشهد/i.test(titleLine)) {
         type = 'UGC';
-        badge = isAr ? '🎬 سكريبتات UGC' : '🎬 Scripts Vidéo';
-      } else if (/🚀|Stratégie|Kill|Scale|خطة إطلاق/i.test(titleLine)) {
+        badge = currentLang === 'ar' ? '🎬 سكريبتات UGC' : '🎬 Scripts Vidéo';
+      } else if (/🚀|Stratégie|Kill|Scale|خطة إطلاق|الاستهداف/i.test(titleLine)) {
         type = 'STRATEGY';
-        badge = isAr ? '🚀 خطة وتوجيهات' : '🚀 Kill & Scale';
+        badge = currentLang === 'ar' ? '🚀 خطة وتوجيهات' : '🚀 Kill & Scale';
+      } else if (/📊|Potentiel|Ventes|تقييم|المبيعات/i.test(titleLine)) {
+        type = 'GENERAL';
+        badge = currentLang === 'ar' ? '📊 تقييم المبيعات' : '📊 Potentiel Ventes';
+      } else if (/⚠️|Objections|مخاوف|اعتراضات/i.test(titleLine)) {
+        type = 'GENERAL';
+        badge = currentLang === 'ar' ? '⚠️ اعتراضات وحلول' : '⚠️ Objections Clients';
       }
 
       sections.push({
         id: `sec-${i}`,
-        title: titleLine || (isAr ? 'تفاصيل التقرير' : 'Détails du rapport'),
+        title: titleLine || (currentLang === 'ar' ? 'تفاصيل التقرير' : 'Détails du rapport'),
         badge,
         content: content || raw,
         type,
@@ -148,20 +187,25 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
     }
 
     return sections;
-  }, [report?.text, isAr]);
+  }, [report?.text, currentLang]);
 
   // Extract executive verdict for the Top Hero Card
+  // Calibrated so language of the card ALWAYS matches the report's actual content language!
   const executiveVerdict = useMemo(() => {
     if (!report?.text) return null;
     const text = report.text;
+
+    // Detect if the report content is actually in Arabic or French
+    const reportIsActuallyArabic = /[\u0600-\u06FF]/.test(text.slice(0, 500));
+    const cardIsAr = reportIsActuallyArabic;
 
     const isWinnerDefinitive = /🟢\s*WINNER|WINNER مؤكد|OUI, le produit est un WINNER|Produit WINNER avéré/i.test(text);
     const isWinnerConditional = /🟡\s*WINNER|WINNER مشروط|WINNER Conditionnel|Pack Duo/i.test(text);
     const isLoser = /🛑|LOSER|خاسر|non rentable|produit à éviter/i.test(text);
 
     let status: 'WINNER' | 'CONDITIONAL' | 'LOSER' = 'WINNER';
-    let title = isAr ? '🟢 منتج رابح مؤكد (WINNER مؤكد)' : '🟢 PRODUIT WINNER CONFIRMÉ (FEU VERT)';
-    let desc = isAr
+    let title = cardIsAr ? '🟢 منتج رابح مؤكد (WINNER مؤكد)' : '🟢 PRODUIT WINNER CONFIRMÉ (FEU VERT)';
+    let desc = cardIsAr
       ? 'ضوء أخضر كامل: المنتج يتمتع بهامش أمان ممتاز ومعدل طلب عفوي قوي في السوق المحلي. جاهز للإطلاق فوراً!'
       : 'Feu vert complet : Excellent potentiel de vente avec un ratio de marge solide. Prêt pour un lancement immédiat !';
     let themeBg = 'bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950 border-emerald-500/50 text-emerald-100';
@@ -169,24 +213,24 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
 
     if (isWinnerConditional && !isWinnerDefinitive) {
       status = 'CONDITIONAL';
-      title = isAr ? '🟡 منتج رابح مشروط (WINNER مشروط بالباقة)' : '🟡 WINNER CONDITIONNEL (PACK DUO REQUIS)';
-      desc = isAr
+      title = cardIsAr ? '🟡 منتج رابح مشروط (WINNER مشروط بالباقة)' : '🟡 WINNER CONDITIONNEL (PACK DUO REQUIS)';
+      desc = cardIsAr
         ? 'تحذير استراتيجي: بيع القطعة الواحدة يقلل الأرباح. يجب تركيز 100% من الحملات الإعلانية على عرض باقة القطعتين (Pack Duo) لضمان الربحية.'
         : 'Conditionné au Pack Duo : Ne vendez pas à l\'unité. Basez vos créatives sur l\'offre Pack 2 pièces pour garantir un ROI supérieur à 40%.';
       themeBg = 'bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 border-amber-500/50 text-amber-100';
       badgeClass = 'bg-amber-500/20 text-amber-300 border-amber-400/40';
     } else if (isLoser && !isWinnerDefinitive && !isWinnerConditional) {
       status = 'LOSER';
-      title = isAr ? '🛑 منتج غير مجدٍ (LOSER - تجنب إضاعة المال)' : '🛑 PRODUIT NON RENTABLE (LOSER - À ÉVITER)';
-      desc = isAr
+      title = cardIsAr ? '🛑 منتج غير مجدٍ (LOSER - تجنب إضاعة المال)' : '🛑 PRODUIT NON RENTABLE (LOSER - À ÉVITER)';
+      desc = cardIsAr
         ? 'تحذير مالي صارم: فارق السعر مع المنافسين أو سعر الجملة سيحرق ميزانية الإعلانات دون تحقيق أرباح كافية. ابحث عن مورد بسعر أقل أو اختر منتجاً بديلاً.'
         : 'Alerte anti-perte : Marge insuffisante face aux coûts d\'acquisition publicitaire. Risque élevé de brûler du budget sans rentabilité.';
       themeBg = 'bg-gradient-to-r from-rose-950 via-slate-900 to-rose-950 border-rose-500/50 text-rose-100';
       badgeClass = 'bg-rose-500/20 text-rose-300 border-rose-400/40';
     }
 
-    return { status, title, desc, themeBg, badgeClass };
-  }, [report?.text, isAr]);
+    return { status, title, desc, themeBg, badgeClass, cardIsAr };
+  }, [report?.text]);
 
   const copySection = async (id: string, text: string) => {
     try {
@@ -198,13 +242,15 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
     }
   };
 
+  const isRtl = currentLang === 'ar';
+
   return (
-    <section dir={isAr ? 'rtl' : 'ltr'} className="rounded-3xl border border-indigo-200 bg-white p-5 sm:p-7 shadow-sm space-y-6">
+    <section dir={isRtl ? 'rtl' : 'ltr'} className="rounded-3xl border border-indigo-200 bg-white p-5 sm:p-7 shadow-sm space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-black mb-2">
             <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-            <span>{scout ? label('استكشاف الفرص الرابحة', 'Détecter des opportunités') : label('تدقيق إعلاني واستشاري شامل 360°', 'Audit 360° & Intelligence Publicitaire')}</span>
+            <span>{scout ? label('Détecter des opportunités', 'استكشاف الفرص الرابحة') : label('Audit 360° & Intelligence Publicitaire', 'تدقيق إعلاني واستشاري شامل 360°')}</span>
           </div>
           <h2 className="text-lg sm:text-xl font-black text-slate-900">
             {scout ? label('Détecter des opportunités par pays', 'اكتشف فرص المنتجات الرابحة حسب البلد') :
@@ -226,7 +272,7 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all border border-slate-200 cursor-pointer disabled:opacity-50 shadow-2xs"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${running ? 'animate-spin' : ''}`} />
-              <span>{isAr ? '🔄 تحديث وفحص جديد (Bypass Cache)' : '🔄 Forcer l\'actualisation'}</span>
+              <span>{label('🔄 Forcer l\'actualisation', '🔄 تحديث وفحص جديد (Bypass Cache)')}</span>
             </button>
           </div>
         )}
@@ -268,7 +314,7 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
                       : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
-                  {isAr ? item.labelAr : item.labelFr}
+                  {currentLang === 'ar' ? item.labelAr : item.labelFr}
                 </button>
               ))}
             </div>
@@ -310,6 +356,18 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
         </div>
       )}
 
+      {/* Auto-translating alert when language was changed and fetch is running */}
+      {running && report && (
+        <div className="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold flex items-center gap-2 animate-pulse">
+          <RefreshCw className="w-4 h-4 animate-spin text-indigo-600 shrink-0" />
+          <span>
+            {currentLang === 'ar'
+              ? '🔄 جارٍ تحديث وتوطين التقرير كاملاً باللغة العربية…'
+              : '🔄 Actualisation et adaptation du rapport en Français…'}
+          </span>
+        </div>
+      )}
+
       {/* ========================================================================= */}
       {/* STRUCTURED REPORT PRESENTATION                                            */}
       {/* ========================================================================= */}
@@ -319,7 +377,7 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
           <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-3 sm:p-4 rounded-2xl border border-slate-200">
             <div className="flex items-center gap-2">
               <span className="text-xs font-black text-slate-800">
-                {isAr ? '📋 تقرير الاستشارة والتدقيق الإعلاني جاهز :' : '📋 Rapport d\'expertise & Copies prêtes :'}
+                {label('📋 Rapport d\'expertise & Copies prêtes :', '📋 تقرير الاستشارة والتدقيق الإعلاني جاهز :')}
               </span>
             </div>
 
@@ -356,10 +414,10 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
                 disabled={running}
                 onClick={() => void search(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-300 cursor-pointer shadow-2xs"
-                title={isAr ? 'إعادة طلب تحليل جديد وتجاوز الذاكرة المؤقتة' : 'Relancer une analyse fraîche'}
+                title={label('Relancer une analyse fraîche', 'إعادة طلب تحليل جديد وتجاوز الذاكرة المؤقتة')}
               >
                 <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${running ? 'animate-spin' : ''}`} />
-                <span>{isAr ? 'تحديث' : 'Actualiser'}</span>
+                <span>{label('Actualiser', 'تحديث')}</span>
               </button>
             </div>
           </div>
@@ -374,7 +432,7 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
                       {executiveVerdict.status === 'WINNER' ? '🚀 FEU VERT' : executiveVerdict.status === 'CONDITIONAL' ? '⚡ CONDITIONNEL' : '🛑 STOP'}
                     </span>
                     <span className="text-[11px] font-bold text-slate-300">
-                      {isAr ? 'الخلاصة والقرار النهائي الحاسم' : 'Conclusion Exécutive'}
+                      {executiveVerdict.cardIsAr ? 'الخلاصة والقرار النهائي الحاسم' : 'Conclusion Exécutive'}
                     </span>
                   </div>
                   <h3 className="text-lg sm:text-2xl font-black text-white tracking-tight">
@@ -390,35 +448,51 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
               {/* 4-KPI Quick Snapshot */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 pt-2">
                 <div className="rounded-2xl bg-white/10 border border-white/10 p-3 text-center">
-                  <span className="text-[10px] text-slate-300 block font-medium">{isAr ? 'سعر الجملة المدخل' : 'Coût d\'Achat'}</span>
+                  <span className="text-[10px] text-slate-300 block font-medium">
+                    {executiveVerdict.cardIsAr ? 'سعر الجملة المدخل' : 'Coût d\'Achat'}
+                  </span>
                   <span className="text-base sm:text-lg font-black text-white mt-0.5 block">
                     {wholesalePrice ? `${wholesalePrice} DH` : '35 DH'}
                   </span>
-                  <span className="text-[9px] text-slate-300 block">{isAr ? 'تكلفة التوريد' : 'Sourcing'}</span>
+                  <span className="text-[9px] text-slate-300 block">
+                    {executiveVerdict.cardIsAr ? 'تكلفة التوريد' : 'Sourcing'}
+                  </span>
                 </div>
 
                 <div className="rounded-2xl bg-white/10 border border-white/10 p-3 text-center">
-                  <span className="text-[10px] text-slate-300 block font-medium">{isAr ? 'سعر البيع الموصى به' : 'Prix Recommandé'}</span>
+                  <span className="text-[10px] text-slate-300 block font-medium">
+                    {executiveVerdict.cardIsAr ? 'سعر البيع الموصى به' : 'Prix Recommandé'}
+                  </span>
                   <span className="text-base sm:text-lg font-black text-emerald-300 mt-0.5 block">
                     {retailPrice ? `${retailPrice} DH` : '189 DH'}
                   </span>
-                  <span className="text-[9px] text-emerald-300/80 block">{isAr ? 'للشراء العفوي' : 'Impulse Buy'}</span>
+                  <span className="text-[9px] text-emerald-300/80 block">
+                    {executiveVerdict.cardIsAr ? 'للشراء العفوي' : 'Impulse Buy'}
+                  </span>
                 </div>
 
                 <div className="rounded-2xl bg-rose-500/10 border border-rose-500/20 p-3 text-center">
-                  <span className="text-[10px] text-rose-300 block font-medium">{isAr ? 'سقف تكلفة الطلب (Kill)' : 'CPA Plafond Max'}</span>
+                  <span className="text-[10px] text-rose-300 block font-medium">
+                    {executiveVerdict.cardIsAr ? 'سقف تكلفة الطلب (Kill)' : 'CPA Plafond Max'}
+                  </span>
                   <span className="text-base sm:text-lg font-black text-rose-200 mt-0.5 block">
                     {wholesalePrice && retailPrice ? `${Math.round((retailPrice - wholesalePrice) * 0.7)} DH` : '~95 DH'}
                   </span>
-                  <span className="text-[9px] text-rose-300/80 block">{isAr ? 'أوقف الإعلان فوقه' : 'Seuil de Coupure'}</span>
+                  <span className="text-[9px] text-rose-300/80 block">
+                    {executiveVerdict.cardIsAr ? 'أوقف الإعلان فوقه' : 'Seuil de Coupure'}
+                  </span>
                 </div>
 
                 <div className="rounded-2xl bg-white/10 border border-white/10 p-3 text-center">
-                  <span className="text-[10px] text-slate-300 block font-medium">{isAr ? 'توقع المبيعات اليومية' : 'Prédiction Ventes'}</span>
-                  <span className="text-base sm:text-lg font-black text-amber-300 mt-0.5 block">
-                    15-45+ {isAr ? 'طلب' : 'cmd/j'}
+                  <span className="text-[10px] text-slate-300 block font-medium">
+                    {executiveVerdict.cardIsAr ? 'توقع المبيعات اليومية' : 'Prédiction Ventes'}
                   </span>
-                  <span className="text-[9px] text-amber-200/80 block">{isAr ? 'في مرحلة الـ Scale' : 'Phase de Scale'}</span>
+                  <span className="text-base sm:text-lg font-black text-amber-300 mt-0.5 block">
+                    15-45+ {executiveVerdict.cardIsAr ? 'طلب' : 'cmd/j'}
+                  </span>
+                  <span className="text-[9px] text-amber-200/80 block">
+                    {executiveVerdict.cardIsAr ? 'في مرحلة الـ Scale' : 'Phase de Scale'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -462,12 +536,12 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
                       {copiedSectionId === sec.id ? (
                         <>
                           <Check className="w-3.5 h-3.5 text-emerald-600" />
-                          <span className="text-emerald-700">{isAr ? 'تم النسخ !' : 'Copié !'}</span>
+                          <span className="text-emerald-700">{label('Copié !', 'تم النسخ !')}</span>
                         </>
                       ) : (
                         <>
                           <Copy className="w-3.5 h-3.5 text-slate-500" />
-                          <span>{isAr ? 'نسخ هذا القسم' : 'Copier'}</span>
+                          <span>{label('Copier', 'نسخ هذا القسم')}</span>
                         </>
                       )}
                     </button>
@@ -493,7 +567,7 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', w
             <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 space-y-2">
               <span className="text-xs font-black text-indigo-900 flex items-center gap-1.5">
                 <ExternalLink className="w-3.5 h-3.5 text-indigo-600" />
-                <span>{isAr ? 'المصادر والروابط المرجعية التي تم فحصها على الويب :' : 'Sources et références vérifiées sur le web :'}</span>
+                <span>{label('Sources et références vérifiées sur le web :', 'المصادر والروابط المرجعية التي تم فحصها على الويب :')}</span>
               </span>
               <div className="flex flex-wrap gap-2 pt-1">
                 {report.citations.map((cite, idx) => (
