@@ -199,9 +199,15 @@ export function MarketResearch({ mode, isAr, language, product = '', defaultTarg
     const reportIsActuallyArabic = /[\u0600-\u06FF]/.test(text.slice(0, 500));
     const cardIsAr = reportIsActuallyArabic;
 
+    const effWholesale = wholesalePrice || 35;
+    const effRetail = retailPrice || (effWholesale * 3);
+    const multiplier = effRetail / effWholesale;
+    const grossMargin = effRetail - effWholesale;
+    const isMathDeficit = multiplier < 2.3 || grossMargin < 75;
+
     const isWinnerDefinitive = /🟢\s*WINNER|WINNER مؤكد|OUI, le produit est un WINNER|Produit WINNER avéré/i.test(text);
-    const isWinnerConditional = /🟡\s*WINNER|WINNER مشروط|WINNER Conditionnel|Pack Duo/i.test(text);
-    const isLoser = /🛑|LOSER|خاسر|non rentable|produit à éviter/i.test(text);
+    const isWinnerConditional = /🟡\s*WINNER|WINNER مشروط|WINNER Conditionnel/i.test(text);
+    const isLoser = /🛑|LOSER|خاسر|غير مؤهل للإطلاق|non rentable|produit à éviter/i.test(text);
 
     let status: 'WINNER' | 'CONDITIONAL' | 'LOSER' = 'WINNER';
     let title = cardIsAr ? '🟢 منتج رابح مؤكد (WINNER مؤكد)' : '🟢 PRODUIT WINNER CONFIRMÉ (FEU VERT)';
@@ -211,26 +217,26 @@ export function MarketResearch({ mode, isAr, language, product = '', defaultTarg
     let themeBg = 'bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950 border-emerald-500/50 text-emerald-100';
     let badgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40';
 
-    if (isWinnerConditional && !isWinnerDefinitive) {
-      status = 'CONDITIONAL';
-      title = cardIsAr ? '🟡 منتج رابح مشروط (WINNER مشروط بالباقة)' : '🟡 WINNER CONDITIONNEL (PACK DUO REQUIS)';
-      desc = cardIsAr
-        ? 'تحذير استراتيجي: بيع القطعة الواحدة يقلل الأرباح. يجب تركيز 100% من الحملات الإعلانية على عرض باقة القطعتين (Pack Duo) لضمان الربحية.'
-        : 'Conditionné au Pack Duo : Ne vendez pas à l\'unité. Basez vos créatives sur l\'offre Pack 2 pièces pour garantir un ROI supérieur à 40%.';
-      themeBg = 'bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 border-amber-500/50 text-amber-100';
-      badgeClass = 'bg-amber-500/20 text-amber-300 border-amber-400/40';
-    } else if (isLoser && !isWinnerDefinitive && !isWinnerConditional) {
+    if (isMathDeficit || isLoser) {
       status = 'LOSER';
-      title = cardIsAr ? '🛑 منتج غير مجدٍ (LOSER - تجنب إضاعة المال)' : '🛑 PRODUIT NON RENTABLE (LOSER - À ÉVITER)';
+      title = cardIsAr ? '🛑 غير مؤهل للإطلاق بهذا السعر (الهامش ضيق جداً)' : '🛑 PRODUIT NON RENTABLE (LOSER - STOP)';
       desc = cardIsAr
-        ? 'تحذير مالي صارم: فارق السعر مع المنافسين أو سعر الجملة سيحرق ميزانية الإعلانات دون تحقيق أرباح كافية. ابحث عن مورد بسعر أقل أو اختر منتجاً بديلاً.'
-        : 'Alerte anti-perte : Marge insuffisante face aux coûts d\'acquisition publicitaire. Risque élevé de brûler du budget sans rentabilité.';
+        ? `تحذير مالي صارم: بسعر شراء ${effWholesale} د.م وسعر بيع ${effRetail} د.م، مضاعف السعر (${multiplier.toFixed(1)}x) ضعيف جداً ولا يكفي لتغطية الإعلانات ومصاريف التوصيل والروتور. أوقف الإطلاق بهذا السعر لتفادي الخسارة!`
+        : `Alerte financière stricte : Avec un achat à ${effWholesale} DH et une vente à ${effRetail} DH, le multiplicateur (${multiplier.toFixed(1)}x) est insuffisant. Après frais pub, livraison et retours, vous perdrez de l'argent. Ne lancez pas à ce prix !`;
       themeBg = 'bg-gradient-to-r from-rose-950 via-slate-900 to-rose-950 border-rose-500/50 text-rose-100';
       badgeClass = 'bg-rose-500/20 text-rose-300 border-rose-400/40';
+    } else if (isWinnerConditional) {
+      status = 'CONDITIONAL';
+      title = cardIsAr ? '🟡 منتج رابح مشروط (WINNER مشروط)' : '🟡 WINNER CONDITIONNEL';
+      desc = cardIsAr
+        ? 'تحذير استراتيجي: بيع القطعة الواحدة بهامش محدود. تأكد من تأمين هامش أمان كافٍ أو بيع تكميلي Cross-sell لتفادي تضييع الميزانية.'
+        : 'Conditionné : Marge unitaire serrée. Assurez-vous d\'augmenter le panier moyen (cross-sell ou pack adapté) pour garantir la rentabilité.';
+      themeBg = 'bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 border-amber-500/50 text-amber-100';
+      badgeClass = 'bg-amber-500/20 text-amber-300 border-amber-400/40';
     }
 
     return { status, title, desc, themeBg, badgeClass, cardIsAr };
-  }, [report?.text]);
+  }, [report?.text, wholesalePrice, retailPrice]);
 
   const copySection = async (id: string, text: string) => {
     try {
@@ -476,7 +482,9 @@ export function MarketResearch({ mode, isAr, language, product = '', defaultTarg
                     {executiveVerdict.cardIsAr ? 'سقف تكلفة الطلب (Kill)' : 'CPA Plafond Max'}
                   </span>
                   <span className="text-base sm:text-lg font-black text-rose-200 mt-0.5 block">
-                    {wholesalePrice && retailPrice ? `${Math.round((retailPrice - wholesalePrice) * 0.7)} DH` : '~95 DH'}
+                    {wholesalePrice && retailPrice
+                      ? `${Math.max(10, Math.round(((retailPrice - wholesalePrice) * 0.70 - 35) * 0.85))} DH`
+                      : '~55 DH'}
                   </span>
                   <span className="text-[9px] text-rose-300/80 block">
                     {executiveVerdict.cardIsAr ? 'أوقف الإعلان فوقه' : 'Seuil de Coupure'}

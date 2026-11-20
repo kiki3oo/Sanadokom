@@ -55,6 +55,7 @@ export interface CompetitivePricingResult {
 
 export interface PricingOptions {
   wholesalePrice: number;
+  retailPrice?: number;
   title?: string;
   targetCountry?: string;
   shippingFee?: number;
@@ -197,6 +198,33 @@ export function calculateCompetitivePricing(options: PricingOptions): Competitiv
     titleLower.includes('حامل') ||
     titleLower.includes('سيارة') ||
     titleLower.includes('شاحن');
+
+  const isSingleApplianceDevice =
+    titleLower.includes('masseur') ||
+    titleLower.includes('massage') ||
+    titleLower.includes('pistolet') ||
+    titleLower.includes('مساج') ||
+    titleLower.includes('تدليك') ||
+    titleLower.includes('hachoir') ||
+    titleLower.includes('chopper') ||
+    titleLower.includes('mixeur') ||
+    titleLower.includes('robot') ||
+    titleLower.includes('cuisin') ||
+    titleLower.includes('aspirateur') ||
+    titleLower.includes('camera') ||
+    titleLower.includes('كاميرا') ||
+    titleLower.includes('montre') ||
+    titleLower.includes('ساعة') ||
+    titleLower.includes('tondeuse') ||
+    titleLower.includes('حلاقة') ||
+    titleLower.includes('sechoir') ||
+    titleLower.includes('سشوار') ||
+    titleLower.includes('lisseur') ||
+    titleLower.includes('ecouteur') ||
+    titleLower.includes('projecteur') ||
+    titleLower.includes('drone') ||
+    options.niche === 'CAR' ||
+    options.niche === 'KITCHEN';
 
   // =========================================================================
   // 1. STRICT LOCAL BENCHMARKS: MOROCCO (🇲🇦 السوق المغربي)
@@ -356,6 +384,10 @@ export function calculateCompetitivePricing(options: PricingOptions): Competitiv
     recommendedRetailPrice = roundToPsychologicalPrice(wholesale * 2.7 + shipping * 2, country);
   }
 
+  if (options.retailPrice && options.retailPrice > 0) {
+    recommendedRetailPrice = options.retailPrice;
+  }
+
   // Calculate discount percentage vs competitor average
   const competitiveDiscountVsAvg = competitorAvg > recommendedRetailPrice
     ? Math.round(((competitorAvg - recommendedRetailPrice) / competitorAvg) * 100)
@@ -488,23 +520,41 @@ export function calculateCompetitivePricing(options: PricingOptions): Competitiv
     verdictBadgeColor = 'bg-rose-50 text-rose-800 border-rose-300';
   } else if (multiplierStatus === 'ACCEPTABLE') {
     verdictDecision = 'CONDITIONAL';
-    verdictTitleAr = '🟡 إطلاق مشروط بتفعيل عرض القطعتين (Pack Duo)';
-    verdictTitleFr = '🟡 Lancement Conditionné au Pack Duo';
+    verdictTitleAr = isSingleApplianceDevice
+      ? '🟡 إطلاق مشروط (جهاز فردي: تأكد من هامش القطعة الواحدة أو Cross-sell)'
+      : '🟡 إطلاق مشروط بتفعيل عرض القطعتين (Pack Duo)';
+    verdictTitleFr = isSingleApplianceDevice
+      ? '🟡 Lancement Conditionné (Appareil individuel : marge unitaire ou cross-sell)'
+      : '🟡 Lancement Conditionné au Pack Duo';
     verdictBadgeColor = 'bg-amber-50 text-amber-800 border-amber-300';
   }
 
+  const bundleAdviceAr = isSingleApplianceDevice
+    ? `📦 طبيعة المنتج (جهاز إلكتروني/منزلي فردي): الزبون نادراً ما يشتري قطعتين من نفس الجهاز لنفسه. لا تعتمد على باقة القطعتين لتبرير الربحية! إذا كان هامش القطعة الواحدة غير كافٍ، فالمنتج غير مجدٍ. لرفع قيمة السلة، استخدم البيع التكميلي (Cross-sell: جهاز + زيت تدليك أو إكسسوار إضافي) وليس قطعتين من نفس الجهاز.`
+    : `📦 اجعل "باك 2" (قطعتين بسعر ${pack2Price} ${currencySymbol} مع توصيل مجاني) هو العرض المحدد مسبقاً في صفحة الهبوط، لأنه يرفع صافي أرباحك بنسبة +${Math.max(30, pack2Boost)}% وتكلفة التوصيل تبقى واحدة (${shipping} ${currencySymbol}).`;
+
+  const bundleAdviceFr = isSingleApplianceDevice
+    ? `📦 Nature du produit (Appareil individuel) : Un client n'achète que très rarement 2 appareils identiques pour lui-même. Ne comptez pas sur un Pack Duo pour compenser un manque de marge unitaire ! La rentabilité doit être validée sur la pièce unique à ${recommendedRetailPrice} ${currencySymbol}. Pour augmenter le panier moyen (AOV), utilisez le Cross-sell (appareil + huile/accessoire) et non 2 appareils identiques.`
+    : `📦 Mettez le Pack Duo (${pack2Price} ${currencySymbol}) en option pré-cochée avec livraison gratuite : les frais de port restent uniques (${shipping} ${currencySymbol}) et votre marge nette bondit de +${Math.max(30, pack2Boost)}%.`;
+
   // Realistic Local Practical Advice
   const antiLossAdviceAr = [
+    ...(multiplierStatus === 'RISKY' ? [
+      `🛑 قرار مالي صارم: شراء هذا المنتج بـ ${wholesale} ${currencySymbol} وبيعه بـ ${recommendedRetailPrice} ${currencySymbol} غير مربح إطلاقاً في التجارة الإلكترونية COD! أمامك خياران فقط لتفادي خسارة رأس مالك: 1) إما التفاوض لخفض سعر الجملة إلى أقل من ${Math.round(recommendedRetailPrice * 0.28)} ${currencySymbol}، أو 2) رفع سعر البيع إلى ${competitorAvg} ${currencySymbol} مع تقديم ضمان حقيقي وبراندينغ ممتاز.`
+    ] : []),
     `🛡️ قاعدة كسر الخسارة (Kill Rule الصارمة): سقف تكلفة الطلب (CPA) هو ${antiLossPlafondCpa} ${currencySymbol}. إذا صرف أي إعلان ضعف هذا السقف دون مبيعات، أوقفه فوراً لحماية أرباحك.`,
     `👻 اختبار الشبح السريع (Ghost Testing): قبل أن تشتري كرتونة أو كمية من درب عمر، شغل إعلاناً تجريبياً بـ ${ghostTestBudget} ${currencySymbol} لمدة 24-48 ساعة. إذا جاءت 3 إلى 5 طلبات بتكلفة أقل من ${idealTargetCpaMax} ${currencySymbol}، حينها فقط اذهب لشراء السلعة وأنت متأكد من وجود الطلب.`,
-    `📦 اجعل "باك 2" (قطعتين بسعر ${pack2Price} ${currencySymbol} مع توصيل مجاني) هو العرض المحدد مسبقاً في صفحة الهبوط، لأنه يرفع صافي أرباحك بنسبة +${Math.max(30, pack2Boost)}% وتكلفة التوصيل تبقى واحدة (${shipping} ${currencySymbol}).`,
+    bundleAdviceAr,
     `📞 التأكيد السريع في أول 15 دقيقة: الاتصال بالزبون المغربي فور ملء الاستمارة يرفع نسبة التسليم لأكثر من 82% ويحميك من مصاريف الروتور.`,
   ];
 
   const antiLossAdviceFr = [
+    ...(multiplierStatus === 'RISKY' ? [
+      `🛑 Alerte Rentabilité Stricte : Acheter à ${wholesale} ${currencySymbol} pour vendre à ce niveau est déficitaire en COD local. Deux solutions réelles : 1) Négocier le prix d'achat sous ${Math.round(recommendedRetailPrice * 0.28)} ${currencySymbol}, ou 2) Monter le prix de vente à ${competitorAvg} ${currencySymbol} avec un positionnement haut de gamme.`
+    ] : []),
     `🛡️ Règle d'arrêt stricte (Kill Rule) : Votre CPA plafond est de ${antiLossPlafondCpa} ${currencySymbol}. Tout adset dépassant cette limite sans conversion rentable doit être coupé immédiatement.`,
     `👻 Ghost Testing avant achat de stock : Lancez un test publicitaire de ${ghostTestBudget} ${currencySymbol} sur 24-48h AVANT d'acheter les cartons à Derb Omar. Si vous obtenez 3-5 leads sous ${idealTargetCpaMax} ${currencySymbol}, achetez le stock sereinement.`,
-    `📦 Mettez le Pack Duo (${pack2Price} ${currencySymbol}) en option pré-cochée avec livraison gratuite : les frais de port restent uniques (${shipping} ${currencySymbol}) et votre marge nette bondit de +${Math.max(30, pack2Boost)}%.`,
+    bundleAdviceFr,
     `📞 Confirmation sous 15 min : Réduit drastiquement les retours au Maroc et sécurise vos encaissements réels.`,
   ];
 

@@ -138,10 +138,36 @@ function generateFallbackAuditReport(input: {
 
   const compPricing = calculateCompetitivePricing({
     wholesalePrice: wholesale,
+    retailPrice: typeof input.retailPrice === 'number' && input.retailPrice > 0 ? input.retailPrice : undefined,
     title,
     targetCountry,
     shippingFee: shipping,
   });
+
+  const titleLower = title.toLowerCase();
+  const isSingleAppliance =
+    titleLower.includes('masseur') ||
+    titleLower.includes('massage') ||
+    titleLower.includes('pistolet') ||
+    titleLower.includes('مساج') ||
+    titleLower.includes('تدليك') ||
+    titleLower.includes('hachoir') ||
+    titleLower.includes('chopper') ||
+    titleLower.includes('mixeur') ||
+    titleLower.includes('robot') ||
+    titleLower.includes('aspirateur') ||
+    titleLower.includes('camera') ||
+    titleLower.includes('كاميرا') ||
+    titleLower.includes('montre') ||
+    titleLower.includes('ساعة') ||
+    titleLower.includes('tondeuse') ||
+    titleLower.includes('حلاقة') ||
+    titleLower.includes('sechoir') ||
+    titleLower.includes('سشوار') ||
+    titleLower.includes('lisseur') ||
+    titleLower.includes('ecouteur') ||
+    titleLower.includes('projecteur') ||
+    titleLower.includes('drone');
 
   const effectiveRetail = typeof input.retailPrice === 'number' && input.retailPrice > 0 ? input.retailPrice : compPricing.recommendedRetailPrice;
 
@@ -203,10 +229,13 @@ ${salesPredictionAr}
 • مصاريف التوصيل التقديرية: ${shipping} ${compPricing.currencySymbol}
 • سقف تكلفة الطلب الصارم (Plafond Break-Even CPA - Kill Rule): ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol} (أي سنتيم فوق هذا السقف = خسارة صافية، أوقف الإعلان فوراً!)
 • النطاق الذهبي للـ Target CPA (لتحقيق ربح صافي > 40%): ${compPricing.idealTargetCpaMin} - ${compPricing.idealTargetCpaMax} ${compPricing.currencySymbol}
-• استراتيجية عروض الباقات الفائزة (Bundle Strategy):
-  - باك 1 (قطعة واحدة): ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}
+• استراتيجية عروض البيع (Offer & Pricing Strategy):
+${isSingleAppliance
+  ? `  - العرض الأساسي (قطعة واحدة): ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}
+  - تنبيه استراتيجي: هذا جهاز فردي، الزبون يشتري قطعة واحدة فقط لنفسه؛ لا تعتمد على باقة قطعتين لنفس الجهاز لتعويض ضعف الهامش الربحي! لرفع قيمة السلة، قدم بيعاً تكميلياً (Cross-sell: جهاز + زيت تدليك أو إكسسوار إضافي بسعر رمزي).`
+  : `  - باك 1 (قطعة واحدة): ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}
   - باك 2 (قطعتين - Best Seller ⭐): ${pack2?.price || Math.round(compPricing.recommendedRetailPrice * 1.55)} ${compPricing.currencySymbol} (يوفر للزبون ${pack2?.savingsAmount || 0} ${compPricing.currencySymbol} ويرفع أرباحك الصافية بـ +${pack2?.profitBoostPercent || 50}%)
-  - باك 3 (3 قطع - عائلي VIP): ${pack3?.price || Math.round(compPricing.recommendedRetailPrice * 2.15)} ${compPricing.currencySymbol}
+  - باك 3 (3 قطع - عائلي VIP): ${pack3?.price || Math.round(compPricing.recommendedRetailPrice * 2.15)} ${compPricing.currencySymbol}`}
 • ميزانية اختبار الشبح (Ghost Test): ${compPricing.ghostTestBudget} ${compPricing.currencySymbol} (~15$) لاختبار الإقبال 24-48 ساعة قبل شراء أي كرتونة ستوك.
 
 💪 3. نقاط القوة والمزايا التنافسية الكبرى:
@@ -257,10 +286,10 @@ ${a.adCopyTextAr}
 • مؤشر مضاعف السعر المحلي: ${compPricing.codMultiplier}x (${compPricing.multiplierVerdictAr})
 
 🎯 التوصية الصريحة للميديا باير:
-${compPricing.verdictDecision === 'GO' ? '🚀 نعم، المنتج يعتبر WINNER حقيقي ومناسب جداً للبدء فوراً. هامش الأمان الإعلاني عريض ويحميك من ارتفاع أسعار المزادات.' : compPricing.verdictDecision === 'CONDITIONAL' ? '⚡ المنتج WINNER مشروط: لا تبعه كقطعة منفردة، بل ركز حملاتك على عرض "باك 2" (قطعتين وتوصيل مجاني) لضمان الربح وتفادي تضييع الميزانية.' : '🛑 المنتج ليس WINNER بهذا السعر: ابتعد عنه حالياً أو ابحث عن مورد بسعر جملة أقل، لأنك ستخسر أموالك في الإعلانات بدون هامش أمان كافٍ.'}
+${compPricing.verdictDecision === 'GO' ? '🚀 نعم، المنتج يعتبر WINNER حقيقي ومناسب جداً للبدء فوراً. هامش الأمان الإعلاني عريض ويحميك من ارتفاع أسعار المزادات.' : compPricing.verdictDecision === 'CONDITIONAL' ? (isSingleAppliance ? '⚡ المنتج WINNER مشروط: نظراً لأنه جهاز فردي، لا تعتمد على بيع قطعتين من نفس الجهاز. تأكد من أن هامش القطعة الواحدة يغطي الإعلانات أو ارفع السعر قليلاً لضمان الربح.' : '⚡ المنتج WINNER مشروط: لا تبعه كقطعة منفردة، بل ركز حملاتك على عرض "باك 2" (قطعتين وتوصيل مجاني) لضمان الربح وتفادي تضييع الميزانية.') : '🛑 المنتج خاسر (LOSER) بهذا السعر: ابتعد عنه حالياً أو ابحث عن مورد بسعر جملة أقل، لأنك ستخسر أموالك في الإعلانات بدون هامش أمان كافٍ.'}
 
 📋 خطة العمل الفورية فـ 3 خطوات عملية (Action Plan):
-1. [تصوير الإعلانات]: جهز 3 فيديوهات UGC بالدارجة تعتمد على الـ Hooks المذكورة في التقرير (زاوية حل المشكلة + زاوية الصدمة والنتيجة + زاوية باقة القطعتين).
+1. [تصوير الإعلانات]: جهز 3 فيديوهات UGC بالدارجة تعتمد على الـ Hooks المذكورة في التقرير (زاوية حل المشكلة + زاوية الصدمة والنتيجة + زاوية ${isSingleAppliance ? 'الضمان وتجربة المنتج' : 'باقة القطعتين'}).
 2. [اختبار الشبح السريع Ghost Test]: أطلق حملة اختبار بميزانية ${compPricing.ghostTestBudget} ${compPricing.currencySymbol} (~15$) لمدة 24-48 ساعة قبل شراء أي كرتونة ستوك.
 3. [قاعدة الـ Kill الصارمة]: إذا وصل صرف أي إعلان إلى ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol} بدون مبيعات، أوقفه فوراً لحماية رأس مالك.`;
   } else {
@@ -286,10 +315,13 @@ ${salesPredictionFr}
 • Frais de livraison estimés : ${shipping} ${compPricing.currencySymbol}
 • CPA Plafond Seuil (Kill Rule stricte) : ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol} (Au-delà, perte nette immédiate)
 • Fourchette CPA cible idéale (> 40% ROI net) : ${compPricing.idealTargetCpaMin} - ${compPricing.idealTargetCpaMax} ${compPricing.currencySymbol}
-• Stratégie des Packs Gagnants (Offres Bundles) :
-  - Pack 1 (1 Unité) : ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}
+• Stratégie des Packs & Offres Commerciales :
+${isSingleAppliance
+  ? `  - Offre Standard (1 Unité) : ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}
+  - Alerte Stratégique : Appareil individuel, le client n'achète qu'une seule pièce pour lui-même ; ne comptez pas sur un Pack Duo identique pour compenser un manque de marge unitaire ! Privilégiez le Cross-sell (appareil + huile/accessoire).`
+  : `  - Pack 1 (1 Unité) : ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}
   - Pack 2 (Duo Best-Seller ⭐) : ${pack2?.price || Math.round(compPricing.recommendedRetailPrice * 1.55)} ${compPricing.currencySymbol} (Économie client ${pack2?.savingsAmount || 0} ${compPricing.currencySymbol}, boost de marge nette +${pack2?.profitBoostPercent || 50}%)
-  - Pack 3 (3 Unités VIP) : ${pack3?.price || Math.round(compPricing.recommendedRetailPrice * 2.15)} ${compPricing.currencySymbol}
+  - Pack 3 (3 Unités VIP) : ${pack3?.price || Math.round(compPricing.recommendedRetailPrice * 2.15)} ${compPricing.currencySymbol}`}
 • Budget Ghost Test recommandé : ${compPricing.ghostTestBudget} ${compPricing.currencySymbol} (~15$) avant tout achat de stock.
 
 💪 3. Forces & Avantages concurrentiels :
@@ -339,7 +371,7 @@ ${a.adCopyTextFr || a.adCopyTextAr}
 • Multiplicateur COD local : ${compPricing.codMultiplier}x (${compPricing.multiplierVerdictFr})
 
 🎯 Recommandation finale Media Buyer :
-${compPricing.verdictDecision === 'GO' ? '🚀 OUI, le produit est un WINNER avéré et prêt pour un lancement immédiat.' : compPricing.verdictDecision === 'CONDITIONAL' ? '⚡ WINNER Conditionnel : Ne vendez pas à l\'unité, basez toute votre offre sur le Pack Duo pour sécuriser la marge.' : '🛑 Produit non rentable à ce tarif grossiste. Négociez un prix plus bas ou passez à un autre produit.'}
+${compPricing.verdictDecision === 'GO' ? '🚀 OUI, le produit est un WINNER avéré et prêt pour un lancement immédiat.' : compPricing.verdictDecision === 'CONDITIONAL' ? (isSingleAppliance ? '⚡ WINNER Conditionnel : Appareil individuel, validez la rentabilité sur la pièce unique avant de lancer.' : '⚡ WINNER Conditionnel : Ne vendez pas à l\'unité, basez toute votre offre sur le Pack Duo pour sécuriser la marge.') : '🛑 Produit non rentable (LOSER) à ce tarif grossiste. Négociez un prix plus bas ou passez à un autre produit.'}
 
 📋 Plan d'action immédiat en 3 étapes :
 1. Préparez 3 créatives UGC percutantes basées sur les accroches du rapport.
@@ -380,7 +412,7 @@ ${compPricing.verdictDecision === 'GO' ? '🚀 OUI, le produit est un WINNER av�
 // In-memory cache for market research to eliminate redundant OpenAI calls & token usage
 const researchCache = new Map<string, { timestamp: number; data: ResearchReport }>();
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours cache
-const CACHE_VERSION = 'v6_clean_audit';
+const CACHE_VERSION = 'v8_strict_math';
 
 export async function researchMarkets(input: {
   mode: 'scout' | 'audit';
@@ -436,6 +468,53 @@ export async function researchMarkets(input: {
         toneDescFr = 'Ton requis : Axé 100% sur les offres irrésistibles de packs (1+1 offert, réduction sur le 2ème).';
       }
 
+      // Pre-calculate authoritative competitive pricing & local benchmarks
+      let targetCountry = 'MA';
+      if (/gcc|saudi|ksa|السعودية|الخليج/i.test(input.target)) targetCountry = 'GCC';
+      else if (/senegal|sn|السنغال/i.test(input.target)) targetCountry = 'SN';
+      else if (/france|fr|europe/i.test(input.target)) targetCountry = 'FR';
+      else if (/us|usa|united states|أمريكا/i.test(input.target)) targetCountry = 'US';
+      else if (!/maroc|morocco|ma|المغرب/i.test(input.target)) targetCountry = 'GLOBAL';
+
+      const wholesale = typeof input.wholesalePrice === 'number' && input.wholesalePrice > 0 ? input.wholesalePrice : 35;
+      const defaultShip = targetCountry === 'SN' ? 2500 : (targetCountry === 'GCC' ? 25 : (targetCountry === 'US' || targetCountry === 'FR' ? 5 : 35));
+      const shipping = typeof input.shippingFee === 'number' && input.shippingFee > 0 ? input.shippingFee : defaultShip;
+
+      const compPricing = calculateCompetitivePricing({
+        wholesalePrice: wholesale,
+        retailPrice: typeof input.retailPrice === 'number' && input.retailPrice > 0 ? input.retailPrice : undefined,
+        title: input.product,
+        targetCountry,
+        shippingFee: shipping,
+      });
+
+      const titleLower = input.product.toLowerCase();
+      const isSingleAppliance =
+        titleLower.includes('masseur') ||
+        titleLower.includes('massage') ||
+        titleLower.includes('pistolet') ||
+        titleLower.includes('مساج') ||
+        titleLower.includes('تدليك') ||
+        titleLower.includes('hachoir') ||
+        titleLower.includes('chopper') ||
+        titleLower.includes('mixeur') ||
+        titleLower.includes('robot') ||
+        titleLower.includes('aspirateur') ||
+        titleLower.includes('camera') ||
+        titleLower.includes('كاميرا') ||
+        titleLower.includes('montre') ||
+        titleLower.includes('ساعة') ||
+        titleLower.includes('tondeuse') ||
+        titleLower.includes('حلاقة') ||
+        titleLower.includes('sechoir') ||
+        titleLower.includes('سشوار') ||
+        titleLower.includes('lisseur') ||
+        titleLower.includes('ecouteur') ||
+        titleLower.includes('projecteur') ||
+        titleLower.includes('drone');
+
+      const isLossRisk = compPricing.verdictDecision === 'NO_GO' || compPricing.multiplierStatus === 'RISKY';
+
       let promptInstructions = '';
       if (radarCategory) {
         promptInstructions = radarInstructions + (isArabic
@@ -449,6 +528,34 @@ export async function researchMarkets(input: {
 
 ${toneDescAr}
 
+قواعد اقتصادية وحسابية إلزامية قطعية (Strict Moroccan COD Economics):
+1. قرار هل المنتج WINNER أم لا:
+${isLossRisk
+  ? `🛑 تنبيه مالي قطعي ملزم: هذا المنتج تصنيفه [🛑 غير مؤهل للإطلاق / خاسر (LOSER)] بهذا السعر!
+سعر الشراء (${compPricing.wholesalePrice} ${compPricing.currencySymbol}) وسعر البيع (${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}) يعطيان مضاعف سعر (${compPricing.codMultiplier}x) وهو ضعيف جداً ولا يكفي لتغطية تكاليف الإعلانات (CPA) والتوصيل والروتور في السوق المحلي.
+ممنوع منعاً باتاً وصف المنتج بأنه WINNER في أي جزء من التقرير أو في الفقرة 8! بل صرح بوضوح قاطع في الفقرة 8 والفقرة 1 و 2 بأنه LOSER وغير صالح للإطلاق بهذا السعر، وقدم الحلول الصريحة فقط: (1) التفاوض لخفض سعر الجملة إلى أقل من ${Math.round(compPricing.recommendedRetailPrice * 0.28)} درهم، أو (2) رفع سعر البيع إلى ${compPricing.competitorAvg} درهم، أو (3) التخلي عن المنتج فوراً لحماية رأس المال.`
+  : compPricing.verdictDecision === 'CONDITIONAL'
+  ? `🟡 قرار مشروط: المنتج [🟡 رابح مشروط]. هامش الربح يتطلب إدارة دقيقة للـ CPA وتفادي الهدر.`
+  : `🟢 قرار إيجابي: هذا المنتج [🟢 WINNER مؤكد] بهامش أمان قوي ومضاعف سعري ممتاز.`}
+
+2. طبيعة المنتج واستراتيجية الباقات:
+${isSingleAppliance
+  ? `⚠️ طبيعة المنتج (${input.product}): هذا جهاز فردي (Appareil individuel). الزبون في الواقع يشتري جهازاً واحداً فقط لنفسه ونسبة من يشتري قطعتين لنفسه أقل من 5%!
+ممنوع منعاً باتاً أن تقترح بيع باقة قطعتين لنفس الجهاز كحل لتعويض ضعف الهامش! يجب أن ترتكز الربحية على بيع القطعة الواحدة (${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}). ولرفع قيمة السلة يُنصح بالبيع التكميلي (Cross-sell: الجهاز + زيت تدليك أو إكسسوار إضافي) وليس قطعتين من نفس الجهاز.`
+  : `📦 باقة القطعتين (Pack Duo): هذا المنتج استهلاكي أو متعدد القطع، لذا باقة القطعتين (${compPricing.recommendedBundlePacks[1]?.price || Math.round(compPricing.recommendedRetailPrice * 1.55)} ${compPricing.currencySymbol}) خيار ممتاز لرفع السلة.`}
+
+3. ميزانية اختبار الشبح السريع (Ghost Test):
+ميزانية اختبار الشبح السريع محددة بدقة وصارمة بـ ${compPricing.ghostTestBudget} ${compPricing.currencySymbol} فقط (بين 150 و 250 درهم لمدة 24 إلى 48 ساعة) لفحص الإقبال الإعلاني قبل شراء المخزون. ممنوع منعاً باتاً ذكر أرقام وهمية أو مبالغ فيها مثل 1000 أو 5000 درهم!
+
+4. الأرقام المالية الدقيقة الملزمة للفقرة 2:
+- سعر الجملة الفعلي: ${compPricing.wholesalePrice} ${compPricing.currencySymbol}
+- أسعار المنافسين في السوق المحلي: الأدنى ${compPricing.competitorMin} ${compPricing.currencySymbol} | المتوسط ${compPricing.competitorAvg} ${compPricing.currencySymbol} | الأعلى ${compPricing.competitorMax} ${compPricing.currencySymbol}
+- سعر البيع التنافسي الموصى به: ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}
+- مضاعف السعر المحلي: ${compPricing.codMultiplier}x
+- سقف تكلفة الطلب الصارم (Plafond CPA - Kill Rule): ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol}
+- الـ Target CPA المثالي: ${compPricing.idealTargetCpaMin} إلى ${compPricing.idealTargetCpaMax} ${compPricing.currencySymbol}
+- ميزانية اختبار الشبح: ${compPricing.ghostTestBudget} ${compPricing.currencySymbol}
+
 الهيكل الإلزامي للتقرير باللغة العربية:
 ### 🔍 تقرير فحص واستشارة السوق الإعلاني الشامل: ${input.product} (${input.target})
 
@@ -457,12 +564,13 @@ ${toneDescAr}
 • تقدير حجم المبيعات اليومية المتوقعة في مرحلة الاختبار الأولي ومرحلة التوسيع (Scaling).
 
 #### 💰 2. كشف الحسابات المالية الدقيقة وهامش الأمان الإعلاني (COD Economics)
-• سعر الجملة المقدر وسعر البيع التنافسي الموصى به لكسر المنافسين (مع مراعاة سعر الجملة الفعلي المدخل: ${input.wholesalePrice || 35} درهم).
-• مقارنة أسعار المنافسين في السوق المحلي (أرخص منافس، متوسط السوق، وأعلى سعر).
-• سقف تكلفة الطلب الصارم (Plafond CPA - Kill Rule) الذي إذا تجاوزه الإعلان يجب إيقافه فوراً.
-• الـ Target CPA المثالي لتحقيق أرباح صافية تفوق 40%.
-• استراتيجية باقة القطعتين (Pack Duo) لرفع متوسط السلة وتوفير تكلفة الشحن.
-• ميزانية اختبار الشبح السريع (Ghost Test) بدون شراء المخزون مسبقاً.
+• سعر الجملة الفعلي (${compPricing.wholesalePrice} ${compPricing.currencySymbol}) وسعر البيع التنافسي الموصى به لكسر المنافسين (${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}).
+• مقارنة أسعار المنافسين في السوق المحلي: أرخص منافس (${compPricing.competitorMin} ${compPricing.currencySymbol})، متوسط السوق (${compPricing.competitorAvg} ${compPricing.currencySymbol})، وأعلى سعر (${compPricing.competitorMax} ${compPricing.currencySymbol}).
+• مضاعف السعر المحلي (${compPricing.codMultiplier}x) وهامش الأمان الإعلاني.
+• سقف تكلفة الطلب الصارم (Plafond CPA - Kill Rule: ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol}) الذي إذا تجاوزه الإعلان يجب إيقافه فوراً.
+• الـ Target CPA المثالي (${compPricing.idealTargetCpaMin} - ${compPricing.idealTargetCpaMax} ${compPricing.currencySymbol}) لتحقيق أرباح صافية تفوق 40%.
+• ${isSingleAppliance ? 'استراتيجية البيع التكميلي (Cross-sell)' : 'استراتيجية باقة القطعتين (Pack Duo)'}.
+• ميزانية اختبار الشبح السريع (Ghost Test: ${compPricing.ghostTestBudget} ${compPricing.currencySymbol} فقط) بدون شراء المخزون مسبقاً.
 
 #### ⚠️ 3. مخاوف واعتراضات الزبائن وكيفية نسفها
 • أبرز الاعتراضات (السعر، الجودة، الشك في النصب) وكيفية تحويلها إلى نقاط قوة بيعية في الإعلان وصفحة الهبوط.
@@ -497,11 +605,11 @@ ${toneDescAr}
 • الميزانية المقترحة للاختبار، متى يتم إيقاف الإعلان الخاسر، ومتى تتم مضاعفة الميزانية للإعلان الرابح.
 
 #### 🏁 8. الخلاصة والقرار النهائي الحاسم: واش المنتج WINNER تخدم عليه ولا لا؟
-• حدد قرارك الصريح والفاصل: هل المنتج WINNER مؤكد، أم WINNER مشروط، أم منتج خاسر (LOSER) يجب الابتعاد عنه؟
+• حدد قرارك الصريح والفاصل بحسب الأرقام المالية أعلاه (${isLossRisk ? 'المنتج خاسر LOSER' : compPricing.verdictDecision === 'CONDITIONAL' ? 'WINNER مشروط' : 'WINNER مؤكد'}).
 • اذكر خطة العمل الفورية في 3 خطوات عملية لاختبار المنتج بأقل تكلفة وضمان الربح وعدم خسارة الميزانية.
 
 قاعدة صارمة للتنسيق:
-ممنوع منعاً باتاً استخدام رموز وصيغ LaTeX مثل \\[ \\text{...} \\] أو \\( ... \\). اكتب جميع الحسابات والمعادلات بنص عادي ومقروء للمسوق (مثال: هامش الربح = سعر البيع - سعر الشراء).
+ممنوع منعاً باتاً استخدام رموز وصيغ LaTeX مثل \\[ \\text{...} \\] أو \\( ... \\). اكتب جميع الحسابات والمعادلات بنص عادي ومقروء للمسوق.
 استشهد بروابط المواقع والمصادر الحقيقية التي وجدتها على الويب.`;
         } else {
           promptInstructions = `Vous êtes un analyste expert en e-commerce COD et stratégie publicitaire Direct-Response.
@@ -509,19 +617,47 @@ RÈGLE ABSOLUE ET OBLIGATOIRE : Rédigez l'intégralité du rapport, des titres,
 
 ${toneDescFr}
 
+RÈGLES FINANCIÈRES STRICTES ET IMPÉRATIVES (COD Anti-Loss Rules) :
+1. Verdict Exécutif Formel (Produit WINNER ou pas) :
+${isLossRisk
+  ? `🛑 ALERTE FINANCIÈRE ABSOLUE : Ce produit est formellement classé comme [🛑 NON RENTABLE / DÉFICITAIRE (LOSER)] à ce niveau de prix !
+Avec un prix d'achat de ${compPricing.wholesalePrice} ${compPricing.currencySymbol} et un prix de vente de ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}, le multiplicateur COD est de seulement ${compPricing.codMultiplier}x (en dessous du seuil minimal de 2.5x requis en COD local).
+Il est STRICTEMENT INTERDIT de qualifier ce produit de WINNER dans le rapport ou dans la conclusion de la section 8 ! Déclarez clairement qu'il s'agit d'un produit perdant à éviter à ce prix, et proposez les solutions réelles : (1) négocier l'achat sous ${Math.round(compPricing.recommendedRetailPrice * 0.28)} ${compPricing.currencySymbol}, (2) monter le prix de vente à ${compPricing.competitorAvg} ${compPricing.currencySymbol}, ou (3) passer à un autre produit pour protéger le capital.`
+  : compPricing.verdictDecision === 'CONDITIONAL'
+  ? `🟡 Verdict : Produit [🟡 WINNER CONDITIONNEL] avec marges nécessitant un pilotage rigoureux.`
+  : `🟢 Verdict : Produit [🟢 WINNER CONFIRMÉ] avec solide coussin de sécurité.`}
+
+2. Nature du Produit & Stratégie d'Offres :
+${isSingleAppliance
+  ? `⚠️ Nature du produit (${input.product}) : C'est un appareil individuel. En pratique, un client n'achète qu'un seul appareil pour lui-même (moins de 5% de conversion sur un duo identique).
+Il est STRICTEMENT INTERDIT de proposer un Pack Duo d'appareils identiques comme solution miracle pour sauver une marge unitaire déficitaire ! La rentabilité doit être viable sur la pièce unique (${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}). Pour augmenter le panier moyen, conseillez du Cross-sell (l'appareil + huile ou accessoire complémentaire).`
+  : `📦 Pack Duo : Produit consommable/multi-usage adapté au Pack Duo (${compPricing.recommendedBundlePacks[1]?.price || Math.round(compPricing.recommendedRetailPrice * 1.55)} ${compPricing.currencySymbol}).`}
+
+3. Budget Ghost Test Réel :
+Le budget de Ghost Test est strictement fixé à ${compPricing.ghostTestBudget} ${compPricing.currencySymbol} (150 à 250 DH sur 24-48h). Interdiction formelle de citer des budgets extravagants comme 1000 ou 5000 DH !
+
+4. Chiffres Financiers Exacts à intégrer dans la Section 2 :
+- Prix d'achat grossiste : ${compPricing.wholesalePrice} ${compPricing.currencySymbol}
+- Prix concurrents locaux : Min ${compPricing.competitorMin} ${compPricing.currencySymbol} | Moyen ${compPricing.competitorAvg} ${compPricing.currencySymbol} | Max ${compPricing.competitorMax} ${compPricing.currencySymbol}
+- Prix de vente recommandé : ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}
+- Multiplicateur COD : ${compPricing.codMultiplier}x
+- CPA Plafond (Kill Rule) : ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol}
+- CPA Cible idéal : ${compPricing.idealTargetCpaMin} à ${compPricing.idealTargetCpaMax} ${compPricing.currencySymbol}
+- Budget Ghost Test : ${compPricing.ghostTestBudget} ${compPricing.currencySymbol}
+
 Structure obligatoire :
 ### 🔍 Audit & Analyse Complète du Produit : ${input.product} (${input.target})
 #### 📊 1. Évaluation du Potentiel & Prédiction des Ventes Réelles
-#### 💰 2. Chiffres Clés & Économie COD (Prix d'achat ${input.wholesalePrice || 35}, prix recommandé, CPA plafond Kill Rule, Pack Duo)
+#### 💰 2. Chiffres Clés & Économie COD (Prix d'achat ${compPricing.wholesalePrice} ${compPricing.currencySymbol}, prix de vente ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}, CPA plafond ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol}, Ghost Test ${compPricing.ghostTestBudget} ${compPricing.currencySymbol})
 #### ⚠️ 3. Objections Clients & Solutions de Vente
 #### 🎣 4. Pack des 10 Accroches Gagnantes (10 Winning Hooks Direct-Response)
 #### 📱 5. Textes Publicitaires Multi-Plateformes (TikTok, Facebook Feed, WhatsApp Relance)
 #### 🎬 6. Angles Marketing & 3 Scripts UGC Publicitaires
 #### 🚀 7. Stratégie de Lancement & Règles Kill/Scale
-#### 🏁 8. Conclusion & Verdict Exécutif : Produit WINNER ou pas ? (Décision claire et plan en 3 étapes).
+#### 🏁 8. Conclusion & Verdict Exécutif : Produit WINNER ou pas ? (${isLossRisk ? 'Produit NON RENTABLE / LOSER' : compPricing.verdictDecision === 'CONDITIONAL' ? 'WINNER CONDITIONNEL' : 'WINNER CONFIRMÉ'}).
 
 RÈGLE STRICTE DE FORMATAGE :
-Ne JAMAIS utiliser de code LaTeX ni de balises mathématiques comme \\[ \\text{...} \\] ou \\( ... \\). Écrivez toutes les formules en texte clair et lisible pour l'humain (ex: Marge brute = Prix de vente - Coût d'achat).
+Ne JAMAIS utiliser de code LaTeX ni de balises mathématiques comme \\[ \\text{...} \\] ou \\( ... \\). Écrivez toutes les formules en texte clair et lisible pour l'humain.
 Citez les sources web réelles vérifiées trouvées sur le web.`;
         }
       }
@@ -581,13 +717,30 @@ Citez les sources web réelles vérifiées trouvées sur le web.`;
             report = { text: '', citations: [], products: parseRadarProducts(part.text, sourceUrls, radarCategory) };
           } else {
             let sanitizedText = cleanLatexAndFormat(part.text);
-            // Verify if conclusion section exists; if truncated or omitted by LLM, automatically append authoritative verdict
-            const hasConclusion = /(?:🏁|8\.\s*Conclusion|9\.\s*Conclusion|8\.\s*الخلاصة|9\.\s*الخلاصة|Verdict|القرار النهائي)/i.test(sanitizedText);
-            if (!hasConclusion && input.mode === 'audit') {
-              const fallback = generateFallbackAuditReport(input);
-              const conclusionMatch = fallback.text.match(/(?:━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\s*🏁[\s\S]*|🏁[\s\S]*)/);
-              if (conclusionMatch) {
-                sanitizedText += '\n\n' + conclusionMatch[0];
+
+            // 1. Sanitize any hallucinated ghost test budget (> 450 DH) with the realistic budget
+            sanitizedText = sanitizedText.replace(/(?:Ghost\s*Test|اختبار\s*الشبح)[^:\n]*:\s*(?:[5-9]\d{2,}|[1-9]\d{3,})\s*(?:درهم|DH)/gi, `اختبار الشبح: ${compPricing.ghostTestBudget} ${compPricing.currencySymbol}`);
+
+            // 2. Strict mathematical consistency guardrail: if product economics fail, NEVER allow hallucinated WINNER in conclusion
+            if (isLossRisk) {
+              const replacementConclusion = isArabic
+                ? `\n\n### 🏁 8. الخلاصة والقرار النهائي الحاسم: واش المنتج WINNER تخدم عليه ولا لا؟\n• **القرار النهائي الصارم**: 🛑 **المنتج غير مؤهل للإطلاق بهذا السعر (LOSER)!**\n• **التعليل المالي الدقيق**: بسعر جملة ${compPricing.wholesalePrice} ${compPricing.currencySymbol} وسعر بيع ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}، مضاعف السعر هو ${compPricing.codMultiplier}x فقط (أقل بكثير من مضاعف الأمان 2.5x المطلوب في التجارة الإلكترونية COD بالمغرب). سقف تكلفة الإعلان (CPA) المتبقي بعد مصاريف الشحن ونسبة الروتور هو ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol}، بينما متوسط تكلفة الطلب في إعلانات فيسبوك وتيك توك بالمغرب تتراوح بين 65 و 85 درهم. أي إطلاق لهذا المنتج بهذا السعر سيؤدي لخسارة مالية مؤكدة في كل طلب!\n• **خطة الإنقاذ للميديا باير (الحلول المتاحة)**:\n  1. **التفاوض على سعر الجملة**: خفض سعر الشراء إلى أقل من ${Math.round(compPricing.recommendedRetailPrice * 0.28)} ${compPricing.currencySymbol} (من درب عمر أو 1688).\n  2. **رفع سعر البيع**: إعادة التموضع وبيعه بـ ${compPricing.competitorAvg} ${compPricing.currencySymbol} مع ضمان حقيقي وفيديو UGC احترافي.\n  3. **التخلي عن المنتج**: إذا لم تتمكن من خفض تكلفة الشراء أو رفع السعر، أوقف العمل على هذا المنتج فوراً لحماية رأس مالك.`
+                : `\n\n### 🏁 8. Conclusion & Verdict Exécutif : Produit WINNER ou pas ?\n• **Verdict Exécutif Stricte** : 🛑 **Produit NON RENTABLE (LOSER à ce niveau de prix) !**\n• **Justification Financière** : Avec un coût d'achat de ${compPricing.wholesalePrice} ${compPricing.currencySymbol} et un prix de vente de ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}, le multiplicateur COD est de seulement ${compPricing.codMultiplier}x (inférieur au seuil de sécurité 2.5x). Le CPA plafond n'est que de ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol}, alors que le CPA moyen sur Meta/TikTok au Maroc oscille entre 65 et 85 DH. Lancer ce produit en l'état vous garantit une perte nette sur chaque commande livrée !\n• **Plan d'action correctif** :\n  1. **Renégocier le sourcing** sous ${Math.round(compPricing.recommendedRetailPrice * 0.28)} ${compPricing.currencySymbol}.\n  2. **Monter le prix de vente** à ${compPricing.competitorAvg} ${compPricing.currencySymbol} avec un positionnement haut de gamme.\n  3. **Tuer le produit** et préserver votre budget publicitaire si les deux premières options sont impossibles.`;
+
+              if (/(?:###\s*🏁?\s*8\.|####\s*🏁?\s*8\.|🏁\s*8\.|🏁\s*9\.)/i.test(sanitizedText)) {
+                sanitizedText = sanitizedText.replace(/(?:###\s*🏁?\s*8\.|####\s*🏁?\s*8\.|🏁\s*8\.|🏁\s*9\.)[\s\S]*$/, replacementConclusion.trim());
+              } else {
+                sanitizedText += replacementConclusion;
+              }
+            } else {
+              // Verify if conclusion section exists; if truncated or omitted by LLM, automatically append authoritative verdict
+              const hasConclusion = /(?:🏁|8\.\s*Conclusion|9\.\s*Conclusion|8\.\s*الخلاصة|9\.\s*الخلاصة|Verdict|القرار النهائي)/i.test(sanitizedText);
+              if (!hasConclusion && input.mode === 'audit') {
+                const fallback = generateFallbackAuditReport(input);
+                const conclusionMatch = fallback.text.match(/(?:━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\s*🏁[\s\S]*|🏁[\s\S]*)/);
+                if (conclusionMatch) {
+                  sanitizedText += '\n\n' + conclusionMatch[0];
+                }
               }
             }
             report = { text: sanitizedText, citations };
