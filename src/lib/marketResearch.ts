@@ -11,6 +11,9 @@ export interface Citation {
   end_index: number;
 }
 
+import { cleanLatexAndFormat } from './cleanLatex';
+export { cleanLatexAndFormat };
+
 export interface ResearchReport {
   text: string;
   citations: Citation[];
@@ -377,6 +380,7 @@ ${compPricing.verdictDecision === 'GO' ? '🚀 OUI, le produit est un WINNER av�
 // In-memory cache for market research to eliminate redundant OpenAI calls & token usage
 const researchCache = new Map<string, { timestamp: number; data: ResearchReport }>();
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours cache
+const CACHE_VERSION = 'v6_clean_audit';
 
 export async function researchMarkets(input: {
   mode: 'scout' | 'audit';
@@ -389,17 +393,23 @@ export async function researchMarkets(input: {
   wholesalePrice?: number;
   retailPrice?: number;
   shippingFee?: number;
+  forceRefresh?: boolean;
 }): Promise<ResearchReport> {
   const chosenTone = input.tone || 'AGGRESSIVE';
   // 1. Check cache first - saves 100% of tokens on repeated queries
-  const cacheKey = `${input.mode}:${input.target}:${input.source}:${input.product.trim().toLowerCase()}:${input.category || 'ALL'}:${input.language}:${chosenTone}:${input.wholesalePrice || 0}:${input.retailPrice || 0}`;
-  const cached = researchCache.get(cacheKey);
-  if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
-    // If Arabic was requested, ensure the cached report is actually in Arabic, otherwise invalidate
-    if (input.language === 'ar' && cached.data.text && !/[\u0600-\u06FF]/.test(cached.data.text)) {
-      researchCache.delete(cacheKey);
-    } else {
-      return cached.data;
+  const cacheKey = `${CACHE_VERSION}:${input.mode}:${input.target}:${input.source}:${input.product.trim().toLowerCase()}:${input.category || 'ALL'}:${input.language}:${chosenTone}:${input.wholesalePrice || 0}:${input.retailPrice || 0}`;
+  
+  if (input.forceRefresh) {
+    researchCache.delete(cacheKey);
+  } else {
+    const cached = researchCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+      // If Arabic was requested, ensure the cached report is actually in Arabic, otherwise invalidate
+      if (input.language === 'ar' && cached.data.text && !/[\u0600-\u06FF]/.test(cached.data.text)) {
+        researchCache.delete(cacheKey);
+      } else {
+        return cached.data;
+      }
     }
   }
 
@@ -490,6 +500,8 @@ ${toneDescAr}
 • حدد قرارك الصريح والفاصل: هل المنتج WINNER مؤكد، أم WINNER مشروط، أم منتج خاسر (LOSER) يجب الابتعاد عنه؟
 • اذكر خطة العمل الفورية في 3 خطوات عملية لاختبار المنتج بأقل تكلفة وضمان الربح وعدم خسارة الميزانية.
 
+قاعدة صارمة للتنسيق:
+ممنوع منعاً باتاً استخدام رموز وصيغ LaTeX مثل \\[ \\text{...} \\] أو \\( ... \\). اكتب جميع الحسابات والمعادلات بنص عادي ومقروء للمسوق (مثال: هامش الربح = سعر البيع - سعر الشراء).
 استشهد بروابط المواقع والمصادر الحقيقية التي وجدتها على الويب.`;
         } else {
           promptInstructions = `Vous êtes un analyste expert en e-commerce COD et stratégie publicitaire Direct-Response.
@@ -508,6 +520,8 @@ Structure obligatoire :
 #### 🚀 7. Stratégie de Lancement & Règles Kill/Scale
 #### 🏁 8. Conclusion & Verdict Exécutif : Produit WINNER ou pas ? (Décision claire et plan en 3 étapes).
 
+RÈGLE STRICTE DE FORMATAGE :
+Ne JAMAIS utiliser de code LaTeX ni de balises mathématiques comme \\[ \\text{...} \\] ou \\( ... \\). Écrivez toutes les formules en texte clair et lisible pour l'humain (ex: Marge brute = Prix de vente - Coût d'achat).
 Citez les sources web réelles vérifiées trouvées sur le web.`;
         }
       }
@@ -521,8 +535,8 @@ Citez les sources web réelles vérifiées trouvées sur le web.`;
 - الأسواق المقارنة: ${input.source || 'السوق العام'}
 - وضع البحث: ${input.mode === 'audit' ? 'تدقيق تسويقي وإعلاني' : 'استكشاف الفرص الرابحة'}
 
-تنبيه حاسم: يجب أن يتضمن التقرير فصلاً مالياً دقيقاً بالأرقام وخلاصة فاصلة تجيب: هل المنتج WINNER تخدم عليه ولا لا؟`
-        : `Veuillez analyser et auditer ce produit exclusivement en FRANÇAIS avec le ton (${chosenTone}) incluant les calculs financiers détaillés et la décision finale WINNER ou pas :
+تنبيه حاسم: اكتب كل الحسابات بنص عادي مقروء بدون أي كود LaTeX، ويجب أن يختم التقرير بخلاصة فاصلة تجيب: هل المنتج WINNER تخدم عليه ولا لا؟`
+        : `Veuillez analyser et auditer ce produit exclusivement en FRANÇAIS avec le ton (${chosenTone}) sans aucun code LaTeX, incluant les calculs financiers détaillés et la décision finale WINNER ou pas :
 - Produit : ${input.product}
 - Prix d'achat : ${input.wholesalePrice || 35}
 - Prix de vente : ${input.retailPrice || 'calculé'}
@@ -533,12 +547,12 @@ Citez les sources web réelles vérifiées trouvées sur le web.`;
       const response = await fetch('https://api.openai.com/v1/responses', {
         method: 'POST',
         headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(25_000),
+        signal: AbortSignal.timeout(30_000),
         body: JSON.stringify({
           model,
           tools: [{ type: 'web_search' }],
           tool_choice: 'auto',
-          max_output_tokens: 2500, // Adjusted to allow full 8 sections including financial details and conclusion
+          max_output_tokens: 3500, // Generous limit to ensure all 8 sections and conclusion are fully rendered
           store: false,
           ...(radarCategory && {
             include: ['web_search_call.action.sources'],
@@ -566,7 +580,17 @@ Citez les sources web réelles vérifiées trouvées sur le web.`;
             sourceUrls.push(...citations.map((citation: Citation) => citation.url));
             report = { text: '', citations: [], products: parseRadarProducts(part.text, sourceUrls, radarCategory) };
           } else {
-            report = { text: part.text, citations };
+            let sanitizedText = cleanLatexAndFormat(part.text);
+            // Verify if conclusion section exists; if truncated or omitted by LLM, automatically append authoritative verdict
+            const hasConclusion = /(?:🏁|8\.\s*Conclusion|9\.\s*Conclusion|8\.\s*الخلاصة|9\.\s*الخلاصة|Verdict|القرار النهائي)/i.test(sanitizedText);
+            if (!hasConclusion && input.mode === 'audit') {
+              const fallback = generateFallbackAuditReport(input);
+              const conclusionMatch = fallback.text.match(/(?:━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\s*🏁[\s\S]*|🏁[\s\S]*)/);
+              if (conclusionMatch) {
+                sanitizedText += '\n\n' + conclusionMatch[0];
+              }
+            }
+            report = { text: sanitizedText, citations };
           }
           // Save to cache
           researchCache.set(cacheKey, { timestamp: Date.now(), data: report });

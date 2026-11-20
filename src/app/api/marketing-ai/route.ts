@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
     const { action } = body;
 
     if (action === 'RESEARCH_MARKETS') {
-      const { mode, target, source, product, language, category, tone, wholesalePrice, retailPrice, shippingFee } = body;
+      const { mode, target, source, product, language, category, tone, wholesalePrice, retailPrice, shippingFee, forceRefresh } = body;
       if (
         (mode !== 'scout' && mode !== 'audit') ||
         typeof target !== 'string' || !target.trim() || target.length > 120 ||
@@ -129,6 +129,7 @@ export async function POST(req: NextRequest) {
           wholesalePrice: typeof wholesalePrice === 'number' ? wholesalePrice : undefined,
           retailPrice: typeof retailPrice === 'number' ? retailPrice : undefined,
           shippingFee: typeof shippingFee === 'number' ? shippingFee : undefined,
+          forceRefresh: Boolean(forceRefresh),
         });
         return NextResponse.json({ success: true, report });
       } catch (error) {
