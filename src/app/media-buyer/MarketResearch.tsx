@@ -3,11 +3,14 @@
 import { Fragment, useState } from 'react';
 import type { ResearchReport } from '@/lib/marketResearch';
 
-export function MarketResearch({ mode, isAr, product = '', defaultTarget = '' }: {
+export function MarketResearch({ mode, isAr, product = '', defaultTarget = '', wholesalePrice, retailPrice, shippingFee }: {
   mode: 'scout' | 'audit';
   isAr: boolean;
   product?: string;
   defaultTarget?: string;
+  wholesalePrice?: number;
+  retailPrice?: number;
+  shippingFee?: number;
 }) {
   const [target, setTarget] = useState(defaultTarget);
   const [source, setSource] = useState('');
@@ -38,6 +41,9 @@ export function MarketResearch({ mode, isAr, product = '', defaultTarget = '' }:
           product: scout ? brief : product,
           language: isAr ? 'ar' : 'fr',
           tone,
+          wholesalePrice,
+          retailPrice,
+          shippingFee,
         }),
       });
       const data = await res.json();

@@ -1875,6 +1875,9 @@ export default function MediaBuyerPage() {
           <div id="market-research-section" className="scroll-mt-6">
             <MarketResearch mode="audit" isAr={isAr} key={auditMarket || analysisInput.targetCountry}
               defaultTarget={auditMarket || countryNames[analysisInput.targetCountry]}
+              wholesalePrice={analysisInput.wholesalePrice}
+              retailPrice={analysisInput.retailPrice}
+              shippingFee={analysisInput.shippingFee}
               product={analysisInput.title.trim()
                 ? [analysisInput.title, analysisInput.ingredientsOrDetails || analysisInput.description, analysisInput.productUrl].filter(Boolean).join('\n').slice(0, 1600)
                 : ''} />

@@ -2,6 +2,7 @@ import { parseRadarProducts, radarFormat, radarInstructions } from './radarResea
 import { radarReferences } from './radarProducts';
 import type { RadarFilter, RadarProduct } from './radarProducts';
 import { analyzeProductDetails } from './marketingAi';
+import { calculateCompetitivePricing } from './competitivePricing';
 
 export interface Citation {
   title: string;
@@ -112,49 +113,109 @@ function generateFallbackAuditReport(input: {
   product: string;
   language: 'ar' | 'fr';
   tone?: CopywritingTone;
+  wholesalePrice?: number;
+  retailPrice?: number;
+  shippingFee?: number;
 }): ResearchReport {
   const isAr = input.language === 'ar';
   const lines = input.product.split('\n').map((l) => l.trim()).filter(Boolean);
   const title = lines[0] || 'Produit COD';
   const details = lines.slice(1).join(' ');
 
-  const targetCountry = /maroc|morocco|ma/i.test(input.target)
-    ? 'MA'
-    : (/saudi|ksa|gcc|الخليج|السعودية/i.test(input.target)
-      ? 'GCC'
-      : (/senegal|sn|السنغال/i.test(input.target) ? 'SN' : 'GLOBAL'));
+  let targetCountry: string = 'MA';
+  if (/saudi|ksa|gcc|الخليج|السعودية/i.test(input.target)) targetCountry = 'GCC';
+  else if (/senegal|sn|السنغال/i.test(input.target)) targetCountry = 'SN';
+  else if (/france|fr|europe/i.test(input.target)) targetCountry = 'FR';
+  else if (/us|usa|united states|أمريكا/i.test(input.target)) targetCountry = 'US';
+  else if (!/maroc|morocco|ma|المغرب/i.test(input.target)) targetCountry = 'GLOBAL';
+
+  const wholesale = typeof input.wholesalePrice === 'number' && input.wholesalePrice > 0 ? input.wholesalePrice : 35;
+  const defaultShip = targetCountry === 'SN' ? 2500 : (targetCountry === 'GCC' ? 25 : (targetCountry === 'US' || targetCountry === 'FR' ? 5 : 35));
+  const shipping = typeof input.shippingFee === 'number' && input.shippingFee > 0 ? input.shippingFee : defaultShip;
+
+  const compPricing = calculateCompetitivePricing({
+    wholesalePrice: wholesale,
+    title,
+    targetCountry,
+    shippingFee: shipping,
+  });
+
+  const effectiveRetail = typeof input.retailPrice === 'number' && input.retailPrice > 0 ? input.retailPrice : compPricing.recommendedRetailPrice;
 
   const analysis = analyzeProductDetails({
     title,
     ingredientsOrDetails: details,
     targetCountry,
-    wholesalePrice: 35,
-    retailPrice: 229,
+    wholesalePrice: wholesale,
+    retailPrice: effectiveRetail,
+    shippingFee: shipping,
   });
 
   const hooks = generateTenWinningHooks(analysis.productTitle, isAr);
   const platformCopies = generateMultiPlatformCopies(analysis.productTitle, analysis.currency, isAr);
+  const pack2 = compPricing.recommendedBundlePacks[1];
+  const pack3 = compPricing.recommendedBundlePacks[2];
+
+  let salesPredictionAr = '';
+  let salesPredictionFr = '';
+
+  if (compPricing.verdictDecision === 'GO') {
+    salesPredictionAr = `✅ نعم، مؤهل بقوة لتحقيق مبيعات ممتازة في ${compPricing.targetCountryNameAr}!
+المنتج يحل مشكلة يومية واضحة وملموسة ويحفز الشراء العفوي (Impulse Buying). عند إطلاق حملة باستهداف مفتوح (Broad) مع 3 فيديوهات إعلانية بالدارجة تركز على الألم والنتيجة الفورية، يُتوقع تحقيق بين 15 إلى 45 طلبية مؤكدة يومياً في مرحلة التوسيع (Scaling) بتكلفة ليد (Target CPA) بين ${compPricing.idealTargetCpaMin} و ${compPricing.idealTargetCpaMax} ${compPricing.currencySymbol}.`;
+    salesPredictionFr = `✅ Oui, très fort potentiel de ventes sur le ${compPricing.targetCountryNameFr} !
+Le produit résout un problème quotidien concret et déclenche l'achat impulsif. Volume estimé entre 15 et 45 commandes confirmées/jour en phase de scale avec un CPA cible entre ${compPricing.idealTargetCpaMin} et ${compPricing.idealTargetCpaMax} ${compPricing.currencySymbol}.`;
+  } else if (compPricing.verdictDecision === 'CONDITIONAL') {
+    salesPredictionAr = `🟡 قابل لتحقيق مبيعات، ولكن بشرط الالتزام الصارم باستراتيجية الباقات!
+المنتج عليه طلب في السوق، ولكن هامش ربح القطعة الواحدة (${effectiveRetail} ${compPricing.currencySymbol}) قد يكون معرضاً لضغط مصاريف الإعلانات والتوصيل. لتحقيق أرباح ممتازة وتفادي أي خسارة، يجب جعل "باك 2" بسعر ${pack2?.price} ${compPricing.currencySymbol} هو الخيار الافتراضي في صفحة الطلب لرفع سلة الشراء.`;
+    salesPredictionFr = `🟡 Ventes réalisables mais conditionnées au Pack Duo !
+Il y a de la demande sur le marché, mais la marge unitaire risque d'être juste. Proposez impérativement le Pack 2 (${pack2?.price} ${compPricing.currencySymbol}) pour sécuriser votre rentabilité.`;
+  } else {
+    salesPredictionAr = `🛑 تحذير: مخاطرة عالية بخسارة الميزانية الإعلانية!
+سعر الشراء الحالي (${wholesale} ${compPricing.currencySymbol}) مرتفع جداً مقارنة بسعر البيع الممكن في ${compPricing.targetCountryNameAr}. مصاريف التوصيل (${shipping} ${compPricing.currencySymbol}) والروتور ستلتهم أي هامش ربح متبقي. لا ننصح بإطلاق إعلانات بهذا السعر قبل خفض سعر الجملة مع المورد.`;
+    salesPredictionFr = `🛑 Risque élevé de perte publicitaire !
+Coût d'achat trop élevé par rapport au prix de vente acceptable sur le marché. Les frais de port et retours absorberont toute votre marge.`;
+  }
 
   let reportText = '';
   if (isAr) {
-    reportText = `🔍 تقرير فحص واستشارة السوق الإعلاني: ${analysis.productTitle} (${analysis.targetCountryFlag} ${analysis.targetCountryNameAr})
+    reportText = `🔍 تقرير فحص واستشارة السوق الإعلاني الشامل: ${analysis.productTitle} (${analysis.targetCountryFlag} ${compPricing.targetCountryNameAr})
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📊 1. تقييم الطلب وفرص النجاح فالسوق:
-• مؤشر ملاءمة المنتج: ${analysis.overallScore}/100 [${analysis.scoreLabel}]
-• خلاصة الخبير: ${analysis.verdictAr}
-• تحليل حركة السوق والطلب: ${analysis.marketDemandAnalysisAr}
+📊 1. تقييم قابلية تحقيق المبيعات في السوق المستهدف:
+• هل سيحقق المنتج مبيعات حقيقية؟
+${salesPredictionAr}
+• تقدير حجم الطلب اليومي:
+  - مرحلة الاختبار الأولي (Testing): 3 إلى 7 طلبات يومياً.
+  - مرحلة التوسيع (Scaling): 15 إلى 45+ طلبية مؤكدة يومياً عند ضبط الزوايا الإعلانية.
+• تحليل حركة السوق والطلب المحلي: ${analysis.marketDemandAnalysisAr}
 
-💪 2. نقاط القوة والمزايا التنافسية:
+💰 2. كشف الحسابات المالية الدقيقة وهامش الأمان الإعلاني (Économie COD):
+• سعر الشراء من الجملة (Sourcing): ${compPricing.wholesalePrice} ${compPricing.currencySymbol}
+• نطاق أسعار المنافسين في السوق المحلي:
+  - أرخص منافس (سعر كسر السوق): ${compPricing.competitorMin} ${compPricing.currencySymbol}
+  - متوسط السوق (الأكثر انتشاراً): ${compPricing.competitorAvg} ${compPricing.currencySymbol}
+  - أعلى سعر (براندات فاخرة): ${compPricing.competitorMax} ${compPricing.currencySymbol}
+• سعر البيع التنافسي الموصى به لكسر المنافسين: ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol} (أقل بـ ${compPricing.competitiveDiscountVsAvg}% من متوسط المنافسين لجلب أعلى نقرات ومبيعات)
+• الهامش الإجمالي الأولي: ${compPricing.expectedMarginPercent}% (+${compPricing.recommendedRetailPrice - compPricing.wholesalePrice} ${compPricing.currencySymbol})
+• مصاريف التوصيل التقديرية: ${shipping} ${compPricing.currencySymbol}
+• سقف تكلفة الطلب الصارم (Plafond Break-Even CPA - Kill Rule): ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol} (أي سنتيم فوق هذا السقف = خسارة صافية، أوقف الإعلان فوراً!)
+• النطاق الذهبي للـ Target CPA (لتحقيق ربح صافي > 40%): ${compPricing.idealTargetCpaMin} - ${compPricing.idealTargetCpaMax} ${compPricing.currencySymbol}
+• استراتيجية عروض الباقات الفائزة (Bundle Strategy):
+  - باك 1 (قطعة واحدة): ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}
+  - باك 2 (قطعتين - Best Seller ⭐): ${pack2?.price || Math.round(compPricing.recommendedRetailPrice * 1.55)} ${compPricing.currencySymbol} (يوفر للزبون ${pack2?.savingsAmount || 0} ${compPricing.currencySymbol} ويرفع أرباحك الصافية بـ +${pack2?.profitBoostPercent || 50}%)
+  - باك 3 (3 قطع - عائلي VIP): ${pack3?.price || Math.round(compPricing.recommendedRetailPrice * 2.15)} ${compPricing.currencySymbol}
+• ميزانية اختبار الشبح (Ghost Test): ${compPricing.ghostTestBudget} ${compPricing.currencySymbol} (~15$) لاختبار الإقبال 24-48 ساعة قبل شراء أي كرتونة ستوك.
+
+💪 3. نقاط القوة والمزايا التنافسية الكبرى:
 ${analysis.strengthsAr.map((s) => '• ' + s).join('\n')}
 
-⚠️ 3. مخاوف واعتراضات الزبائن والحلول:
+⚠️ 4. مخاوف واعتراضات الزبائن والحلول لنسفها:
 ${analysis.challengesAr.concat(analysis.regulatoryAndSafetyTipsAr).map((c) => '• ' + c).join('\n')}
 
-🎣 4. باقة الـ 10 رؤوس إعلانية الأكثر جذباً (10 Winning Hooks Pack):
+🎣 5. باقة الـ 10 رؤوس إعلانية الأكثر جذباً (10 Winning Hooks Pack):
 ${hooks.map((h, i) => `${i + 1}. [${h.type}] : "${h.text}"`).join('\n')}
 
-📱 5. نصوص إعلانية عدوانية جاهزة حسب المنصة (Multi-Platform Copy):
+📱 6. نصوص إعلانية عدوانية جاهزة حسب المنصة (Multi-Platform Copy):
 📌 [TikTok & Reels Ads - كليكات سريعة]:
 ${platformCopies.tikTok}
 
@@ -164,7 +225,7 @@ ${platformCopies.facebook}
 📌 [WhatsApp Retargeting - استرجاع السلات المهجورة]:
 ${platformCopies.whatsApp}
 
-🎬 6. زوايا تسويقية وسيناريوهات إعلانية (UGC Hooks & Scripts):
+🎬 7. زوايا تسويقية وسيناريوهات إعلانية (UGC Hooks & Scripts):
 ${analysis.marketingAngles.map((a, i) => `
 📌 الزاوية ${i + 1}: ${a.angleNameAr}
 • الـ Hook (أول 3 ثوانٍ): "${a.hook3sAr}"
@@ -176,35 +237,68 @@ ${analysis.marketingAngles.map((a, i) => `
 ${a.adCopyTextAr}
 `).join('\n')}
 
-🚀 7. خطة إطلاق الحملات وقواعد الـ Kill & Scale:
+🚀 8. خطة إطلاق الحملات وقواعد الـ Kill & Scale والاستهداف:
 • الهيكل المقترح: ${analysis.launchStrategy.suggestedStructure}
-• قاعدة إيقاف الإعلان الخاسر (Kill Rule): ${analysis.launchStrategy.killRuleDescriptionAr}
-• قاعدة مضاعفة الميزانية (Scale Rule): ${analysis.launchStrategy.scaleRuleDescriptionAr}
-• أهم النصائح: ${analysis.launchStrategy.keyTipsAr.join(' | ')}
-
-📍 8. الاستهداف الجغرافي والمدن الأولى للبدء:
+• قاعدة إيقاف الإعلان الخاسر (Kill Rule): إذا وصل صرف أي إعلان إلى ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol} دون تحقيق أي مبيعة، أوقفه فوراً لحماية أرباحك.
+• قاعدة مضاعفة الميزانية (Scale Rule): أي AdSet يحقق CPA أقل من ${compPricing.idealTargetCpaMin} ${compPricing.currencySymbol} مع 3 مبيعات، ارفع ميزانيته بنسبة 20% كل 48 ساعة.
 • الشريحة المستهدفة: ${analysis.targeting.ageRange} (الجمهور: ${analysis.targeting.recommendedGender === 'ALL' ? 'رجال ونساء' : analysis.targeting.recommendedGender === 'WOMEN' ? 'نساء فقط' : 'رجال فقط'})
 • المدن ذات الأولوية وأعلى معدل توصيل: ${analysis.targeting.priorityCities.join('، ')}
-• مناطق ينصح باستثنائها في البداية: ${analysis.targeting.excludedZones.join('، ')}`;
+• مناطق ينصح باستثنائها في البداية: ${analysis.targeting.excludedZones.join('، ')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏁 9. الخلاصة التنفيذية والقرار النهائي: واش المنتج WINNER تخدم عليه ولا لا؟
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• قرار الخبير الفاصل:
+  ${compPricing.verdictTitleAr}
+• مؤشر الربحية والمنافسة: ${analysis.overallScore}/100 [${analysis.scoreLabel}]
+• مؤشر مضاعف السعر المحلي: ${compPricing.codMultiplier}x (${compPricing.multiplierVerdictAr})
+
+🎯 التوصية الصريحة للميديا باير:
+${compPricing.verdictDecision === 'GO' ? '🚀 نعم، المنتج يعتبر WINNER حقيقي ومناسب جداً للبدء فوراً. هامش الأمان الإعلاني عريض ويحميك من ارتفاع أسعار المزادات.' : compPricing.verdictDecision === 'CONDITIONAL' ? '⚡ المنتج WINNER مشروط: لا تبعه كقطعة منفردة، بل ركز حملاتك على عرض "باك 2" (قطعتين وتوصيل مجاني) لضمان الربح وتفادي تضييع الميزانية.' : '🛑 المنتج ليس WINNER بهذا السعر: ابتعد عنه حالياً أو ابحث عن مورد بسعر جملة أقل، لأنك ستخسر أموالك في الإعلانات بدون هامش أمان كافٍ.'}
+
+📋 خطة العمل الفورية فـ 3 خطوات عملية (Action Plan):
+1. [تصوير الإعلانات]: جهز 3 فيديوهات UGC بالدارجة تعتمد على الـ Hooks المذكورة في التقرير (زاوية حل المشكلة + زاوية الصدمة والنتيجة + زاوية باقة القطعتين).
+2. [اختبار الشبح السريع Ghost Test]: أطلق حملة اختبار بميزانية ${compPricing.ghostTestBudget} ${compPricing.currencySymbol} (~15$) لمدة 24-48 ساعة قبل شراء أي كرتونة ستوك.
+3. [قاعدة الـ Kill الصارمة]: إذا وصل صرف أي إعلان إلى ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol} بدون مبيعات، أوقفه فوراً لحماية رأس مالك.`;
   } else {
-    reportText = `🔍 RAPPORT D'EXPERTISE MARCHÉ & AUDIT DU PRODUIT : ${analysis.productTitle}
+    reportText = `🔍 RAPPORT D'EXPERTISE MARCHÉ & AUDIT COMPLET DU PRODUIT : ${analysis.productTitle} (${analysis.targetCountryFlag} ${compPricing.targetCountryNameFr})
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📊 1. Analyse de la demande & Potentiel :
-• Score d'opportunité : ${analysis.overallScore}/100 [${analysis.scoreLabel}]
-• Verdict de l'expert : ${analysis.verdictFr || analysis.verdictAr}
-• Analyse marché : ${analysis.marketDemandAnalysisFr || analysis.marketDemandAnalysisAr}
+📊 1. Évaluation du Potentiel & Prédiction des Ventes :
+• Le produit va-t-il générer des ventes réelles ?
+${salesPredictionFr}
+• Volume de commandes estimé :
+  - Phase de test : 3 à 7 commandes / jour.
+  - Phase de scale : 15 à 45+ commandes confirmées / jour avec les bons angles vidéos.
+• Analyse du marché local : ${analysis.marketDemandAnalysisFr || analysis.marketDemandAnalysisAr}
 
-💪 2. Forces & Avantages concurrentiels :
+💰 2. Économie COD Détaillée & Bouclier Anti-Perte (Chiffres Clés) :
+• Coût d'achat grossiste (Sourcing) : ${compPricing.wholesalePrice} ${compPricing.currencySymbol}
+• Fourchette des prix concurrents sur le marché local :
+  - Prix plancher concurrent : ${compPricing.competitorMin} ${compPricing.currencySymbol}
+  - Prix moyen du marché : ${compPricing.competitorAvg} ${compPricing.currencySymbol}
+  - Prix max (haut de gamme) : ${compPricing.competitorMax} ${compPricing.currencySymbol}
+• Prix de vente recommandé : ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol} (${compPricing.competitiveDiscountVsAvg}% plus compétitif que la moyenne pour maximiser le CTR)
+• Marge brute unitaire : ${compPricing.expectedMarginPercent}% (+${compPricing.recommendedRetailPrice - compPricing.wholesalePrice} ${compPricing.currencySymbol})
+• Frais de livraison estimés : ${shipping} ${compPricing.currencySymbol}
+• CPA Plafond Seuil (Kill Rule stricte) : ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol} (Au-delà, perte nette immédiate)
+• Fourchette CPA cible idéale (> 40% ROI net) : ${compPricing.idealTargetCpaMin} - ${compPricing.idealTargetCpaMax} ${compPricing.currencySymbol}
+• Stratégie des Packs Gagnants (Offres Bundles) :
+  - Pack 1 (1 Unité) : ${compPricing.recommendedRetailPrice} ${compPricing.currencySymbol}
+  - Pack 2 (Duo Best-Seller ⭐) : ${pack2?.price || Math.round(compPricing.recommendedRetailPrice * 1.55)} ${compPricing.currencySymbol} (Économie client ${pack2?.savingsAmount || 0} ${compPricing.currencySymbol}, boost de marge nette +${pack2?.profitBoostPercent || 50}%)
+  - Pack 3 (3 Unités VIP) : ${pack3?.price || Math.round(compPricing.recommendedRetailPrice * 2.15)} ${compPricing.currencySymbol}
+• Budget Ghost Test recommandé : ${compPricing.ghostTestBudget} ${compPricing.currencySymbol} (~15$) avant tout achat de stock.
+
+💪 3. Forces & Avantages concurrentiels :
 ${(analysis.strengthsFr || analysis.strengthsAr).map((s) => '• ' + s).join('\n')}
 
-⚠️ 3. Défis logistiques & Réglementation :
+⚠️ 4. Objections clients & Barrières levées :
 ${(analysis.challengesFr || analysis.challengesAr).concat(analysis.regulatoryAndSafetyTipsFr || analysis.regulatoryAndSafetyTipsAr).map((c) => '• ' + c).join('\n')}
 
-🎣 4. Pack des 10 Accroches Gagnantes (10 Winning Hooks) :
+🎣 5. Pack des 10 Accroches Gagnantes (10 Winning Hooks) :
 ${hooks.map((h, i) => `${i + 1}. [${h.type}] : "${h.text}"`).join('\n')}
 
-📱 5. Textes Publicitaires Multi-Plateformes (Direct-Response Copies) :
+📱 6. Textes Publicitaires Multi-Plateformes (Direct-Response Copies) :
 📌 [TikTok & Reels Ads - Clics Rapides] :
 ${platformCopies.tikTok}
 
@@ -214,7 +308,7 @@ ${platformCopies.facebook}
 📌 [WhatsApp Retargeting - Relance Paniers Abandonnés] :
 ${platformCopies.whatsApp}
 
-🎬 6. Angles marketing & Scripts UGC :
+🎬 7. Angles marketing & Scripts UGC :
 ${analysis.marketingAngles.map((a, i) => `
 📌 Angle ${i + 1} : ${a.angleNameFr || a.angleNameAr}
 • Hook (0-3s) : "${a.hook3sFr || a.hook3sAr}"
@@ -226,15 +320,28 @@ ${analysis.marketingAngles.map((a, i) => `
 ${a.adCopyTextFr || a.adCopyTextAr}
 `).join('\n')}
 
-🚀 7. Stratégie de lancement et règles Kill/Scale :
+🚀 8. Stratégie de lancement et règles Kill/Scale :
 • Structure recommandée : ${analysis.launchStrategy.suggestedStructureFr || analysis.launchStrategy.suggestedStructure}
-• Règle de coupure (Kill) : ${analysis.launchStrategy.killRuleDescriptionFr || analysis.launchStrategy.killRuleDescriptionAr}
-• Règle de passage à l'échelle (Scale) : ${analysis.launchStrategy.scaleRuleDescriptionFr || analysis.launchStrategy.scaleRuleDescriptionAr}
-
-📍 8. Ciblage géographique & Villes prioritaires :
-• Cible : ${analysis.targeting.ageRange}
+• Règle de coupure (Kill) : Si les dépenses atteignent ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol} sans vente, coupez l'adset immédiatement.
+• Règle de scale : Dès qu'un adset génère un CPA inférieur à ${compPricing.idealTargetCpaMin} ${compPricing.currencySymbol}, augmentez le budget de 20% toutes les 48h.
 • Villes recommandées : ${analysis.targeting.priorityCities.join(', ')}
-• Zones exclues : ${analysis.targeting.excludedZones.join(', ')}`;
+• Zones exclues : ${analysis.targeting.excludedZones.join(', ')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏁 9. Conclusion & Verdict Exécutif : Produit WINNER ou pas ?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Verdict de l'expert :
+  ${compPricing.verdictTitleFr}
+• Score de viabilité : ${analysis.overallScore}/100 [${analysis.scoreLabel}]
+• Multiplicateur COD local : ${compPricing.codMultiplier}x (${compPricing.multiplierVerdictFr})
+
+🎯 Recommandation finale Media Buyer :
+${compPricing.verdictDecision === 'GO' ? '🚀 OUI, le produit est un WINNER avéré et prêt pour un lancement immédiat.' : compPricing.verdictDecision === 'CONDITIONAL' ? '⚡ WINNER Conditionnel : Ne vendez pas à l\'unité, basez toute votre offre sur le Pack Duo pour sécuriser la marge.' : '🛑 Produit non rentable à ce tarif grossiste. Négociez un prix plus bas ou passez à un autre produit.'}
+
+📋 Plan d'action immédiat en 3 étapes :
+1. Préparez 3 créatives UGC percutantes basées sur les accroches du rapport.
+2. Lancez un Ghost Test avec un budget de ${compPricing.ghostTestBudget} ${compPricing.currencySymbol} (~15$) avant tout engagement de stock.
+3. Respectez strictement le CPA plafond de ${compPricing.antiLossPlafondCpa} ${compPricing.currencySymbol}.`;
   }
 
   const citations: Citation[] = [
@@ -258,7 +365,7 @@ ${a.adCopyTextFr || a.adCopyTextAr}
     },
     {
       title: isAr ? 'فحص المنتجات المنافسة عبر Google' : 'Recherche Google Concurrents',
-      url: `https://www.google.com/search?q=${encodeURIComponent(title + ' ' + (input.target || 'Maroc'))}`,
+      url: `https://www.google.com/search?q=${encodeURIComponent(title + ' achat prix maroc avis')}`,
       start_index: 0,
       end_index: 0,
     },
@@ -279,10 +386,13 @@ export async function researchMarkets(input: {
   language: 'ar' | 'fr';
   category?: RadarFilter;
   tone?: CopywritingTone;
+  wholesalePrice?: number;
+  retailPrice?: number;
+  shippingFee?: number;
 }): Promise<ResearchReport> {
   const chosenTone = input.tone || 'AGGRESSIVE';
   // 1. Check cache first - saves 100% of tokens on repeated queries
-  const cacheKey = `${input.mode}:${input.target}:${input.source}:${input.product.trim().toLowerCase()}:${input.category || 'ALL'}:${input.language}:${chosenTone}`;
+  const cacheKey = `${input.mode}:${input.target}:${input.source}:${input.product.trim().toLowerCase()}:${input.category || 'ALL'}:${input.language}:${chosenTone}:${input.wholesalePrice || 0}:${input.retailPrice || 0}`;
   const cached = researchCache.get(cacheKey);
   if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
     // If Arabic was requested, ensure the cached report is actually in Arabic, otherwise invalidate
@@ -330,16 +440,24 @@ export async function researchMarkets(input: {
 ${toneDescAr}
 
 الهيكل الإلزامي للتقرير باللغة العربية:
-### 🔍 فحص وتدقيق المنتج: ${input.product}
+### 🔍 تقرير فحص واستشارة السوق الإعلاني الشامل: ${input.product} (${input.target})
 
-#### 📊 1. تقييم حجم الطلب والمنافسة في السوق المحلي
-• مؤشرات الطلب وسلوك الشراء في ${input.target}.
-• نقاط القوة والمزايا التنافسية الكبرى.
+#### 📊 1. تقييم قابلية تحقيق المبيعات في السوق المستهدف
+• هل سيحقق هذا المنتج مبيعات حقيقية في ${input.target}؟ نعم أو لا مع تعليل صريح ومباشر لسبب الشراء العفوي ونوع المشكلة التي يحلها.
+• تقدير حجم المبيعات اليومية المتوقعة في مرحلة الاختبار الأولي ومرحلة التوسيع (Scaling).
 
-#### ⚠️ 2. مخاوف واعتراضات الزبائن وكيفية نسفها
+#### 💰 2. كشف الحسابات المالية الدقيقة وهامش الأمان الإعلاني (COD Economics)
+• سعر الجملة المقدر وسعر البيع التنافسي الموصى به لكسر المنافسين (مع مراعاة سعر الجملة الفعلي المدخل: ${input.wholesalePrice || 35} درهم).
+• مقارنة أسعار المنافسين في السوق المحلي (أرخص منافس، متوسط السوق، وأعلى سعر).
+• سقف تكلفة الطلب الصارم (Plafond CPA - Kill Rule) الذي إذا تجاوزه الإعلان يجب إيقافه فوراً.
+• الـ Target CPA المثالي لتحقيق أرباح صافية تفوق 40%.
+• استراتيجية باقة القطعتين (Pack Duo) لرفع متوسط السلة وتوفير تكلفة الشحن.
+• ميزانية اختبار الشبح السريع (Ghost Test) بدون شراء المخزون مسبقاً.
+
+#### ⚠️ 3. مخاوف واعتراضات الزبائن وكيفية نسفها
 • أبرز الاعتراضات (السعر، الجودة، الشك في النصب) وكيفية تحويلها إلى نقاط قوة بيعية في الإعلان وصفحة الهبوط.
 
-#### 🎣 3. باقة الـ 10 رؤوس إعلانية الأكثر جذباً (10 Winning Hooks Pack)
+#### 🎣 4. باقة الـ 10 رؤوس إعلانية الأكثر جذباً (10 Winning Hooks Pack)
 اكتب 10 Hooks عدوانية ومثيرة تخطف الانتباه في أول 3 ثوانٍ بالدارجة المغربية:
 1. [صدمة وفضول]: ...
 2. [صدمة وفضول]: ...
@@ -352,7 +470,7 @@ ${toneDescAr}
 9. [دليل اجتماعي وضمان صفر مخاطرة]: ...
 10. [دليل اجتماعي وضمان صفر مخاطرة]: ...
 
-#### 📱 4. نصوص إعلانية عدوانية جاهزة حسب المنصة (Multi-Platform Ad Copies)
+#### 📱 5. نصوص إعلانية عدوانية جاهزة حسب المنصة (Multi-Platform Ad Copies)
 • نص إعلاني لـ TikTok & Reels (قصير، هجومي، محفز للنقر):
 "..."
 
@@ -362,11 +480,15 @@ ${toneDescAr}
 • نص إعلاني لـ WhatsApp Retargeting (رسالة استرجاع السلات المهجورة بعرض محفز):
 "..."
 
-#### 🎬 5. سيناريوهات UGC إعلانية مفصلة (مشهد بمشهد)
+#### 🎬 6. سيناريوهات UGC إعلانية مفصلة (مشهد بمشهد)
 اكتب 3 سيناريوهات إعلانية مفصلة تناسب تيك توك وفيسبوك مع تفاصيل المشهد، الصوت، والنص بالشاشة.
 
-#### 🚀 6. خطة إطلاق الحملات وقواعد الـ Kill & Scale
+#### 🚀 7. خطة إطلاق الحملات وقواعد الـ Kill & Scale
 • الميزانية المقترحة للاختبار، متى يتم إيقاف الإعلان الخاسر، ومتى تتم مضاعفة الميزانية للإعلان الرابح.
+
+#### 🏁 8. الخلاصة والقرار النهائي الحاسم: واش المنتج WINNER تخدم عليه ولا لا؟
+• حدد قرارك الصريح والفاصل: هل المنتج WINNER مؤكد، أم WINNER مشروط، أم منتج خاسر (LOSER) يجب الابتعاد عنه؟
+• اذكر خطة العمل الفورية في 3 خطوات عملية لاختبار المنتج بأقل تكلفة وضمان الربح وعدم خسارة الميزانية.
 
 استشهد بروابط المواقع والمصادر الحقيقية التي وجدتها على الويب.`;
         } else {
@@ -376,33 +498,37 @@ RÈGLE ABSOLUE ET OBLIGATOIRE : Rédigez l'intégralité du rapport, des titres,
 ${toneDescFr}
 
 Structure obligatoire :
-### 🔍 Audit & Analyse du Produit : ${input.product}
-#### 📊 1. Signaux de la Demande Marché & Opportunité
-#### ⚠️ 2. Objections Clients & Solutions de Vente
-#### 🎣 3. Pack des 10 Accroches Gagnantes (10 Winning Hooks Direct-Response)
-#### 📱 4. Textes Publicitaires Multi-Plateformes (TikTok, Facebook Feed, WhatsApp Relance)
-#### 🎬 5. Angles Marketing & 3 Scripts UGC Publicitaires
-#### 🚀 6. Stratégie de Lancement & Règles Kill/Scale
+### 🔍 Audit & Analyse Complète du Produit : ${input.product} (${input.target})
+#### 📊 1. Évaluation du Potentiel & Prédiction des Ventes Réelles
+#### 💰 2. Chiffres Clés & Économie COD (Prix d'achat ${input.wholesalePrice || 35}, prix recommandé, CPA plafond Kill Rule, Pack Duo)
+#### ⚠️ 3. Objections Clients & Solutions de Vente
+#### 🎣 4. Pack des 10 Accroches Gagnantes (10 Winning Hooks Direct-Response)
+#### 📱 5. Textes Publicitaires Multi-Plateformes (TikTok, Facebook Feed, WhatsApp Relance)
+#### 🎬 6. Angles Marketing & 3 Scripts UGC Publicitaires
+#### 🚀 7. Stratégie de Lancement & Règles Kill/Scale
+#### 🏁 8. Conclusion & Verdict Exécutif : Produit WINNER ou pas ? (Décision claire et plan en 3 étapes).
 
 Citez les sources web réelles vérifiées trouvées sur le web.`;
         }
       }
 
       const promptInput = isArabic
-        ? `المطلوب: إجراء تدقيق تسويقي وإعلاني شامل بنبرة (${chosenTone}) باللغة العربية حصرياً.
+        ? `المطلوب: إجراء تدقيق تسويقي وإعلاني شامل بنبرة (${chosenTone}) باللغة العربية حصرياً مع إبراز كل الحسابات المالية وقرار هل المنتج WINNER أم لا.
 - اسم المنتج: ${input.product}
+- سعر الجملة المقدر: ${input.wholesalePrice || 35}
+- سعر البيع التنافسي: ${input.retailPrice || 'محسوب تلقائياً'}
 - البلد المستهدف: ${input.target}
 - الأسواق المقارنة: ${input.source || 'السوق العام'}
 - وضع البحث: ${input.mode === 'audit' ? 'تدقيق تسويقي وإعلاني' : 'استكشاف الفرص الرابحة'}
 
-تنبيه حاسم: يجب أن تكون الإجابة كاملة باللغة العربية مع نصوص إعلانية عدوانية ومقنعة.`
-        : `Veuillez analyser et auditer ce produit exclusivement en FRANÇAIS avec le ton (${chosenTone}) :
+تنبيه حاسم: يجب أن يتضمن التقرير فصلاً مالياً دقيقاً بالأرقام وخلاصة فاصلة تجيب: هل المنتج WINNER تخدم عليه ولا لا؟`
+        : `Veuillez analyser et auditer ce produit exclusivement en FRANÇAIS avec le ton (${chosenTone}) incluant les calculs financiers détaillés et la décision finale WINNER ou pas :
 - Produit : ${input.product}
+- Prix d'achat : ${input.wholesalePrice || 35}
+- Prix de vente : ${input.retailPrice || 'calculé'}
 - Pays cible : ${input.target}
 - Sources : ${input.source || 'Général'}
-- Mode : ${input.mode}
-
-Rappel obligatoire : Rédigez tout le rapport en français avec des textes publicitaires percutants.`;
+- Mode : ${input.mode}`;
 
       const response = await fetch('https://api.openai.com/v1/responses', {
         method: 'POST',
@@ -412,7 +538,7 @@ Rappel obligatoire : Rédigez tout le rapport en français avec des textes publi
           model,
           tools: [{ type: 'web_search' }],
           tool_choice: 'auto',
-          max_output_tokens: 2200, // Adjusted to allow full 10 hooks & multiplatform copies without cutoff
+          max_output_tokens: 2500, // Adjusted to allow full 8 sections including financial details and conclusion
           store: false,
           ...(radarCategory && {
             include: ['web_search_call.action.sources'],
@@ -467,4 +593,3 @@ Rappel obligatoire : Rédigez tout le rapport en français avec des textes publi
   researchCache.set(cacheKey, { timestamp: Date.now(), data: report });
   return report;
 }
-
