@@ -1221,17 +1221,23 @@ export default function MediaBuyerPage() {
                   {/* Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
                     <div className="space-y-1">
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-indigo-200 text-xs font-black">
-                        <ShieldCheck className="w-3.5 h-3.5 text-indigo-300" />
-                        <span>{isAr ? 'خبير التسعير التنافسي ودرع حماية الإعلانات' : 'Moteur de Prix Compétitif & Bouclier Anti-Perte'}</span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-indigo-200 text-xs font-black">
+                          <ShieldCheck className="w-3.5 h-3.5 text-indigo-300" />
+                          <span>{isAr ? 'خبير التسعير التنافسي ودرع حماية الإعلانات' : 'Moteur de Prix Compétitif & Bouclier Anti-Perte'}</span>
+                        </div>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-black">
+                          <span>📍</span>
+                          <span>{isAr ? liveCompetitivePricing.targetCountryNameAr : liveCompetitivePricing.targetCountryNameFr}</span>
+                        </span>
                       </div>
                       <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
-                        <span>{isAr ? 'تحليل أسعار المنافسين والسعر التنافسي الرابح 🎯' : 'Analyse Concurrentielle & Prix Gagnant 🎯'}</span>
+                        <span>{isAr ? 'تحليل أسعار المنافسين المحليين والسعر التنافسي الرابح 🎯' : 'Analyse Concurrentielle Locale & Prix Gagnant 🎯'}</span>
                       </h3>
-                      <p className="text-xs text-slate-300 max-w-2xl">
+                      <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
                         {isAr
-                          ? `بناءً على سعر الجملة (${analysisInput.wholesalePrice} ${getCurrencySymbol()}) في سوق ${countryNames[analysisInput.targetCountry] || analysisInput.targetCountry}، قام الذكاء الاصطناعي بدراسة نطاق المنافسين واقتراح السعر الرابح مع تفعيل سقف الـ CPA الصارم لحماية رأس مالك من خسارة الإعلانات.`
-                          : `Sur la base de votre coût d'achat (${analysisInput.wholesalePrice} ${getCurrencySymbol()}), l'IA analyse le marché local et calcule le prix idéal pour surpasser la concurrence tout en protégeant votre budget publicitaire.`}
+                          ? `تحليل دقيق 100% مبني على واقع التجارة الإلكترونية في ${liveCompetitivePricing.targetCountryNameAr} (COD). يقارن سعر جملتك (${analysisInput.wholesalePrice} ${getCurrencySymbol()}) مع أسعار المتاجر وإعلانات فيسبوك وتيك توك المنافسة محلياً، ليقترح عليك السعر الأنسب للشراء العفوي (Impulse Buying) مع سقف CPA صارم لمنع أي خسارة.`
+                          : `Analyse 100% calibrée sur les standards du ${liveCompetitivePricing.targetCountryNameFr}. Compare votre coût grossiste (${analysisInput.wholesalePrice} ${getCurrencySymbol()}) aux prix réels des concurrents sur ce marché pour fixer un prix compétitif avec bouclier anti-perte.`}
                       </p>
                     </div>
 
@@ -1249,9 +1255,9 @@ export default function MediaBuyerPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-black text-slate-300 flex items-center gap-1.5">
                           <Target className="w-3.5 h-3.5 text-amber-400" />
-                          <span>{isAr ? 'نطاق أسعار المنافسين في السوق' : 'Fourchette des concurrents'}</span>
+                          <span>{isAr ? `أسعار المنافسين في ${countryNames[analysisInput.targetCountry] || analysisInput.targetCountry}` : 'Fourchette des concurrents'}</span>
                         </span>
-                        <span className="text-[10px] font-bold text-slate-400">{countryNames[analysisInput.targetCountry] || analysisInput.targetCountry}</span>
+                        <span className="text-[10px] font-bold text-emerald-400">{getCurrencySymbol()}</span>
                       </div>
 
                       <div className="grid grid-cols-3 gap-2 text-center pt-1">
