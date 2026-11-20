@@ -1,5 +1,8 @@
 import { runtimeDataPath } from './runtimeData';
 import fs from 'fs';
+import { calculateCompetitivePricing, type CompetitivePricingResult } from './competitivePricing';
+
+export { calculateCompetitivePricing, type CompetitivePricingResult } from './competitivePricing';
 
 export type MarketCountry = 'ALL' | 'MA' | 'SN' | 'GCC' | 'US' | 'FR' | 'EU' | 'UK' | 'CA' | 'GLOBAL';
 
@@ -153,6 +156,7 @@ export interface ProductAnalysisResult {
     keyTipsAr: string[];
     keyTipsFr?: string[];
   };
+  competitivePricing?: CompetitivePricingResult;
 }
 
 // Curated worldwide winning products for Morocco, USA, Europe, GCC, Africa & Global
@@ -2189,7 +2193,16 @@ ${titleText} هو سر الجمال الطبيعي والإشراقة الدائ
         'قدم عرض 1+1 بنصف السعر أو عبوتين بخصم خاص لرفع متوسط قيمة السلة (AOV).',
         'فعّل رسائل التأكيد والمتابعة التلقائية عبر WhatsApp لرفع نسبة التسليم.'
       ]
-    }
+    },
+    competitivePricing: calculateCompetitivePricing({
+      wholesalePrice: wholesale,
+      title: input.title,
+      targetCountry,
+      shippingFee: shipping,
+      estConfirmationRate: cr,
+      estDeliveryRate: dr,
+      niche,
+    })
   };
 
   return result;

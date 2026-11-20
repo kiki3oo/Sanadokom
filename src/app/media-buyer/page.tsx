@@ -30,6 +30,13 @@ import {
   ArrowUpRight,
   Zap,
   Compass,
+  ShieldCheck,
+  ShieldAlert,
+  Award,
+  DollarSign,
+  ChevronDown,
+  ChevronUp,
+  Percent,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { CampaignPeriod, getLiveCampaignAudits } from '@/lib/campaignSummary';
@@ -39,6 +46,7 @@ import { ImportRadar } from './ImportRadar';
 import { CrossBorderSpyHub } from './CrossBorderSpyHub';
 import type { RadarProduct } from '@/lib/radarProducts';
 import { mediaBuyerTranslations } from '@/lib/mediaBuyerTranslations';
+import { calculateCompetitivePricing, type CompetitivePricingResult } from '@/lib/competitivePricing';
 
 export default function MediaBuyerPage() {
   const { selectedStoreId, selectedCountry } = useStore();
@@ -264,6 +272,47 @@ export default function MediaBuyerPage() {
 
   // Storyboard State
   const [storyboardCopied, setStoryboardCopied] = useState(false);
+
+  // --- Competitive Pricing & Anti-Loss Engine State ---
+  const [pricingAppliedBanner, setPricingAppliedBanner] = useState(false);
+  const [showAntiLossDetails, setShowAntiLossDetails] = useState(true);
+
+  const liveCompetitivePricing = React.useMemo(() => {
+    if (!analysisInput.wholesalePrice || analysisInput.wholesalePrice <= 0) return null;
+    return calculateCompetitivePricing({
+      wholesalePrice: analysisInput.wholesalePrice,
+      title: analysisInput.title,
+      targetCountry: analysisInput.targetCountry,
+      shippingFee: analysisInput.shippingFee,
+      estConfirmationRate: analysisInput.estConfirmationRate,
+      estDeliveryRate: analysisInput.estDeliveryRate,
+      niche: analysisInput.niche,
+    });
+  }, [
+    analysisInput.wholesalePrice,
+    analysisInput.title,
+    analysisInput.targetCountry,
+    analysisInput.shippingFee,
+    analysisInput.estConfirmationRate,
+    analysisInput.estDeliveryRate,
+    analysisInput.niche,
+  ]);
+
+  const handleApplyCompetitivePricing = () => {
+    if (!liveCompetitivePricing) return;
+    setAnalysisInput((prev) => ({
+      ...prev,
+      retailPrice: liveCompetitivePricing.recommendedRetailPrice,
+    }));
+    if (liveCompetitivePricing.recommendedBundlePacks[1]) {
+      setPack2PriceInput(liveCompetitivePricing.recommendedBundlePacks[1].price);
+    }
+    if (liveCompetitivePricing.recommendedBundlePacks[2]) {
+      setPack3PriceInput(liveCompetitivePricing.recommendedBundlePacks[2].price);
+    }
+    setPricingAppliedBanner(true);
+    setTimeout(() => setPricingAppliedBanner(false), 5000);
+  };
 
   // Copilot Decision Filter
   const [copilotFilter, setCopilotFilter] = useState<'ALL' | 'SCALE' | 'KILL' | 'ALERT'>('ALL');
@@ -1082,9 +1131,22 @@ export default function MediaBuyerPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    {t.valFieldRetail} ({getCurrencySymbol()})
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700">
+                      {t.valFieldRetail} ({getCurrencySymbol()})
+                    </label>
+                    {liveCompetitivePricing && analysisInput.retailPrice !== liveCompetitivePricing.recommendedRetailPrice && (
+                      <button
+                        type="button"
+                        onClick={handleApplyCompetitivePricing}
+                        className="text-[10px] text-indigo-700 font-extrabold hover:underline flex items-center gap-0.5 cursor-pointer"
+                        title={isAr ? 'تطبيق السعر التنافسي المقترح' : 'Appliquer le prix recommandé'}
+                      >
+                        <Zap className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
+                        <span>{liveCompetitivePricing.recommendedRetailPrice} {getCurrencySymbol()}</span>
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="number"
                     placeholder="249"
@@ -1129,6 +1191,235 @@ export default function MediaBuyerPage() {
                   />
                 </div>
               </div>
+
+              {/* ========================================================================= */}
+              {/* 🛡️ AI COMPETITIVE PRICING & ANTI-LOSS ADS SHIELD ENGINE                   */}
+              {/* ========================================================================= */}
+              {liveCompetitivePricing && (
+                <div className="rounded-2xl border-2 border-indigo-300/80 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-900 p-5 sm:p-6 text-white shadow-xl space-y-5">
+                  {/* Applied Success Toast */}
+                  {pricingAppliedBanner && (
+                    <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-400 text-emerald-200 text-xs font-bold flex items-center justify-between animate-fadeIn">
+                      <div className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>
+                          {isAr
+                            ? `✅ تم تطبيق السعر التنافسي الموصى به (${analysisInput.retailPrice} ${getCurrencySymbol()}) وتحديث باقات الأوفر بنجاح!`
+                            : `✅ Prix compétitif recommandé (${analysisInput.retailPrice} ${getCurrencySymbol()}) et packs appliqués avec succès !`}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPricingAppliedBanner(false)}
+                        className="text-emerald-300 hover:text-white"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                    <div className="space-y-1">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-indigo-200 text-xs font-black">
+                        <ShieldCheck className="w-3.5 h-3.5 text-indigo-300" />
+                        <span>{isAr ? 'خبير التسعير التنافسي ودرع حماية الإعلانات' : 'Moteur de Prix Compétitif & Bouclier Anti-Perte'}</span>
+                      </div>
+                      <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                        <span>{isAr ? 'تحليل أسعار المنافسين والسعر التنافسي الرابح 🎯' : 'Analyse Concurrentielle & Prix Gagnant 🎯'}</span>
+                      </h3>
+                      <p className="text-xs text-slate-300 max-w-2xl">
+                        {isAr
+                          ? `بناءً على سعر الجملة (${analysisInput.wholesalePrice} ${getCurrencySymbol()}) في سوق ${countryNames[analysisInput.targetCountry] || analysisInput.targetCountry}، قام الذكاء الاصطناعي بدراسة نطاق المنافسين واقتراح السعر الرابح مع تفعيل سقف الـ CPA الصارم لحماية رأس مالك من خسارة الإعلانات.`
+                          : `Sur la base de votre coût d'achat (${analysisInput.wholesalePrice} ${getCurrencySymbol()}), l'IA analyse le marché local et calcule le prix idéal pour surpasser la concurrence tout en protégeant votre budget publicitaire.`}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`px-3 py-1.5 rounded-xl border text-xs font-black ${liveCompetitivePricing.verdictBadgeColor}`}>
+                        {isAr ? liveCompetitivePricing.verdictTitleAr : liveCompetitivePricing.verdictTitleFr}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Top Block: Competitors vs Recommended Selling Price */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                    {/* Competitor Benchmarks (5 cols) */}
+                    <div className="lg:col-span-5 rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-300 flex items-center gap-1.5">
+                          <Target className="w-3.5 h-3.5 text-amber-400" />
+                          <span>{isAr ? 'نطاق أسعار المنافسين في السوق' : 'Fourchette des concurrents'}</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400">{countryNames[analysisInput.targetCountry] || analysisInput.targetCountry}</span>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                        <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
+                          <span className="text-[10px] text-slate-400 block font-medium">{isAr ? 'أرخص منافس' : 'Min Marché'}</span>
+                          <span className="text-sm sm:text-base font-black text-slate-200 mt-0.5 block">{liveCompetitivePricing.competitorMin} {getCurrencySymbol()}</span>
+                          <span className="text-[9px] text-slate-400 block">{isAr ? 'سعر كسر السوق' : 'Prix plancher'}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                          <span className="text-[10px] text-amber-300 block font-bold">{isAr ? 'متوسط السوق' : 'Moyenne'}</span>
+                          <span className="text-sm sm:text-base font-black text-amber-200 mt-0.5 block">{liveCompetitivePricing.competitorAvg} {getCurrencySymbol()}</span>
+                          <span className="text-[9px] text-amber-300/80 block">{isAr ? 'الأكثر انتشاراً' : 'Standard'}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
+                          <span className="text-[10px] text-slate-400 block font-medium">{isAr ? 'أعلى سعر' : 'Max Marché'}</span>
+                          <span className="text-sm sm:text-base font-black text-slate-200 mt-0.5 block">{liveCompetitivePricing.competitorMax} {getCurrencySymbol()}</span>
+                          <span className="text-[9px] text-slate-400 block">{isAr ? 'براندات فاخرة' : 'Haut de gamme'}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-[11px] text-slate-400 leading-relaxed pt-1">
+                        💡 {isAr
+                          ? 'المنافسون الذين يبيعون تحت الحد الأدنى يواجهون خسارة محققة بسبب تكاليف الشحن والروتور.'
+                          : 'Vendre en dessous du prix plancher entraîne des pertes avec les coûts de livraison et retours.'}
+                      </div>
+                    </div>
+
+                    {/* Recommended Retail Price & One-Click Apply (7 cols) */}
+                    <div className="lg:col-span-7 rounded-2xl bg-gradient-to-r from-indigo-600/30 via-indigo-600/20 to-purple-600/20 border border-indigo-400/40 p-4 sm:p-5 flex flex-col justify-between space-y-3">
+                      <div>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-xs font-black text-indigo-300 flex items-center gap-1.5">
+                            <Award className="w-4 h-4 text-amber-300" />
+                            <span>{isAr ? 'السعر التنافسي الموصى به لربح المزاد' : 'Prix de Vente Recommandé'}</span>
+                          </span>
+                          {liveCompetitivePricing.competitiveDiscountVsAvg > 0 && (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-black">
+                              -{liveCompetitivePricing.competitiveDiscountVsAvg}% {isAr ? 'أرخص من متوسط السوق' : 'vs moyenne'}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-baseline gap-3 my-2">
+                          <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                            {liveCompetitivePricing.recommendedRetailPrice} {getCurrencySymbol()}
+                          </span>
+                          <span className="text-xs text-indigo-200 font-bold">
+                            ({isAr ? 'هامش إجمالي' : 'Marge brute'}: ~{liveCompetitivePricing.expectedMarginPercent}%)
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-200 leading-relaxed">
+                          {isAr ? liveCompetitivePricing.psychologicalAdvantageAr : liveCompetitivePricing.psychologicalAdvantageFr}
+                        </p>
+                      </div>
+
+                      <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={handleApplyCompetitivePricing}
+                          className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
+                            analysisInput.retailPrice === liveCompetitivePricing.recommendedRetailPrice
+                              ? 'bg-emerald-600 text-white cursor-default'
+                              : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black'
+                          }`}
+                        >
+                          <Zap className="w-4 h-4 text-slate-950 fill-current" />
+                          <span>
+                            {analysisInput.retailPrice === liveCompetitivePricing.recommendedRetailPrice
+                              ? (isAr ? '✅ السعر معتمد ومطبق في الحسابات' : '✅ Prix actuellement appliqué')
+                              : (isAr ? `⚡ تطبيق هذا السعر فوراً (${liveCompetitivePricing.recommendedRetailPrice} ${getCurrencySymbol()})` : `⚡ Appliquer ce prix (${liveCompetitivePricing.recommendedRetailPrice} ${getCurrencySymbol()})`)}
+                          </span>
+                        </button>
+
+                        <span className="text-[11px] text-slate-400">
+                          {isAr ? 'يحدث تلقائياً حسابات الربحية والأوفر ⚡' : 'Met à jour instantanément les calculs'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Anti-Loss Shield 4 Metrics */}
+                  <div className="space-y-2.5 pt-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-slate-200 flex items-center gap-1.5">
+                        <ShieldAlert className="w-4 h-4 text-rose-400" />
+                        <span>{isAr ? 'درع حماية ميزانية الإعلانات (Bouclier Anti-Perte Ads)' : 'Bouclier Anti-Perte & Sécurité Ads'}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowAntiLossDetails(!showAntiLossDetails)}
+                        className="text-xs text-indigo-300 hover:text-white font-bold flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>{showAntiLossDetails ? (isAr ? 'إخفاء التفاصيل' : 'Réduire') : (isAr ? 'عرض الإرشادات والقواعد' : 'Afficher les règles')}</span>
+                        {showAntiLossDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5 text-indigo-300" />}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {/* 1. COD Multiplier */}
+                      <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                        <span className="text-[11px] text-slate-400 block font-bold">{isAr ? 'مضاعف السعر COD' : 'Multiplicateur COD'}</span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xl font-black text-white">{liveCompetitivePricing.codMultiplier}x</span>
+                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
+                            liveCompetitivePricing.multiplierStatus === 'EXCELLENT'
+                              ? 'bg-emerald-500/20 text-emerald-300'
+                              : liveCompetitivePricing.multiplierStatus === 'ACCEPTABLE'
+                              ? 'bg-amber-500/20 text-amber-300'
+                              : 'bg-rose-500/20 text-rose-300'
+                          }`}>
+                            {liveCompetitivePricing.multiplierStatus}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-300 leading-tight">
+                          {isAr ? liveCompetitivePricing.multiplierVerdictAr : liveCompetitivePricing.multiplierVerdictFr}
+                        </p>
+                      </div>
+
+                      {/* 2. Plafond Break-Even CPA */}
+                      <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-1">
+                        <span className="text-[11px] text-rose-300 block font-bold">{isAr ? 'سقف الـ CPA الصارم (Kill Rule)' : 'CPA Plafond Max'}</span>
+                        <span className="text-xl font-black text-rose-200 block">{liveCompetitivePricing.antiLossPlafondCpa} {getCurrencySymbol()}</span>
+                        <p className="text-[10px] text-rose-200/90 leading-tight">
+                          {isAr
+                            ? `إذا تجاوزت تكلفة الليد في فيسبوك/تيك توك هذا الرقم = خسارة مباشرة! أوقف الإعلان فوراً.`
+                            : `CPA max par lead. Au-delà, coupez la campagne immédiatement.`}
+                        </p>
+                      </div>
+
+                      {/* 3. Target CPA Sweet Spot */}
+                      <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-1">
+                        <span className="text-[11px] text-emerald-300 block font-bold">{isAr ? 'الـ Target CPA المثالي (ربح +40%)' : 'Target CPA Sweet Spot'}</span>
+                        <span className="text-xl font-black text-emerald-200 block">{liveCompetitivePricing.idealTargetCpaMin} - {liveCompetitivePricing.idealTargetCpaMax} {getCurrencySymbol()}</span>
+                        <p className="text-[10px] text-emerald-200/90 leading-tight">
+                          {isAr ? 'النطاق الذهبي لتكلفة الليد لضمان هامش صافي ممتاز وتغطية الروتور.' : 'Zone idéale pour rentabilité nette supérieure à 40%.'}
+                        </p>
+                      </div>
+
+                      {/* 4. Ghost Testing Budget */}
+                      <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 space-y-1">
+                        <span className="text-[11px] text-purple-300 block font-bold">{isAr ? 'اختبار الشبح السريع (Ghost Test)' : 'Test Ghost sans stock'}</span>
+                        <span className="text-xl font-black text-purple-200 block">{liveCompetitivePricing.ghostTestBudget} {getCurrencySymbol()} (~15$)</span>
+                        <p className="text-[10px] text-purple-200/90 leading-tight">
+                          {isAr ? 'ميزانية اختبار 24-48 ساعة قبل شراء أي كرتونة من السوق للتأكد من الطلب.' : 'Budget test 24-48h avant tout engagement de stock.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Expandable Actionable Guidelines */}
+                    {showAntiLossDetails && (
+                      <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-2 mt-3 text-xs animate-fadeIn">
+                        <span className="text-xs font-black text-amber-300 block">
+                          ⚡ {isAr ? 'بروتوكول حماية ميزانية الإعلانات قبل وبعد الإطلاق:' : 'Protocole Anti-Perte avant et après lancement :'}
+                        </span>
+                        <ul className="space-y-1.5 text-slate-200">
+                          {(isAr ? liveCompetitivePricing.antiLossAdviceAr : liveCompetitivePricing.antiLossAdviceFr).map((advice, idx) => (
+                            <li key={idx} className="flex items-start gap-2 leading-relaxed">
+                              <span className="shrink-0 mt-0.5">•</span>
+                              <span>{advice}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Row 3: Description, Ingredients, and Link */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
@@ -1246,6 +1537,24 @@ export default function MediaBuyerPage() {
                     : 'En e-commerce COD, plus de 65% de votre marge nette provient du pack duo : vos frais de livraison et confirmation restent identiques pour un colis unique !'}
                 </p>
               </div>
+
+              {liveCompetitivePricing && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (liveCompetitivePricing.recommendedBundlePacks[1]) {
+                      setPack2PriceInput(liveCompetitivePricing.recommendedBundlePacks[1].price);
+                    }
+                    if (liveCompetitivePricing.recommendedBundlePacks[2]) {
+                      setPack3PriceInput(liveCompetitivePricing.recommendedBundlePacks[2].price);
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                  <span>{isAr ? 'مزامنة باقات الذكاء الاصطناعي' : 'Synchroniser les packs IA'}</span>
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

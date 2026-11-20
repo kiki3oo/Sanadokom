@@ -9,6 +9,7 @@ import {
 } from '@/lib/marketingAi';
 
 import { researchMarkets } from '@/lib/marketResearch';
+import { calculateCompetitivePricing } from '@/lib/competitivePricing';
 import { isCampaignPeriod } from '@/lib/campaignSummary';
 import { prisma } from '@/lib/prisma';
 import { metaAccountId, metaSyncError, sharedMetaConnectionId, syncMetaCampaignSpend } from '@/lib/facebook/campaignSpend';
@@ -172,6 +173,23 @@ export async function POST(req: NextRequest) {
         success: false,
         error: 'Les actions sur les campagnes publicitaires sont indisponibles.',
       }, { status: 501 });
+    }
+
+    if (action === 'CALCULATE_COMPETITIVE_PRICING') {
+      const { wholesalePrice, title, targetCountry, shippingFee, estConfirmationRate, estDeliveryRate, niche } = body;
+      const result = calculateCompetitivePricing({
+        wholesalePrice: Number(wholesalePrice) || 35,
+        title: title || '',
+        targetCountry: targetCountry || 'MA',
+        shippingFee: typeof shippingFee === 'number' ? shippingFee : undefined,
+        estConfirmationRate: typeof estConfirmationRate === 'number' ? estConfirmationRate : undefined,
+        estDeliveryRate: typeof estDeliveryRate === 'number' ? estDeliveryRate : undefined,
+        niche: niche || undefined,
+      });
+      return NextResponse.json({
+        success: true,
+        data: result,
+      });
     }
 
     if (action === 'SCAN_IMAGE') {
